@@ -15,7 +15,7 @@ export const ProductSpotlightSection: React.FC<ProductSpotlightProps> =
     ({
       productName = "ELEVATING YOUR DRIP",
       productDescription = "Street style meets premium quality in this fire collection. From bold patterns to fresh cuts, every piece is designed to make you stand out. Level up your wardrobe with pieces that speak your language.",
-      productPrice = "₵149.99",
+
       productImage = "https://images.unsplash.com/photo-1634888068224-c4f05484c58b?q=80&w=685&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       productAlt = "Elevating Your Drip - Premium streetwear fashion",
     }) => {
@@ -65,15 +65,6 @@ export const ProductSpotlightSection: React.FC<ProductSpotlightProps> =
                     width="500"
                     height="500"
                   />
-                </div>
-
-                {/* Floating price tag */}
-                <div className="absolute -top-2 sm:-top-4 -right-2 sm:-right-4 liquid-glass rounded-full px-4 sm:px-6 py-2 sm:py-3 touch-target">
-                  <span
-                    className="text-base sm:text-lg font-bold text-black"
-                    aria-label={`Price: ${productPrice}`}>
-                    {productPrice}
-                  </span>
                 </div>
               </div>
             </div>

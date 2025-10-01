@@ -111,7 +111,7 @@ export const Header: React.FC = () => {
                 <motion.img
                   src={logoSrc}
                   alt="OMU FUSION"
-                  className="h-8 lg:h-10 w-auto transition-all duration-300 group-hover:scale-110"
+                  className="h-10 lg:h-12 w-auto transition-all duration-300 group-hover:scale-110"
                   whileHover={{ rotate: 5 }}
                 />
               </Link>
@@ -201,7 +201,7 @@ export const Header: React.FC = () => {
                 <motion.img
                   src={logoSrc}
                   alt="OMU FUSION"
-                  className="h-8 w-auto transition-all duration-300 group-hover:scale-110"
+                  className="h-12 w-auto transition-all duration-300 group-hover:scale-110"
                   whileHover={{ rotate: 5 }}
                 />
               </Link>

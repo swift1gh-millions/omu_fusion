@@ -108,7 +108,7 @@ export const FeaturedProductsSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-700 rounded-3xl">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-700 rounded-b-3xl">
       <div className="max-w-7xl mx-auto">
         {/* Must Have Section */}
         <div className="mb-20">
