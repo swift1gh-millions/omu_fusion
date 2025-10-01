@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "../ui/Button";
+import { useNavigate } from "react-router-dom";
 
 interface CategoryItem {
   id: string;
@@ -11,6 +12,7 @@ interface CategoryItem {
 }
 
 export const ModernCategoriesSection: React.FC = () => {
+  const navigate = useNavigate();
   const categories: CategoryItem[] = [
     {
       id: "new-arrivals",
@@ -76,7 +78,8 @@ export const ModernCategoriesSection: React.FC = () => {
           <Button
             variant="glass"
             size="lg"
-            className="px-16 py-4 text-lg font-semibold border-2 border-white border-opacity-20 hover:border-accent-gold">
+            className="px-16 py-4 text-lg font-semibold border-2 border-white border-opacity-20 hover:border-accent-gold"
+            onClick={() => navigate("/shop")}>
             View All
             <svg
               className="ml-2 w-5 h-5"

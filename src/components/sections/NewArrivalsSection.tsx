@@ -1,18 +1,25 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export const NewArrivalsSection: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleViewAll = () => {
+    navigate("/shop");
+  };
+
   return (
-    <section className="py-20 bg-gray-700">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section className="py-20 bg-gray-700 rounded-3xl">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <motion.div
-          className="text-center max-w-3xl mx-auto mb-16"
+          className="text-center max-w-4xl mx-auto mb-16"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}>
           <motion.h2
-            className="text-4xl lg:text-5xl font-black text-white mb-6"
+            className="text-4xl lg:text-5xl font-bold text-white mb-6 tracking-wide"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -20,7 +27,7 @@ export const NewArrivalsSection: React.FC = () => {
             NEW ARRIVALS [698]
           </motion.h2>
           <motion.p
-            className="text-lg text-gray-300 leading-relaxed"
+            className="text-lg text-gray-300 leading-relaxed font-body"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -39,8 +46,9 @@ export const NewArrivalsSection: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.6 }}
           viewport={{ once: true }}>
           <motion.button
-            className="liquid-glass-dark text-white px-16 py-4 text-sm font-medium tracking-widest transition-all duration-300 modern-button rounded-full"
-            whileHover={{ scale: 1.05, y: -3 }}
+            className="btn-primary text-white px-12 py-4 text-sm font-medium tracking-wider transition-all duration-300 rounded-2xl min-h-[48px]"
+            onClick={handleViewAll}
+            whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.98 }}>
             VIEW ALL
           </motion.button>

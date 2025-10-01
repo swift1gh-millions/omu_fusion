@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 interface ProductSpotlightProps {
   productName?: string;
@@ -12,16 +13,18 @@ interface ProductSpotlightProps {
 export const ProductSpotlightSection: React.FC<ProductSpotlightProps> =
   React.memo(
     ({
-      productName = "CELESTE SLIP DRESS",
-      productDescription = "Effortless elegance meets contemporary design in this stunning piece. Crafted from premium materials with attention to every detail, the Celeste Slip Dress embodies modern sophistication.",
+      productName = "ELEVATING YOUR DRIP",
+      productDescription = "Street style meets premium quality in this fire collection. From bold patterns to fresh cuts, every piece is designed to make you stand out. Level up your wardrobe with pieces that speak your language.",
       productPrice = "₵149.99",
-      productImage = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-      productAlt = "Celeste Slip Dress - Premium women's fashion",
+      productImage = "https://images.unsplash.com/photo-1634888068224-c4f05484c58b?q=80&w=685&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      productAlt = "Elevating Your Drip - Premium streetwear fashion",
     }) => {
+      const navigate = useNavigate();
+
       const handleShopNowClick = React.useCallback(() => {
-        // Add navigation logic here
-        console.log(`Navigate to product: ${productName}`);
-      }, [productName]);
+        // Navigate to shop page
+        navigate("/shop");
+      }, [navigate]);
 
       return (
         <motion.section className="py-12 sm:py-16 lg:py-20 bg-white">
@@ -31,7 +34,7 @@ export const ProductSpotlightSection: React.FC<ProductSpotlightProps> =
               <div className="space-y-6 sm:space-y-8 text-center lg:text-left">
                 <div>
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 sm:mb-4 block">
-                    HIGHLIGHTS
+                    STREET STYLE
                   </span>
                   <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black leading-tight">
                     {productName}

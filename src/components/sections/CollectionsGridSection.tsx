@@ -1,13 +1,23 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export const CollectionsGridSection: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleCollectionClick = (collectionId: number, buttonText: string) => {
+    // Navigate to shop page with collection filter
+    navigate("/shop", {
+      state: { collection: collectionId, filter: buttonText },
+    });
+  };
+
   const collections = [
     {
       id: 1,
       title: "CORE VISION COLLECTION",
       image:
-        "https://images.unsplash.com/photo-1506629905460-348162436dfd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1679937744139-b83f7770148f?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       buttonText: "EXPLORE",
     },
     {
@@ -15,7 +25,7 @@ export const CollectionsGridSection: React.FC = () => {
       title: "[698] JOHN SMITH",
       subtitle: "Limited Edition",
       image:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+        "https://plus.unsplash.com/premium_photo-1758742058529-6fb2fda160cf?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       buttonText: "SHOP NOW",
     },
     {
@@ -62,6 +72,12 @@ export const CollectionsGridSection: React.FC = () => {
                   </h3>
                   <motion.button
                     className="liquid-glass text-black px-8 py-3 text-xs font-medium tracking-widest opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100 rounded-full modern-button"
+                    onClick={() =>
+                      handleCollectionClick(
+                        collection.id,
+                        collection.buttonText
+                      )
+                    }
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}>
                     {collection.buttonText} →

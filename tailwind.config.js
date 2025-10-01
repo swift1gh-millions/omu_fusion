@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
@@ -33,6 +33,8 @@ module.exports = {
           "Roboto",
           "sans-serif",
         ],
+        handwritten: ["Dancing Script", "Caveat", "cursive"],
+        script: ["Dancing Script", "cursive"],
       },
       animation: {
         "fade-in": "fadeIn 0.6s ease-out",

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { SplitText } from "../ui/SplitText";
 
 // Import background images
 import bg1 from "../../assets/bg1.jpg";
@@ -7,6 +9,7 @@ import bg2 from "../../assets/bg2.jpg";
 import bg3 from "../../assets/bg3.jpg";
 
 export const HeroSection: React.FC = () => {
+  const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
@@ -16,6 +19,7 @@ export const HeroSection: React.FC = () => {
     false,
   ]);
   const [slideshowStarted, setSlideshowStarted] = useState(false);
+  const [titleAnimationComplete, setTitleAnimationComplete] = useState(false);
 
   // Memoized background images array
   const backgroundImages = useMemo(
@@ -135,28 +139,40 @@ export const HeroSection: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/10"></div>
       </div>
 
-      {/* Content Overlay - Better mobile positioning */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      {/* Content Overlay - Positioned at bottom */}
+      <div className="relative z-10 min-h-screen flex items-end justify-center px-4 sm:px-6 lg:px-8 pb-14 sm:pb-16 lg:pb-24">
         <motion.div
           className="text-center text-white max-w-xs sm:max-w-lg lg:max-w-2xl w-full"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}>
           {/* Main Title */}
-          <motion.h1
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-wide mb-6 sm:mb-8 leading-tight"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}>
-            PEAK SUMMER '25
-          </motion.h1>
+          <SplitText
+            text="Omu Fusion"
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold tracking-wide mb-8 leading-tight font-handwritten"
+            delay={80}
+            duration={0.8}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 40 }}
+            to={{ opacity: 1, y: 0 }}
+            textAlign="center"
+            onLetterAnimationComplete={() => {
+              setTitleAnimationComplete(true);
+            }}
+          />
 
           {/* CTA Button */}
           <motion.button
-            className="liquid-glass border border-white/30 text-white px-6 sm:px-8 py-4 sm:py-4 text-sm font-medium tracking-wide hover:bg-white hover:text-black transition-all duration-300 rounded-full backdrop-blur-md touch-manipulation min-h-[48px]"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
+            className="btn-glass text-white px-8 py-4 text-sm font-medium tracking-wider hover:bg-white hover:text-black transition-all duration-300 rounded-2xl backdrop-blur-md touch-manipulation min-h-[48px]"
+            onClick={() => navigate("/shop")}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{
+              opacity: titleAnimationComplete ? 1 : 0,
+              y: titleAnimationComplete ? 0 : 20,
+              scale: titleAnimationComplete ? 1 : 0.9,
+            }}
+            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.98 }}>
             SHOP NOW →

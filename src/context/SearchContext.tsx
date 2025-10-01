@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useEffect,
   ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,12 +30,15 @@ interface SearchContextType {
   searchTerm: string;
   searchResults: Product[];
   isSearching: boolean;
+  recentSearches: string[];
+  searchSuggestions: (term: string) => string[];
   openSearch: () => void;
   closeSearch: () => void;
   setSearchTerm: (term: string) => void;
   performSearch: (term: string, products?: Product[]) => void;
   clearSearch: () => void;
   searchAndNavigate: (term: string) => void;
+  clearRecentSearches: () => void;
 }
 
 // Sample products data (this would normally come from an API or global state)
@@ -134,7 +138,25 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("recentSearches");
+    if (saved) {
+      try {
+        setRecentSearches(JSON.parse(saved));
+      } catch (error) {
+        console.error("Failed to load recent searches:", error);
+      }
+    }
+  }, []);
+
+  // Save recent searches to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("recentSearches", JSON.stringify(recentSearches));
+  }, [recentSearches]);
 
   const openSearch = useCallback(() => {
     setIsSearchOpen(true);
@@ -205,12 +227,54 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   const searchAndNavigate = useCallback(
     (term: string) => {
       if (term.trim()) {
+        // Add to recent searches (limit to 10)
+        setRecentSearches((prev) => {
+          const updated = [term, ...prev.filter((s) => s !== term)].slice(
+            0,
+            10
+          );
+          return updated;
+        });
+
         closeSearch();
         navigate(`/shop?search=${encodeURIComponent(term)}`);
       }
     },
     [navigate, closeSearch]
   );
+
+  const clearRecentSearches = useCallback(() => {
+    setRecentSearches([]);
+  }, []);
+
+  // Generate search suggestions based on products
+  const searchSuggestions = useCallback((term: string): string[] => {
+    if (!term.trim()) return [];
+
+    const suggestions = new Set<string>();
+    const termLower = term.toLowerCase();
+
+    sampleProducts.forEach((product) => {
+      // Add product names that match
+      if (product.name.toLowerCase().includes(termLower)) {
+        suggestions.add(product.name);
+      }
+
+      // Add categories that match
+      if (product.category.toLowerCase().includes(termLower)) {
+        suggestions.add(product.category);
+      }
+
+      // Add tags that match
+      product.tags?.forEach((tag) => {
+        if (tag.toLowerCase().includes(termLower)) {
+          suggestions.add(tag);
+        }
+      });
+    });
+
+    return Array.from(suggestions).slice(0, 6);
+  }, []);
 
   const handleSetSearchTerm = useCallback(
     (term: string) => {
@@ -225,12 +289,15 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
     searchTerm,
     searchResults,
     isSearching,
+    recentSearches,
+    searchSuggestions,
     openSearch,
     closeSearch,
     setSearchTerm: handleSetSearchTerm,
     performSearch,
     clearSearch,
     searchAndNavigate,
+    clearRecentSearches,
   };
 
   return (

@@ -51,10 +51,13 @@ export const Header: React.FC = () => {
     { name: "Contact", href: "/contact" },
   ];
 
-  // Dynamic classes based on background
-  const headerClasses = isLightBackground
-    ? "fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200"
-    : "fixed top-0 left-0 right-0 z-50 transition-all duration-500 liquid-glass border-b border-white/10";
+  // Dynamic classes based on background - Updated for wider detached style
+  const headerClasses =
+    "fixed top-4 left-4 right-4 z-50 transition-all duration-500";
+
+  const navContainerClasses = isLightBackground
+    ? "bg-white/90 backdrop-blur-xl border border-gray-200/50 shadow-2xl"
+    : "bg-black/20 backdrop-blur-xl border border-white/10 shadow-2xl";
 
   const textClasses = isLightBackground
     ? "text-gray-900 hover:text-accent-gold"
@@ -69,104 +72,103 @@ export const Header: React.FC = () => {
   return (
     <>
       <header className={headerClasses}>
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
-            {/* Mobile: Logo on left, menu on right */}
-            <div className="lg:hidden flex items-center">
-              <Link to="/" className="flex items-center group">
-                <motion.img
-                  src={logoSrc}
-                  alt="OMU FUSION"
-                  className="h-8 sm:h-10 w-auto transition-all duration-300 group-hover:scale-110"
-                  whileHover={{ rotate: 5 }}
-                />
-              </Link>
-            </div>
-
-            {/* Desktop: Left Navigation */}
-            <div className="hidden lg:flex items-center space-x-8 justify-start flex-1">
+        {/* Detached Navigation Container */}
+        <motion.nav
+          className={`${navContainerClasses} rounded-full px-8 py-4 shadow-xl max-w-7xl mx-auto`}
+          initial={{ opacity: 0, y: -20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}>
+          <div className="flex items-center justify-between w-full">
+            {/* Desktop Navigation - Left Side */}
+            <div className="hidden lg:flex items-center space-x-6">
               {navItems.slice(0, 2).map((item) => (
                 <motion.div key={item.name}>
                   <Link
                     to={item.href}
-                    className={`${textClasses} font-medium text-sm tracking-wider transition-all duration-300 relative group ${
+                    className={`${textClasses} font-medium text-sm tracking-wider transition-all duration-300 relative group px-4 py-2 rounded-full ${
                       location.pathname === item.href ? activeTextClasses : ""
                     }`}>
                     {item.name}
-                    <span
-                      className={`absolute -bottom-1 left-0 h-0.5 bg-accent-gold transition-all duration-300 group-hover:w-full ${
-                        location.pathname === item.href ? "w-full" : "w-0"
-                      }`}></span>
+                    {location.pathname === item.href && (
+                      <motion.div
+                        className="absolute inset-0 bg-accent-gold/10 rounded-full"
+                        layoutId="activeTab"
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
                   </Link>
                 </motion.div>
               ))}
             </div>
 
-            {/* Desktop: Center Logo - Perfectly Centered */}
+            {/* Center Logo - Desktop Only */}
             <motion.div
-              className="hidden lg:flex items-center justify-center flex-shrink-0"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}>
+              className="hidden lg:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}>
               <Link to="/" className="flex items-center group">
                 <motion.img
                   src={logoSrc}
                   alt="OMU FUSION"
-                  className="h-12 w-auto transition-all duration-300 group-hover:scale-110"
+                  className="h-8 lg:h-10 w-auto transition-all duration-300 group-hover:scale-110"
                   whileHover={{ rotate: 5 }}
                 />
               </Link>
             </motion.div>
 
-            {/* Desktop: Right Navigation */}
-            <div className="hidden lg:flex items-center space-x-8 justify-end flex-1">
+            {/* Desktop: Right Navigation + Actions */}
+            <div className="hidden lg:flex items-center space-x-6">
               {navItems.slice(2).map((item) => (
                 <motion.div key={item.name}>
                   <Link
                     to={item.href}
-                    className={`${textClasses} font-medium text-sm tracking-wider transition-all duration-300 relative group ${
+                    className={`${textClasses} font-medium text-sm tracking-wider transition-all duration-300 relative group px-4 py-2 rounded-full ${
                       location.pathname === item.href ? activeTextClasses : ""
                     }`}>
                     {item.name}
-                    <span
-                      className={`absolute -bottom-1 left-0 h-0.5 bg-accent-gold transition-all duration-300 group-hover:w-full ${
-                        location.pathname === item.href ? "w-full" : "w-0"
-                      }`}></span>
+                    {location.pathname === item.href && (
+                      <motion.div
+                        className="absolute inset-0 bg-accent-gold/10 rounded-full"
+                        layoutId="activeTab2"
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
                   </Link>
                 </motion.div>
               ))}
 
               {/* Action Icons */}
               <motion.div
-                className="flex items-center space-x-2 ml-6"
+                className="flex items-center space-x-2 ml-6 pl-6 border-l border-gray-300/20"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}>
+                transition={{ duration: 0.6, delay: 0.4 }}>
                 <motion.button
                   onClick={openSearch}
-                  className={`p-3 ${textClasses} ${
+                  className={`p-2 ${textClasses} ${
                     isLightBackground
                       ? "hover:bg-gray-100"
                       : "hover:bg-white/10"
-                  } transition-all duration-300 rounded-full backdrop-blur-sm`}
-                  whileHover={{ scale: 1.1, y: -2 }}
+                  } transition-all duration-300 rounded-full`}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   aria-label="Search products">
-                  <HiSearch className="h-5 w-5" />
+                  <HiSearch className="h-4 w-4" />
                 </motion.button>
                 <Link to="/cart">
                   <motion.button
-                    className={`p-3 ${textClasses} ${
+                    className={`p-2 ${textClasses} ${
                       isLightBackground
                         ? "hover:bg-gray-100"
                         : "hover:bg-white/10"
-                    } transition-all duration-300 rounded-full relative backdrop-blur-sm`}
-                    whileHover={{ scale: 1.1, y: -2 }}
+                    } transition-all duration-300 rounded-full relative`}
+                    whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}>
-                    <HiShoppingBag className="h-5 w-5" />
+                    <HiShoppingBag className="h-4 w-4" />
                     {cartItemCount > 0 && (
                       <motion.span
-                        className="absolute -top-1 -right-1 h-5 w-5 bg-accent-gold text-black text-xs rounded-full flex items-center justify-center font-bold shadow-lg"
+                        className="absolute -top-1 -right-1 h-4 w-4 bg-accent-gold text-black text-xs rounded-full flex items-center justify-center font-bold shadow-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{
@@ -174,75 +176,98 @@ export const Header: React.FC = () => {
                           type: "spring",
                           stiffness: 500,
                         }}>
-                        {cartItemCount}
+                        {cartItemCount > 9 ? "9+" : cartItemCount}
                       </motion.span>
                     )}
                   </motion.button>
                 </Link>
                 <motion.button
-                  className={`p-3 ${textClasses} hover:text-accent-gold hover:bg-white/10 transition-all duration-300 rounded-full backdrop-blur-sm`}
-                  whileHover={{ scale: 1.1, y: -2 }}
+                  className={`p-2 ${textClasses} hover:text-accent-gold ${
+                    isLightBackground
+                      ? "hover:bg-gray-100"
+                      : "hover:bg-white/10"
+                  } transition-all duration-300 rounded-full`}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}>
-                  <HiUser className="h-5 w-5" />
+                  <HiUser className="h-4 w-4" />
                 </motion.button>
               </motion.div>
             </div>
 
-            {/* Mobile: Action Icons + Menu Button */}
-            <div className="lg:hidden flex items-center space-x-2">
-              <motion.button
-                onClick={openSearch}
-                className={`p-2 sm:p-3 ${textClasses} ${
-                  isLightBackground ? "hover:bg-gray-100" : "hover:bg-white/10"
-                } transition-all duration-300 rounded-full backdrop-blur-sm touch-manipulation`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Search products">
-                <HiSearch className="h-5 w-5" />
-              </motion.button>
-              <Link to="/cart">
+            {/* Mobile: Logo + Action Icons + Menu Button */}
+            <div className="lg:hidden flex items-center justify-between w-full">
+              {/* Mobile Logo */}
+              <Link to="/" className="flex items-center group">
+                <motion.img
+                  src={logoSrc}
+                  alt="OMU FUSION"
+                  className="h-8 w-auto transition-all duration-300 group-hover:scale-110"
+                  whileHover={{ rotate: 5 }}
+                />
+              </Link>
+
+              {/* Mobile Action Icons */}
+              <div className="flex items-center space-x-2">
                 <motion.button
-                  className={`p-2 sm:p-3 ${textClasses} ${
+                  onClick={openSearch}
+                  className={`p-2 ${textClasses} ${
                     isLightBackground
                       ? "hover:bg-gray-100"
                       : "hover:bg-white/10"
-                  } transition-all duration-300 rounded-full relative backdrop-blur-sm touch-manipulation`}
+                  } transition-all duration-300 rounded-full`}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Search products">
+                  <HiSearch className="h-4 w-4" />
+                </motion.button>
+                <Link to="/cart">
+                  <motion.button
+                    className={`p-2 ${textClasses} ${
+                      isLightBackground
+                        ? "hover:bg-gray-100"
+                        : "hover:bg-white/10"
+                    } transition-all duration-300 rounded-full relative`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}>
+                    <HiShoppingBag className="h-4 w-4" />
+                    {cartItemCount > 0 && (
+                      <motion.span
+                        className="absolute -top-1 -right-1 h-4 w-4 bg-accent-gold text-black text-xs rounded-full flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{
+                          delay: 0.2,
+                          type: "spring",
+                          stiffness: 500,
+                        }}>
+                        {cartItemCount > 9 ? "9+" : cartItemCount}
+                      </motion.span>
+                    )}
+                  </motion.button>
+                </Link>
+                <motion.button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className={`p-2 ${textClasses} hover:text-accent-gold ${
+                    isLightBackground
+                      ? "hover:bg-gray-100"
+                      : "hover:bg-white/10"
+                  } transition-all duration-300 rounded-full`}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}>
-                  <HiShoppingBag className="h-5 w-5" />
-                  {cartItemCount > 0 && (
-                    <motion.span
-                      className="absolute -top-1 -right-1 h-5 w-5 bg-accent-gold text-black text-xs rounded-full flex items-center justify-center font-bold shadow-lg"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{
-                        delay: 0.2,
-                        type: "spring",
-                        stiffness: 500,
-                      }}>
-                      {cartItemCount}
-                    </motion.span>
-                  )}
+                  <motion.div
+                    animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}>
+                    {isMobileMenuOpen ? (
+                      <HiX className="h-5 w-5" />
+                    ) : (
+                      <HiMenu className="h-5 w-5" />
+                    )}
+                  </motion.div>
                 </motion.button>
-              </Link>
-              <motion.button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`p-2 sm:p-3 ${textClasses} hover:text-accent-gold hover:bg-white/10 transition-all duration-300 rounded-full backdrop-blur-sm touch-manipulation`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}>
-                <motion.div
-                  animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
-                  transition={{ duration: 0.3 }}>
-                  {isMobileMenuOpen ? (
-                    <HiX className="h-6 w-6" />
-                  ) : (
-                    <HiMenu className="h-6 w-6" />
-                  )}
-                </motion.div>
-              </motion.button>
+              </div>
             </div>
           </div>
-        </nav>
+        </motion.nav>
       </header>
 
       {/* Mobile Navigation Menu - Full Screen Overlay */}

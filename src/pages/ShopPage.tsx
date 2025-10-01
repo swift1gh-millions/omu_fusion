@@ -21,19 +21,96 @@ interface Product {
 }
 
 const mockProducts: Product[] = [
+  // Featured Products from homepage
   {
     id: 1,
-    name: "Premium Cotton T-Shirt",
-    price: 49.99,
-    originalPrice: 69.99,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-    category: "Apparel",
-    isOnSale: true,
+    name: "Premium Oversized Hoodie",
+    price: 129,
+    image:
+      "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "Hoodies",
+    isNew: true,
     rating: 4.8,
     reviews: 124,
   },
   {
     id: 2,
+    name: "Classic Denim Jeans",
+    price: 125,
+    image:
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "Jeans",
+    rating: 4.7,
+    reviews: 89,
+  },
+  {
+    id: 3,
+    name: "Essential Cotton T-Shirt",
+    price: 99,
+    image:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "T-Shirts",
+    isNew: true,
+    rating: 4.9,
+    reviews: 156,
+  },
+  {
+    id: 4,
+    name: "Snapback Baseball Cap",
+    price: 59,
+    image:
+      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "Caps",
+    isOnSale: true,
+    rating: 4.6,
+    reviews: 203,
+  },
+  {
+    id: 5,
+    name: "Street Essential Tee",
+    price: 45,
+    image:
+      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "T-Shirts",
+    rating: 4.8,
+    reviews: 124,
+  },
+  {
+    id: 6,
+    name: "Urban Cargo Pants",
+    price: 89,
+    image:
+      "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "Pants",
+    rating: 4.7,
+    reviews: 167,
+  },
+  {
+    id: 7,
+    name: "Premium Denim Jacket",
+    price: 149,
+    originalPrice: 199,
+    image:
+      "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    category: "Jackets",
+    isOnSale: true,
+    rating: 4.9,
+    reviews: 234,
+  },
+  // Additional products
+  {
+    id: 8,
+    name: "Premium Cotton T-Shirt",
+    price: 49.99,
+    originalPrice: 69.99,
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
+    category: "T-Shirts",
+    isOnSale: true,
+    rating: 4.8,
+    reviews: 124,
+  },
+  {
+    id: 9,
     name: "Minimalist Watch",
     price: 299.99,
     image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
@@ -43,7 +120,7 @@ const mockProducts: Product[] = [
     reviews: 89,
   },
   {
-    id: 3,
+    id: 10,
     name: "Wireless Headphones",
     price: 199.99,
     originalPrice: 249.99,
@@ -87,22 +164,27 @@ const mockProducts: Product[] = [
 
 const categories = [
   "All",
-  "Apparel",
+  "Hoodies",
+  "T-Shirts",
+  "Jeans",
+  "Caps",
+  "Jackets",
+  "Pants",
   "Accessories",
-  "Electronics",
-  "Stationery",
 ];
 
 // Memoized ProductCard component for better performance
 const ProductCard = React.memo(({ product }: { product: Product }) => {
   return (
     <motion.div
+      id={`product-${product.id}`}
       variants={{
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0 },
       }}
       whileHover={{ y: -5 }}
-      className="group touch-manipulation">
+      className="group touch-manipulation"
+      style={{ scrollMarginTop: "100px" }}>
       <GlassCard className="overflow-hidden h-full">
         <div className="relative">
           <OptimizedImage
@@ -178,17 +260,51 @@ ProductCard.displayName = "ProductCard";
 export const ShopPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(
+    searchParams.get("category") || "All"
+  );
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
+  const [isLoading, setIsLoading] = useState(false);
+  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [focusedProduct, setFocusedProduct] = useState<string | null>(
+    searchParams.get("product")
+  );
 
-  // Update search term from URL parameters
+  // Handle URL parameters for category and product focus
   useEffect(() => {
+    const urlCategory = searchParams.get("category");
+    const urlProduct = searchParams.get("product");
     const urlSearchTerm = searchParams.get("search");
+
+    if (urlCategory && urlCategory !== selectedCategory) {
+      setSelectedCategory(urlCategory);
+    }
+
+    if (urlProduct && urlProduct !== focusedProduct) {
+      setFocusedProduct(urlProduct);
+      // Scroll to product after a short delay to ensure rendering
+      setTimeout(() => {
+        const productElement = document.getElementById(`product-${urlProduct}`);
+        if (productElement) {
+          productElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          // Add highlight effect
+          productElement.style.boxShadow = "0 0 20px rgba(255, 193, 7, 0.5)";
+          setTimeout(() => {
+            productElement.style.boxShadow = "";
+          }, 2000);
+        }
+      }, 500);
+    }
+
     if (urlSearchTerm && urlSearchTerm !== searchTerm) {
       setSearchTerm(urlSearchTerm);
     }
@@ -199,6 +315,8 @@ export const ShopPage: React.FC = () => {
 
   // Memoized filtered and sorted products
   const filteredProducts = useMemo(() => {
+    setIsLoading(true);
+
     let filtered = products;
 
     // Filter by category
@@ -221,6 +339,12 @@ export const ShopPage: React.FC = () => {
       );
     }
 
+    // Filter by price range
+    filtered = filtered.filter(
+      (product) =>
+        product.price >= priceRange.min && product.price <= priceRange.max
+    );
+
     // Sort products
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
@@ -237,8 +361,19 @@ export const ShopPage: React.FC = () => {
       }
     });
 
+    // Simulate loading delay for better UX
+    setTimeout(() => setIsLoading(false), 300);
     return sorted;
-  }, [products, selectedCategory, debouncedSearchTerm, sortBy]);
+  }, [products, selectedCategory, debouncedSearchTerm, sortBy, priceRange]);
+
+  // Wishlist functionality
+  const toggleWishlist = useCallback((productId: number) => {
+    setWishlist((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  }, []);
 
   // Memoized event handlers
   const handleCategoryChange = useCallback((category: string) => {
@@ -256,6 +391,7 @@ export const ShopPage: React.FC = () => {
   const handleClearFilters = useCallback(() => {
     setSelectedCategory("All");
     setSearchTerm("");
+    setPriceRange({ min: 0, max: 1000 });
     // Clear URL search parameters
     setSearchParams({});
   }, [setSearchParams]);

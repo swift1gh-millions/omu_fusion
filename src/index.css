@@ -25,6 +25,116 @@
 }
 
 @layer components {
+  /* ==============================================
+     LAYOUT ADJUSTMENTS FOR DETACHED NAVIGATION
+     ============================================== */
+
+  /* Main content spacing for detached header */
+  .page-content {
+    padding-top: 6rem; /* Space for detached navigation */
+  }
+
+  /* Adjust hero section for detached nav */
+  .hero-section {
+    padding-top: 0;
+  }
+
+  /* ==============================================
+     STANDARD ANIMATION & TRANSITION SYSTEM
+     Use these classes for consistency across components
+     ============================================== */
+
+  /* Standard animation durations */
+  .transition-standard {
+    transition-duration: 0.3s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-fast {
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-slow {
+    transition-duration: 0.5s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Standard hover effects */
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .hover-scale {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  /* ==============================================
+     TYPOGRAPHY SYSTEM
+     Use these classes for consistent typography
+     ============================================== */
+
+  .heading-xl {
+    @apply text-4xl lg:text-5xl font-bold tracking-wide;
+  }
+
+  .heading-lg {
+    @apply text-3xl lg:text-4xl font-bold tracking-wide;
+  }
+
+  .heading-md {
+    @apply text-2xl lg:text-3xl font-semibold tracking-wide;
+  }
+
+  .heading-sm {
+    @apply text-xl lg:text-2xl font-semibold tracking-wide;
+  }
+
+  .body-lg {
+    @apply text-lg leading-relaxed font-body;
+  }
+
+  .body-md {
+    @apply text-base leading-relaxed font-body;
+  }
+
+  .body-sm {
+    @apply text-sm leading-relaxed font-body;
+  }
+
+  /* ==============================================
+     SPACING SYSTEM
+     Use these classes for consistent spacing
+     ============================================== */
+
+  .section-padding {
+    @apply py-20 px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-standard {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .spacing-section {
+    @apply mb-16 sm:mb-20;
+  }
+
+  .spacing-content {
+    @apply mb-8 sm:mb-12;
+  }
+
+  /* ==============================================
+     GLASSMORPHISM SYSTEM
+     ============================================== */
+
   /* Enhanced Glassmorphism utility classes */
   .glass {
     background: rgba(255, 255, 255, 0.1);

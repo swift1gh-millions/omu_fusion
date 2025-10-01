@@ -143,13 +143,27 @@ export const Footer: React.FC = () => {
                   Subscribe to our newsletter for exclusive offers
                 </p>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="glass px-4 py-2 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                  className="glass px-4 py-2 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-gold flex-1 min-h-[44px]"
                 />
-                <button className="btn-primary px-6 py-2 rounded-xl text-white font-medium">
+                <button
+                  className="btn-primary px-6 py-2 rounded-xl text-white font-medium min-h-[44px] touch-target w-full sm:w-auto"
+                  onClick={() => {
+                    // Newsletter subscription functionality
+                    const emailInput = document.querySelector(
+                      'input[type="email"]'
+                    ) as HTMLInputElement;
+                    if (emailInput?.value) {
+                      console.log(`Subscribed email: ${emailInput.value}`);
+                      emailInput.value = "";
+                      alert("Thank you for subscribing!");
+                    } else {
+                      alert("Please enter a valid email address");
+                    }
+                  }}>
                   Subscribe
                 </button>
               </div>

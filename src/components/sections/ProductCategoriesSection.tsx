@@ -1,6 +1,7 @@
 import React from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   id: string;
@@ -11,6 +12,7 @@ interface Category {
 }
 
 export const ProductCategoriesSection: React.FC = () => {
+  const navigate = useNavigate();
   const categories: Category[] = [
     {
       id: "beanies",
@@ -96,13 +98,18 @@ export const ProductCategoriesSection: React.FC = () => {
         {/* Categories Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {categories.map((category, index) => (
-            <CategoryCard key={category.id} category={category} index={index} />
+            <CategoryCard
+              key={category.id}
+              category={category}
+              index={index}
+              navigate={navigate}
+            />
           ))}
         </div>
 
         {/* View All Button */}
         <div className="text-center mt-16">
-          <Button variant="glass" size="lg">
+          <Button variant="glass" size="lg" onClick={() => navigate("/shop")}>
             Explore All Categories
           </Button>
         </div>
@@ -114,9 +121,14 @@ export const ProductCategoriesSection: React.FC = () => {
 interface CategoryCardProps {
   category: Category;
   index: number;
+  navigate: (path: string, options?: { state?: any }) => void;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({
+  category,
+  index,
+  navigate,
+}) => {
   return (
     <GlassCard
       hover
@@ -153,7 +165,11 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
 
           {/* Shop Button */}
           <div className="pt-2">
-            <button className="inline-flex items-center space-x-2 text-white hover:text-accent-gold transition-colors duration-300 group-hover:translate-x-2 transform">
+            <button
+              className="inline-flex items-center space-x-2 text-white hover:text-accent-gold transition-colors duration-300 group-hover:translate-x-2 transform"
+              onClick={() =>
+                navigate("/shop", { state: { category: category.id } })
+              }>
               <span className="font-medium">Shop Now</span>
               <svg
                 className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"

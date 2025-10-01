@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HiX, HiPlus, HiMinus, HiTrash } from "react-icons/hi";
 import { Link } from "react-router-dom";
@@ -44,24 +44,69 @@ const mockCartItems: CartItem[] = [
 ];
 
 export const CartPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(mockCartItems);
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    const savedCart = localStorage.getItem("cart");
+    return savedCart ? JSON.parse(savedCart) : mockCartItems;
+  });
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const [savedForLater, setSavedForLater] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem("savedForLater");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  // Persist saved items to localStorage
+  useEffect(() => {
+    localStorage.setItem("savedForLater", JSON.stringify(savedForLater));
+  }, [savedForLater]);
 
   const updateQuantity = (id: number, newQuantity: number) => {
     if (newQuantity === 0) {
       removeItem(id);
       return;
     }
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
+
+    setIsUpdating((prev) => ({ ...prev, [id]: true }));
+
+    // Simulate API call delay
+    setTimeout(() => {
+      setCartItems((items) =>
+        items.map((item) =>
+          item.id === id ? { ...item, quantity: newQuantity } : item
+        )
+      );
+      setIsUpdating((prev) => ({ ...prev, [id]: false }));
+    }, 300);
   };
 
   const removeItem = (id: number) => {
     setCartItems((items) => items.filter((item) => item.id !== id));
+  };
+
+  const saveForLater = (id: number) => {
+    const item = cartItems.find((item) => item.id === id);
+    if (item) {
+      setSavedForLater((prev) => [...prev, { ...item, quantity: 1 }]);
+      removeItem(id);
+    }
+  };
+
+  const moveToCart = (id: number) => {
+    const item = savedForLater.find((item) => item.id === id);
+    if (item) {
+      setCartItems((prev) => [...prev, item]);
+      setSavedForLater((prev) => prev.filter((item) => item.id !== id));
+    }
+  };
+
+  const removeSavedItem = (id: number) => {
+    setSavedForLater((prev) => prev.filter((item) => item.id !== id));
   };
 
   const applyPromoCode = () => {

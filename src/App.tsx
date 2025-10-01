@@ -4,6 +4,7 @@ import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { AppProvider } from "./context/AppContext";
 import { SearchProvider } from "./context/SearchContext";
+import { ScrollToTop } from "./components/ui/ScrollToTop";
 import { useScrollAnimation } from "./components/ui/ScrollAnimation";
 
 // Pages
@@ -21,6 +22,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white">
+      <ScrollToTop />
       <Header />
       <main className="relative">
         <Routes>
