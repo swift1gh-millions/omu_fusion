@@ -1,5 +1,6 @@
 import React from "react";
 import { GlassCard } from "../ui/GlassCard";
+import logoWhite from "../../assets/logo_white.png";
 
 export const Footer: React.FC = () => {
   const footerLinks = {
@@ -37,7 +38,7 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center space-x-3">
               <img
-                src="src/assets/logo_white.png"
+                src={logoWhite}
                 alt="OMU FUSION"
                 className="h-10 w-auto"
               />

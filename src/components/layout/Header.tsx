@@ -5,6 +5,8 @@ import { HiSearch, HiShoppingBag, HiUser, HiMenu, HiX } from "react-icons/hi";
 import { useCart } from "../../context/AppContext";
 import { useSearch } from "../../context/SearchContext";
 import { SearchModal } from "../ui/SearchModal";
+import logoBlack from "../../assets/logo_black.png";
+import logoWhite from "../../assets/logo_white.png";
 
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -63,8 +65,8 @@ export const Header: React.FC = () => {
     : "text-accent-gold";
 
   const logoSrc = isLightBackground
-    ? "src/assets/logo_black.png"
-    : "src/assets/logo_white.png";
+    ? logoBlack
+    : logoWhite;
 
   return (
     <>
