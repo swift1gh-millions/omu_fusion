@@ -64,9 +64,7 @@ export const Header: React.FC = () => {
     ? "text-accent-gold"
     : "text-accent-gold";
 
-  const logoSrc = isLightBackground
-    ? logoBlack
-    : logoWhite;
+  const logoSrc = isLightBackground ? logoBlack : logoWhite;
 
   return (
     <>

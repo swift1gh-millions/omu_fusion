@@ -37,11 +37,7 @@ export const Footer: React.FC = () => {
           {/* Brand Section */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center space-x-3">
-              <img
-                src={logoWhite}
-                alt="OMU FUSION"
-                className="h-10 w-auto"
-              />
+              <img src={logoWhite} alt="OMU FUSION" className="h-10 w-auto" />
               <span className="font-display text-2xl font-bold text-white">
                 OMU FUSION
               </span>
