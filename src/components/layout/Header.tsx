@@ -74,7 +74,7 @@ export const Header: React.FC = () => {
       <header className={headerClasses}>
         {/* Detached Navigation Container */}
         <motion.nav
-          className={`${navContainerClasses} rounded-full px-8 py-4 shadow-xl max-w-7xl mx-auto`}
+          className={`${navContainerClasses} rounded-full px-8 py-2 shadow-xl max-w-7xl mx-auto`}
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}>
@@ -154,7 +154,7 @@ export const Header: React.FC = () => {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   aria-label="Search products">
-                  <HiSearch className="h-4 w-4" />
+                  <HiSearch className="h-5 w-5" />
                 </motion.button>
                 <Link to="/cart">
                   <motion.button
@@ -165,7 +165,7 @@ export const Header: React.FC = () => {
                     } transition-all duration-300 rounded-full relative`}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}>
-                    <HiShoppingBag className="h-4 w-4" />
+                    <HiShoppingBag className="h-5 w-5" />
                     {cartItemCount > 0 && (
                       <motion.span
                         className="absolute -top-1 -right-1 h-4 w-4 bg-accent-gold text-black text-xs rounded-full flex items-center justify-center font-bold shadow-lg"
@@ -189,7 +189,7 @@ export const Header: React.FC = () => {
                   } transition-all duration-300 rounded-full`}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}>
-                  <HiUser className="h-4 w-4" />
+                  <HiUser className="h-5 w-5" />
                 </motion.button>
               </motion.div>
             </div>
@@ -218,7 +218,7 @@ export const Header: React.FC = () => {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   aria-label="Search products">
-                  <HiSearch className="h-4 w-4" />
+                  <HiSearch className="h-5 w-5" />
                 </motion.button>
                 <Link to="/cart">
                   <motion.button
@@ -229,7 +229,7 @@ export const Header: React.FC = () => {
                     } transition-all duration-300 rounded-full relative`}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}>
-                    <HiShoppingBag className="h-4 w-4" />
+                    <HiShoppingBag className="h-5 w-5" />
                     {cartItemCount > 0 && (
                       <motion.span
                         className="absolute -top-1 -right-1 h-4 w-4 bg-accent-gold text-black text-xs rounded-full flex items-center justify-center font-bold shadow-lg"

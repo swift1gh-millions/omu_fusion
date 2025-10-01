@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { HeroSection } from "../components/sections/HeroSection";
 import { ProductSpotlightSection } from "../components/sections/ProductSpotlightSection";
 import { NewArrivalsSection } from "../components/sections/NewArrivalsSection";
@@ -7,9 +7,10 @@ import { FeaturedProductsSection } from "../components/sections/FeaturedProducts
 import { ModernCategoriesSection } from "../components/sections/ModernCategoriesSection";
 import { BrandStorySection } from "../components/sections/BrandStorySection";
 import { NewsletterSection } from "../components/sections/NewsletterSection";
+import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { useScrollAnimation } from "../components/ui/ScrollAnimation";
 
-export const HomePage: React.FC = () => {
+export const HomePage: React.FC = memo(() => {
   // Initialize scroll animations
   useScrollAnimation();
 
@@ -18,17 +19,40 @@ export const HomePage: React.FC = () => {
       <section id="home">
         <HeroSection />
       </section>
-      <ProductSpotlightSection />
-      <NewArrivalsSection />
+
+      <LazyLoadWrapper>
+        <ProductSpotlightSection />
+      </LazyLoadWrapper>
+
+      <LazyLoadWrapper>
+        <NewArrivalsSection />
+      </LazyLoadWrapper>
+
       <section id="collections">
-        <CollectionsGridSection />
+        <LazyLoadWrapper>
+          <CollectionsGridSection />
+        </LazyLoadWrapper>
       </section>
-      <FeaturedProductsSection />
-      <ModernCategoriesSection />
+
+      <LazyLoadWrapper>
+        <FeaturedProductsSection />
+      </LazyLoadWrapper>
+
+      <LazyLoadWrapper>
+        <ModernCategoriesSection />
+      </LazyLoadWrapper>
+
       <section id="about">
-        <BrandStorySection />
+        <LazyLoadWrapper>
+          <BrandStorySection />
+        </LazyLoadWrapper>
       </section>
-      <NewsletterSection />
+
+      <LazyLoadWrapper>
+        <NewsletterSection />
+      </LazyLoadWrapper>
     </div>
   );
-};
+});
+
+HomePage.displayName = "HomePage";

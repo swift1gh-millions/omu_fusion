@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion } from "framer-motion";
 import { HiViewGrid, HiViewList, HiFilter, HiSearch } from "react-icons/hi";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { OptimizedImage } from "../components/ui/OptimizedImage";
-import { useDebounce } from "../hooks/useOptimizedScroll";
+import { PageBackground } from "../components/ui/PageBackground";
+import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
+import {
+  useDebounce,
+  useAnimationVariants,
+  useDebouncedValue,
+} from "../hooks/usePerformance";
 
 interface Product {
   id: number;
@@ -257,7 +263,7 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
 
 ProductCard.displayName = "ProductCard";
 
-export const ShopPage: React.FC = () => {
+export const ShopPage: React.FC = memo(() => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>(mockProducts);
   const [selectedCategory, setSelectedCategory] = useState(
@@ -311,7 +317,7 @@ export const ShopPage: React.FC = () => {
   }, [searchParams]);
 
   // Debounce search term for better performance
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   // Memoized filtered and sorted products
   const filteredProducts = useMemo(() => {
@@ -418,131 +424,135 @@ export const ShopPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-16 sm:pt-20 pb-12 sm:pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          className="text-center mb-8 sm:mb-12"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
-            Shop Our Collection
-          </h1>
-          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-            Discover premium products crafted with excellence and designed for
-            modern living.
-          </p>
-        </motion.div>
+    <PageBackground variant="light">
+      <div className="pt-16 sm:pt-20 pb-12 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <motion.div
+            className="text-center mb-8 sm:mb-12"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
+              Shop Our Collection
+            </h1>
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
+              Discover premium products crafted with excellence and designed for
+              modern living.
+            </p>
+          </motion.div>
 
-        {/* Filters and Search */}
-        <motion.div
-          className="mb-6 sm:mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}>
-          <GlassCard className="p-4 sm:p-6">
-            <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
-              {/* Search */}
-              <div className="relative w-full lg:flex-1 lg:max-w-md">
-                <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300 text-sm sm:text-base"
-                />
-              </div>
+          {/* Filters and Search */}
+          <motion.div
+            className="mb-6 sm:mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}>
+            <GlassCard className="p-4 sm:p-6">
+              <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
+                {/* Search */}
+                <div className="relative w-full lg:flex-1 lg:max-w-md">
+                  <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300 text-sm sm:text-base"
+                  />
+                </div>
 
-              {/* Categories */}
-              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryChange(category)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 touch-manipulation ${
-                      selectedCategory === category
-                        ? "bg-accent-gold text-black"
-                        : "bg-white/80 text-gray-600 hover:bg-accent-gold/20"
-                    }`}>
-                    {category}
-                  </button>
-                ))}
-              </div>
+                {/* Categories */}
+                <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => handleCategoryChange(category)}
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 touch-manipulation ${
+                        selectedCategory === category
+                          ? "bg-accent-gold text-black"
+                          : "bg-white/80 text-gray-600 hover:bg-accent-gold/20"
+                      }`}>
+                      {category}
+                    </button>
+                  ))}
+                </div>
 
-              {/* Sort and View Options */}
-              <div className="flex gap-2 sm:gap-3 items-center justify-center lg:justify-end">
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-xs sm:text-sm">
-                  <option value="name">Sort by Name</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="newest">Newest First</option>
-                </select>
+                {/* Sort and View Options */}
+                <div className="flex gap-2 sm:gap-3 items-center justify-center lg:justify-end">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-xs sm:text-sm">
+                    <option value="name">Sort by Name</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="rating">Highest Rated</option>
+                    <option value="newest">Newest First</option>
+                  </select>
 
-                <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => handleViewModeChange("grid")}
-                    className={`p-2 touch-manipulation ${
-                      viewMode === "grid"
-                        ? "bg-accent-gold text-black"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}>
-                    <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleViewModeChange("list")}
-                    className={`p-2 touch-manipulation ${
-                      viewMode === "list"
-                        ? "bg-accent-gold text-black"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}>
-                    <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
+                  <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => handleViewModeChange("grid")}
+                      className={`p-2 touch-manipulation ${
+                        viewMode === "grid"
+                          ? "bg-accent-gold text-black"
+                          : "bg-white text-gray-600 hover:bg-gray-50"
+                      }`}>
+                      <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleViewModeChange("list")}
+                      className={`p-2 touch-manipulation ${
+                        viewMode === "list"
+                          ? "bg-accent-gold text-black"
+                          : "bg-white text-gray-600 hover:bg-gray-50"
+                      }`}>
+                      <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        {/* Products Grid */}
-        <motion.div
-          className={`grid gap-4 sm:gap-6 ${
-            viewMode === "grid"
-              ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              : "grid-cols-1"
-          }`}
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </motion.div>
-
-        {/* Empty State */}
-        {filteredProducts.length === 0 && (
-          <motion.div
-            className="text-center py-16"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}>
-            <p className="text-xl text-gray-500">
-              No products found matching your criteria.
-            </p>
-            <Button
-              variant="primary"
-              className="mt-4"
-              onClick={handleClearFilters}>
-              Clear Filters
-            </Button>
+            </GlassCard>
           </motion.div>
-        )}
+
+          {/* Products Grid */}
+          <motion.div
+            className={`grid gap-4 sm:gap-6 ${
+              viewMode === "grid"
+                ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "grid-cols-1"
+            }`}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </motion.div>
+
+          {/* Empty State */}
+          {filteredProducts.length === 0 && (
+            <motion.div
+              className="text-center py-16"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}>
+              <p className="text-xl text-gray-500">
+                No products found matching your criteria.
+              </p>
+              <Button
+                variant="primary"
+                className="mt-4"
+                onClick={handleClearFilters}>
+                Clear Filters
+              </Button>
+            </motion.div>
+          )}
+        </div>
       </div>
-    </div>
+    </PageBackground>
   );
-};
+});
+
+ShopPage.displayName = "ShopPage";

@@ -8,10 +8,10 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "composite": true,
+    "emitDeclarationOnly": true,
     "types": ["node"]
   },
   "include": ["vite.config.ts", "postcss.config.js", "tailwind.config.js"]
