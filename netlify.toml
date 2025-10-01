@@ -5,9 +5,10 @@
   # Directory to publish (Vite builds to 'dist' by default)
   publish = "dist"
   
-  # Node version for build environment
+  # Node version for build environment (use LTS version)
   [build.environment]
     NODE_VERSION = "18"
+
 
 # Redirect rules for single-page applications
 [[redirects]]
