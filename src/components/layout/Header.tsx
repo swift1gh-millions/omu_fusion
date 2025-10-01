@@ -267,7 +267,7 @@ export const Header: React.FC = () => {
             isLightBackground
               ? "bg-white/95 backdrop-blur-md border-l border-gray-200"
               : "bg-gray-900/95 backdrop-blur-md border-l border-white/10"
-          } shadow-2xl`}
+          } shadow-2xl overflow-y-auto`}
           initial={{ x: "100%" }}
           animate={{
             x: isMobileMenuOpen ? 0 : "100%",
@@ -299,7 +299,7 @@ export const Header: React.FC = () => {
                   transition={{ delay: index * 0.1 + 0.1 }}>
                   <Link
                     to={item.href}
-                    className={`block py-3 px-4 rounded-lg text-lg font-medium transition-all duration-300 ${
+                    className={`flex items-center py-4 px-4 rounded-lg text-lg font-medium transition-all duration-300 min-h-[48px] ${
                       location.pathname === item.href
                         ? "text-accent-gold bg-accent-gold/10"
                         : `${textClasses} hover:text-accent-gold hover:bg-gray-100/50`

@@ -153,7 +153,7 @@ export const HeroSection: React.FC = () => {
 
           {/* CTA Button */}
           <motion.button
-            className="liquid-glass border border-white/30 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm font-medium tracking-wide hover:bg-white hover:text-black transition-all duration-300 rounded-full backdrop-blur-md touch-manipulation"
+            className="liquid-glass border border-white/30 text-white px-6 sm:px-8 py-4 sm:py-4 text-sm font-medium tracking-wide hover:bg-white hover:text-black transition-all duration-300 rounded-full backdrop-blur-md touch-manipulation min-h-[48px]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}

@@ -109,7 +109,7 @@ export const NewsletterSection: React.FC = () => {
               </div>
 
               {/* Benefits */}
-              <div className="grid md:grid-cols-3 gap-6 my-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 my-8">
                 <div className="space-y-2">
                   <div className="w-12 h-12 bg-accent-gold bg-opacity-20 rounded-full flex items-center justify-center mx-auto">
                     <svg

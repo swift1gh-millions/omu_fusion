@@ -1,6 +1,7 @@
 import React from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
+import { OptimizedImage } from "../ui/OptimizedImage";
 
 export const BrandStorySection: React.FC = () => {
   const values = [
@@ -144,11 +145,12 @@ export const BrandStorySection: React.FC = () => {
             className="relative animate-fade-in-up"
             style={{ animationDelay: "0.3s" }}>
             <GlassCard className="overflow-hidden h-96 lg:h-[500px]">
-              <img
+              <OptimizedImage
                 src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
                 alt="OMU FUTION Brand Story"
                 className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
                 loading="lazy"
+                fallbackSrc="https://via.placeholder.com/1200x500/1a1a1a/ffffff?text=OMU+FUSION+Story"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
               <div className="absolute bottom-6 left-6 right-6">
@@ -177,7 +179,7 @@ export const BrandStorySection: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {values.map((value, index) => (
               <GlassCard
                 key={value.title}
