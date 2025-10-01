@@ -140,7 +140,7 @@ export const HeroSection: React.FC = () => {
       </div>
 
       {/* Content Overlay - Positioned at bottom */}
-      <div className="relative z-10 min-h-screen flex items-end justify-center px-4 sm:px-6 lg:px-8 pb-14 sm:pb-16 lg:pb-24">
+      <div className="relative z-10 min-h-screen flex items-end justify-center px-4 sm:px-6 lg:px-8 pb-20 sm:pb-24 lg:pb-28">
         <motion.div
           className="text-center text-white max-w-xs sm:max-w-lg lg:max-w-2xl w-full"
           initial={{ opacity: 0, y: 50 }}
