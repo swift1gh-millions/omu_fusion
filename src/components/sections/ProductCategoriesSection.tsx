@@ -2,6 +2,7 @@ import React from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";
+import { useDarkBackground } from "../../utils/backgroundUtils";
 
 interface Category {
   id: string;
@@ -13,6 +14,7 @@ interface Category {
 
 export const ProductCategoriesSection: React.FC = () => {
   const navigate = useNavigate();
+  const darkBg = useDarkBackground("ProductCategoriesSection", 0.75);
   const categories: Category[] = [
     {
       id: "beanies",
@@ -81,7 +83,9 @@ export const ProductCategoriesSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-dark-primary to-dark-secondary">
+    <section
+      className={`py-20 px-4 sm:px-6 lg:px-8 ${darkBg.className}`}
+      style={darkBg.style}>
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">

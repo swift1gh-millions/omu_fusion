@@ -425,8 +425,8 @@ export const ShopPage: React.FC = memo(() => {
 
   return (
     <PageBackground variant="light">
-      <div className="pt-16 sm:pt-20 pb-12 sm:pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-32 pb-12 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-40 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
             className="text-center mb-8 sm:mb-12"
@@ -442,7 +442,7 @@ export const ShopPage: React.FC = memo(() => {
             </p>
           </motion.div>
 
-          {/* Filters and Search */}
+          {/* Filters*/}
           <motion.div
             className="mb-6 sm:mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -450,18 +450,6 @@ export const ShopPage: React.FC = memo(() => {
             transition={{ duration: 0.6, delay: 0.2 }}>
             <GlassCard className="p-4 sm:p-6">
               <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
-                {/* Search */}
-                <div className="relative w-full lg:flex-1 lg:max-w-md">
-                  <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300 text-sm sm:text-base"
-                  />
-                </div>
-
                 {/* Categories */}
                 <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
                   {categories.map((category) => (

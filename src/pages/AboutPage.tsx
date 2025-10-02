@@ -76,7 +76,7 @@ export const AboutPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden pt-32 pb-40">
       {/* Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-10 w-72 h-72 bg-accent-gold opacity-10 rounded-full blur-3xl"></div>
@@ -84,7 +84,7 @@ export const AboutPage: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500 opacity-5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative z-10 pt-20 pb-16">
+      <div className="relative z-10 pt-4 pb-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Hero Section */}
           <motion.div

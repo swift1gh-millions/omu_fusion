@@ -1,6 +1,7 @@
 import React from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
+import { useDarkBackground } from "../../utils/backgroundUtils";
 
 interface Product {
   id: string;
@@ -16,6 +17,7 @@ interface Product {
 }
 
 export const FeaturedCollectionsSection: React.FC = () => {
+  const darkBg = useDarkBackground("FeaturedCollectionsSection", 0.7);
   const featuredProducts: Product[] = [
     // New Arrivals
     {
@@ -129,7 +131,9 @@ export const FeaturedCollectionsSection: React.FC = () => {
   const limitedEdition = featuredProducts.filter((p) => p.isLimited);
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-dark-primary">
+    <section
+      className={`py-20 px-4 sm:px-6 lg:px-8 ${darkBg.className}`}
+      style={darkBg.style}>
       <div className="max-w-7xl mx-auto space-y-20">
         {/* New Arrivals */}
         <FeaturedCollection

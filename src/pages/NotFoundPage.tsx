@@ -6,8 +6,8 @@ import { GlassCard } from "../components/ui/GlassCard";
 
 export const NotFoundPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-20 pb-16">
-      <div className="max-w-4xl mx-auto px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-32 pb-16">
+      <div className="max-w-4xl mx-auto px-6 lg:px-8 pt-4 pb-40">
         <motion.div
           className="text-center py-16"
           initial={{ opacity: 0, y: 30 }}

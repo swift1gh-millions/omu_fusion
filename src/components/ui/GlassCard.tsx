@@ -15,12 +15,14 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   hover = false,
   style,
 }) => {
-  const baseClasses = "rounded-3xl";
+  const baseClasses = "rounded-3xl transition-all duration-300";
 
   const variantClasses = {
-    default: "glass",
-    strong: "glass-strong",
-    dark: "glass-dark",
+    default:
+      "glass shadow-xl border border-white/20 hover:shadow-2xl hover:scale-[1.02]",
+    strong:
+      "glass-strong shadow-2xl border border-white/30 hover:shadow-3xl hover:scale-[1.02]",
+    dark: "glass-dark shadow-2xl border border-gray-700/30 hover:shadow-3xl hover:scale-[1.02]",
   };
 
   const hoverClasses = hover ? "card-hover cursor-pointer" : "";

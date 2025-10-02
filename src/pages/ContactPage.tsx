@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { HiMail, HiPhone, HiLocationMarker, HiClock } from "react-icons/hi";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { PageBackground } from "../components/ui/PageBackground";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { useAnimationVariants, useDebounce } from "../hooks/usePerformance";
 
@@ -129,22 +128,32 @@ export const ContactPage: React.FC = memo(() => {
   const debouncedValidation = useDebounce(validateForm, 300);
 
   return (
-    <PageBackground variant="light">
-      <div className="pt-20 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden pt-32 pb-40">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-accent-gold opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500 opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500 opacity-5 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative z-10 pt-4 pb-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Header */}
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-16 relative"
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}>
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-              Get In Touch
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              We'd love to hear from you. Send us a message and we'll respond as
-              soon as possible.
-            </p>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent blur-sm"></div>
+            <div className="relative z-10">
+              <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 bg-gradient-to-r from-white via-accent-gold to-white bg-clip-text text-transparent">
+                Get In Touch
+              </h1>
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                We'd love to hear from you. Send us a message and we'll respond
+                as soon as possible.
+              </p>
+            </div>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
@@ -155,7 +164,7 @@ export const ContactPage: React.FC = memo(() => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}>
               <GlassCard className="p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                <h2 className="text-2xl font-bold text-gray-100 mb-6">
                   Send Message
                 </h2>
 
@@ -169,7 +178,7 @@ export const ContactPage: React.FC = memo(() => {
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">
                       Message Sent!
                     </h3>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-gray-300 mb-6">
                       Thank you for contacting us. We'll get back to you within
                       24 hours.
                     </p>
@@ -185,7 +194,7 @@ export const ContactPage: React.FC = memo(() => {
                       <div>
                         <label
                           htmlFor="name"
-                          className="block text-sm font-medium text-gray-700 mb-2">
+                          className="block text-sm font-medium text-gray-300 mb-2">
                           Full Name *
                         </label>
                         <input
@@ -202,7 +211,7 @@ export const ContactPage: React.FC = memo(() => {
                       <div>
                         <label
                           htmlFor="email"
-                          className="block text-sm font-medium text-gray-700 mb-2">
+                          className="block text-sm font-medium text-gray-300 mb-2">
                           Email Address *
                         </label>
                         <input
@@ -221,7 +230,7 @@ export const ContactPage: React.FC = memo(() => {
                     <div>
                       <label
                         htmlFor="subject"
-                        className="block text-sm font-medium text-gray-700 mb-2">
+                        className="block text-sm font-medium text-gray-300 mb-2">
                         Subject *
                       </label>
                       <select
@@ -243,7 +252,7 @@ export const ContactPage: React.FC = memo(() => {
                     <div>
                       <label
                         htmlFor="message"
-                        className="block text-sm font-medium text-gray-700 mb-2">
+                        className="block text-sm font-medium text-gray-300 mb-2">
                         Message *
                       </label>
                       <textarea
@@ -289,13 +298,13 @@ export const ContactPage: React.FC = memo(() => {
                         <info.icon className="h-6 w-6 text-accent-gold" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        <h3 className="text-lg font-semibold text-white mb-1">
                           {info.title}
                         </h3>
-                        <p className="text-gray-900 font-medium mb-1">
+                        <p className="text-gray-300 font-medium mb-1">
                           {info.details}
                         </p>
-                        <p className="text-gray-600 text-sm">
+                        <p className="text-gray-400 text-sm">
                           {info.description}
                         </p>
                       </div>
@@ -307,10 +316,10 @@ export const ContactPage: React.FC = memo(() => {
               {/* FAQ Link */}
               <motion.div variants={fadeInUp}>
                 <GlassCard className="p-6 text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-white mb-2">
                     Quick Answers
                   </h3>
-                  <p className="text-gray-600 mb-4 text-sm">
+                  <p className="text-gray-400 mb-4 text-sm">
                     Check out our FAQ section for instant answers to common
                     questions.
                   </p>
@@ -323,7 +332,7 @@ export const ContactPage: React.FC = memo(() => {
               {/* Social Media */}
               <motion.div variants={fadeInUp}>
                 <GlassCard className="p-6 text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <h3 className="text-lg font-semibold text-gray-200 mb-4">
                     Follow Us
                   </h3>
                   <div className="flex justify-center space-x-4">
@@ -353,7 +362,7 @@ export const ContactPage: React.FC = memo(() => {
               <div className="aspect-video bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
                 <div className="text-center">
                   <HiLocationMarker className="h-12 w-12 text-gray-500 mx-auto mb-2" />
-                  <p className="text-gray-600">Interactive Map Coming Soon</p>
+                  <p className="text-gray-400">Interactive Map Coming Soon</p>
                   <p className="text-sm text-gray-500">
                     123 Innovation Street, Tech City, TC 12345
                   </p>
@@ -363,7 +372,7 @@ export const ContactPage: React.FC = memo(() => {
           </motion.div>
         </div>
       </div>
-    </PageBackground>
+    </div>
   );
 });
 

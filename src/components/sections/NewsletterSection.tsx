@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
+import { useDarkBackground } from "../../utils/backgroundUtils";
 
 export const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const darkBg = useDarkBackground("NewsletterSection", 0.8);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -86,7 +88,9 @@ export const NewsletterSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-dark-primary to-dark-secondary relative overflow-hidden">
+    <section
+      className={`py-20 px-4 sm:px-6 lg:px-8 ${darkBg.className} relative overflow-hidden`}
+      style={darkBg.style}>
       {/* Background Elements */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-gold rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>

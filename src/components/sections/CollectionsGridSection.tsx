@@ -47,7 +47,7 @@ export const CollectionsGridSection: React.FC = () => {
               className="group relative overflow-hidden rounded-2xl aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-100 hover-lift"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
+              transition={{ duration: 0.6 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.02 }}>
               <img

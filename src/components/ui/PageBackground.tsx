@@ -42,18 +42,6 @@ const PageBackground: React.FC<PageBackgroundProps> = memo(
               delay: 2,
             }}
           />
-          <motion.div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500 opacity-5 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.05, 1],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
         </>
       ) : (
         <>
@@ -80,18 +68,6 @@ const PageBackground: React.FC<PageBackgroundProps> = memo(
               repeat: Infinity,
               ease: "easeInOut",
               delay: 2,
-            }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-400 opacity-3 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.05, 1],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "linear",
             }}
           />
         </>

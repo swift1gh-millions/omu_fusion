@@ -35,12 +35,12 @@ export const Button: React.FC<ButtonProps> = memo(
     );
 
     const variantClasses = {
-      glass: "btn-glass text-white hover:text-accent-gold",
-      primary: "btn-primary text-white font-semibold",
+      glass: "btn-glass text-white hover:text-accent-gold backdrop-blur-md",
+      primary: "btn-primary text-white font-semibold shadow-lg hover:shadow-xl",
       secondary:
-        "bg-transparent border-2 border-white text-white hover:bg-white hover:text-black",
+        "bg-transparent border-2 border-white text-white hover:bg-white hover:text-black shadow-md hover:shadow-lg",
       outline:
-        "bg-transparent border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400",
+        "bg-white/80 backdrop-blur-md border-2 border-gray-200 text-gray-700 hover:bg-white hover:border-gray-300 shadow-md hover:shadow-lg hover:scale-105",
     };
 
     const sizeClasses = {

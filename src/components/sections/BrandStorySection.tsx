@@ -2,8 +2,10 @@ import React from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
 import { OptimizedImage } from "../ui/OptimizedImage";
+import { useDarkBackground } from "../../utils/backgroundUtils";
 
 export const BrandStorySection: React.FC = () => {
+  const darkBg = useDarkBackground("BrandStorySection", 0.75);
   const values = [
     {
       icon: (
@@ -84,7 +86,9 @@ export const BrandStorySection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-dark-secondary to-dark-primary relative overflow-hidden">
+    <section
+      className={`py-20 px-4 sm:px-6 lg:px-8 ${darkBg.className} relative overflow-hidden`}
+      style={darkBg.style}>
       {/* Background Elements */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-1/4 left-0 w-72 h-72 bg-accent-gold rounded-full mix-blend-multiply filter blur-3xl"></div>

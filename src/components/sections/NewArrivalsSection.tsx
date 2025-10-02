@@ -10,7 +10,7 @@ export const NewArrivalsSection: React.FC = () => {
   };
 
   return (
-    <section className="py-20 bg-gray-700 rounded-3xl">
+    <section className="py-20 bg-zinc-800 rounded-3xl">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <motion.div
           className="text-center max-w-4xl mx-auto mb-16"

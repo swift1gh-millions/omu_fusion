@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useReducer, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  ReactNode,
+} from "react";
 
 // Types
 export interface CartItem {
@@ -17,6 +23,12 @@ export interface User {
   firstName: string;
   lastName: string;
   avatar?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+  country?: string;
+  createdAt?: string;
 }
 
 export interface AppState {
@@ -43,15 +55,32 @@ export type AppAction =
   | { type: "LOGOUT" }
   | { type: "UPDATE_USER"; payload: Partial<User> };
 
-// Initial state
-const initialState: AppState = {
-  cart: [],
-  user: null,
-  isAuthenticated: false,
-  isCartOpen: false,
-  cartItemCount: 0,
-  cartTotal: 0,
+// Initial state with localStorage check
+const getInitialState = (): AppState => {
+  try {
+    const savedState = localStorage.getItem("omu_app_state");
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      return {
+        ...parsed,
+        isCartOpen: false, // Always start with cart closed
+      };
+    }
+  } catch (error) {
+    console.error("Error loading saved state:", error);
+  }
+
+  return {
+    cart: [],
+    user: null,
+    isAuthenticated: false,
+    isCartOpen: false,
+    cartItemCount: 0,
+    cartTotal: 0,
+  };
 };
+
+const initialState: AppState = getInitialState();
 
 // Reducer
 const appReducer = (state: AppState, action: AppAction): AppState => {
@@ -217,6 +246,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
+  // Persist state to localStorage
+  useEffect(() => {
+    try {
+      const stateToSave = {
+        ...state,
+        isCartOpen: false, // Don't persist cart open state
+      };
+      localStorage.setItem("omu_app_state", JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("Error saving state:", error);
+    }
+  }, [state]);
+
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       {children}
@@ -281,15 +323,62 @@ export const useAuth = () => {
   const { state, dispatch } = useApp();
 
   const login = (user: User) => {
-    dispatch({ type: "LOGIN", payload: user });
+    const userWithTimestamp = {
+      ...user,
+      createdAt: user.createdAt || new Date().toISOString(),
+    };
+    dispatch({ type: "LOGIN", payload: userWithTimestamp });
   };
 
   const logout = () => {
     dispatch({ type: "LOGOUT" });
+    // Clear localStorage on logout
+    try {
+      localStorage.removeItem("omu_app_state");
+    } catch (error) {
+      console.error("Error clearing saved state:", error);
+    }
   };
 
   const updateUser = (updates: Partial<User>) => {
     dispatch({ type: "UPDATE_USER", payload: updates });
+  };
+
+  const register = async (userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) => {
+    // This would normally be an API call
+    // For now, we'll simulate registration
+    const newUser: User = {
+      id: `user-${Date.now()}`,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    login(newUser);
+    return newUser;
+  };
+
+  const signIn = async (credentials: { email: string; password: string }) => {
+    // This would normally be an API call
+    // For demo purposes, we'll accept any email/password
+    const user: User = {
+      id: `user-${Date.now()}`,
+      email: credentials.email,
+      firstName: "Demo",
+      lastName: "User",
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${credentials.email}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    login(user);
+    return user;
   };
 
   return {
@@ -298,5 +387,7 @@ export const useAuth = () => {
     login,
     logout,
     updateUser,
+    register,
+    signIn,
   };
 };

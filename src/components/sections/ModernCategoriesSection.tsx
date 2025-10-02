@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";
+import { useDarkBackground } from "../../utils/backgroundUtils";
 
 interface CategoryItem {
   id: string;
@@ -13,6 +14,7 @@ interface CategoryItem {
 
 export const ModernCategoriesSection: React.FC = () => {
   const navigate = useNavigate();
+  const darkBg = useDarkBackground("ModernCategoriesSection", 0.8);
   const categories: CategoryItem[] = [
     {
       id: "new-arrivals",
@@ -57,7 +59,9 @@ export const ModernCategoriesSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
+    <section
+      className={`py-20 px-4 sm:px-6 lg:px-8 ${darkBg.className}`}
+      style={darkBg.style}>
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
