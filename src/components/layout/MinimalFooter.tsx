@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export const MinimalFooter: React.FC = () => {
   return (
@@ -9,21 +10,21 @@ export const MinimalFooter: React.FC = () => {
             © {new Date().getFullYear()} OMU FUSION. All rights reserved.
           </div>
           <div className="flex space-x-6 text-sm">
-            <a
-              href="#"
+            <Link
+              to="/privacy"
               className="text-gray-400 hover:text-white transition-colors duration-300 font-body">
               Privacy Policy
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              to="/terms"
               className="text-gray-400 hover:text-white transition-colors duration-300 font-body">
               Terms of Service
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              to="/cookies"
               className="text-gray-400 hover:text-white transition-colors duration-300 font-body">
               Cookie Policy
-            </a>
+            </Link>
           </div>
         </div>
       </div>

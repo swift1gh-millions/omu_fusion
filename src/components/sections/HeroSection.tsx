@@ -165,13 +165,9 @@ export const HeroSection: React.FC = () => {
           {/* CTA Button */}
           <motion.button
             className="btn-glass text-white px-8 py-4 text-sm font-medium tracking-wider hover:bg-white hover:text-black transition-all duration-300 rounded-2xl backdrop-blur-md touch-manipulation min-h-[48px]"
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             onClick={() => navigate("/shop")}
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{
-              opacity: titleAnimationComplete ? 1 : 0,
-              y: titleAnimationComplete ? 0 : 20,
-              scale: titleAnimationComplete ? 1 : 0.9,
-            }}
             transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.98 }}>

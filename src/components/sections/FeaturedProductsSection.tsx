@@ -262,11 +262,56 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="absolute bottom-2 left-2 bg-black text-white text-xs font-semibold px-2 py-1 rounded-full text-[10px] sm:text-xs">
           ₵{product.price}
         </div>
+
+        {/* Add to Cart Button - Positioned at bottom right */}
+        <div
+          className="absolute bottom-2 right-2"
+          onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="primary"
+            size="sm"
+            className="text-xs py-1.5 px-2 sm:hidden opacity-90 hover:opacity-100 shadow-lg"
+            onClick={() => {
+              addToCart({
+                id: parseInt(product.id),
+                name: product.name,
+                price: product.price,
+                image: product.images[0],
+              });
+            }}>
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            className="text-xs py-1.5 px-3 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg"
+            onClick={() => {
+              addToCart({
+                id: parseInt(product.id),
+                name: product.name,
+                price: product.price,
+                image: product.images[0],
+              });
+            }}>
+            Add
+          </Button>
+        </div>
       </div>
 
       {/* Product Info - Optimized for smaller grid */}
-      <div className="space-y-1 sm:space-y-2">
-        <h3 className="text-white font-semibold text-sm sm:text-base lg:text-lg group-hover:text-accent-gold transition-colors duration-300 line-clamp-2">
+      <div className="space-y-2 sm:space-y-2 px-1">
+        <h3 className="text-white font-semibold text-sm sm:text-base lg:text-lg group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
           {product.name}
         </h3>
 
@@ -280,7 +325,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   e.stopPropagation();
                   setCurrentImageIndex(idx);
                 }}
-                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-200 ${
+                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-200 touch-manipulation ${
                   idx === currentImageIndex
                     ? "bg-accent-gold scale-110"
                     : "bg-white bg-opacity-30 hover:bg-opacity-50"
@@ -289,24 +334,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
             ))}
           </div>
         )}
-
-        {/* Add to Cart Button */}
-        <div onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="primary"
-            size="sm"
-            className="w-full text-xs py-2 mt-2"
-            onClick={() => {
-              addToCart({
-                id: parseInt(product.id),
-                name: product.name,
-                price: product.price,
-                image: product.images[0],
-              });
-            }}>
-            Add to Cart
-          </Button>
-        </div>
       </div>
     </div>
   );
@@ -341,7 +368,7 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
       className="group relative animate-fade-in-up cursor-pointer md:cursor-default"
       style={{ animationDelay: `${index * 0.2}s` }}
       onClick={handleCardClick}>
-      <div className="bg-white bg-opacity-5 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 hover:bg-opacity-10 transition-all duration-300">
+      <div className="bg-white bg-opacity-5 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 hover:bg-opacity-10 transition-all duration-300 relative">
         <div className="aspect-square mb-2 sm:mb-3 lg:mb-4 overflow-hidden rounded-lg relative">
           <OptimizedImage
             src={product.images[currentImageIndex]}
@@ -369,38 +396,15 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
               ))}
             </div>
           )}
-        </div>
 
-        <div className="space-y-2 sm:space-y-3">
-          <h3 className="text-white font-semibold text-sm sm:text-base lg:text-xl line-clamp-2">
-            {product.name}
-          </h3>
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <span className="text-accent-gold font-bold text-lg sm:text-xl lg:text-2xl">
-                ₵{product.price}
-              </span>
-              {product.originalPrice && (
-                <span className="text-gray-500 line-through text-sm sm:text-base lg:text-lg">
-                  ₵{product.originalPrice}
-                </span>
-              )}
-            </div>
-
-            {product.isTrending && (
-              <div className="bg-accent-gold text-black text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded whitespace-nowrap">
-                TRENDING
-              </div>
-            )}
-          </div>
-
-          {/* Add to Cart Button */}
-          <div onClick={(e) => e.stopPropagation()}>
+          {/* Add to Cart Button - Positioned at bottom right of image */}
+          <div
+            className="absolute bottom-2 right-2"
+            onClick={(e) => e.stopPropagation()}>
             <Button
               variant="primary"
               size="sm"
-              className="w-full text-xs py-2 mt-3"
+              className="text-xs py-1.5 px-2 sm:hidden opacity-90 hover:opacity-100 shadow-lg"
               onClick={() => {
                 addToCart({
                   id: parseInt(product.id),
@@ -409,8 +413,61 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
                   image: product.images[0],
                 });
               }}>
-              Add to Cart
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
             </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="text-xs py-1.5 px-3 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg"
+              onClick={() => {
+                addToCart({
+                  id: parseInt(product.id),
+                  name: product.name,
+                  price: product.price,
+                  image: product.images[0],
+                });
+              }}>
+              Add
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-3 sm:space-y-3">
+          <h3 className="text-white font-semibold text-sm sm:text-base lg:text-xl line-clamp-2 leading-tight">
+            {product.name}
+          </h3>
+
+          {/* Price section - stacked on mobile, inline on larger screens */}
+          <div className="space-y-1 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                <span className="text-accent-gold font-bold text-lg sm:text-xl lg:text-2xl">
+                  ₵{product.price}
+                </span>
+                {product.originalPrice && (
+                  <span className="text-gray-500 line-through text-sm sm:text-base lg:text-lg">
+                    ₵{product.originalPrice}
+                  </span>
+                )}
+              </div>
+
+              {product.isTrending && (
+                <div className="bg-accent-gold text-black text-[10px] sm:text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded whitespace-nowrap self-start sm:self-center">
+                  TRENDING
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

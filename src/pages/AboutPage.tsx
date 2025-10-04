@@ -123,7 +123,7 @@ export const AboutPage: React.FC = () => {
             {/* Section Background */}
             <div className="absolute inset-0 bg-gradient-to-r from-gray-800/20 to-gray-700/20 rounded-3xl blur-sm -z-10"></div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center md:p-8">
               <motion.div variants={itemVariants}>
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 h-full shadow-2xl">
                   <motion.h2
@@ -357,13 +357,15 @@ export const AboutPage: React.FC = () => {
                 <Button
                   variant="primary"
                   size="lg"
-                  className="px-12 py-4 text-lg">
+                  className="px-12 py-4 text-lg"
+                  onClick={() => (window.location.href = "/shop")}>
                   Shop Our Collection
                 </Button>
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="px-12 py-4 text-lg">
+                  className="px-12 py-4 text-lg"
+                  onClick={() => (window.location.href = "/contact")}>
                   Contact Us
                 </Button>
               </motion.div>

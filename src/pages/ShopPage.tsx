@@ -191,7 +191,7 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
       whileHover={{ y: -5 }}
       className="group touch-manipulation"
       style={{ scrollMarginTop: "100px" }}>
-      <GlassCard className="overflow-hidden h-full">
+      <GlassCard className="overflow-hidden h-full relative">
         <div className="relative">
           <OptimizedImage
             src={product.image}
@@ -212,18 +212,20 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
             </span>
           )}
         </div>
-        <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-accent-gold transition-colors duration-300 line-clamp-2">
+        <div className="p-3 sm:p-4 lg:p-6 pb-16">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
             {product.name}
           </h3>
-          <p className="text-gray-600 text-sm mb-3">{product.category}</p>
+          <p className="text-gray-600 text-xs sm:text-sm mb-3">
+            {product.category}
+          </p>
 
           <div className="flex items-center mb-3">
             <div className="flex text-yellow-400">
               {Array.from({ length: 5 }, (_, i) => (
                 <span
                   key={i}
-                  className={`text-sm ${
+                  className={`text-xs sm:text-sm ${
                     i < Math.floor(product.rating)
                       ? "text-yellow-400"
                       : "text-gray-300"
@@ -232,13 +234,13 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
                 </span>
               ))}
             </div>
-            <span className="text-gray-500 text-xs sm:text-sm ml-2">
+            <span className="text-gray-500 text-xs ml-2">
               ({product.reviews})
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col space-y-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
               <span className="text-lg sm:text-xl font-bold text-gray-900">
                 ₵{product.price}
               </span>
@@ -248,13 +250,34 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
                 </span>
               )}
             </div>
-            <Button
-              variant="primary"
-              size="sm"
-              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm touch-manipulation">
-              Add to Cart
-            </Button>
           </div>
+        </div>
+
+        {/* Add to Cart Button - Positioned at bottom right */}
+        <div className="absolute bottom-3 right-3">
+          <Button
+            variant="primary"
+            size="sm"
+            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm touch-manipulation sm:hidden shadow-lg">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm touch-manipulation hidden sm:block shadow-lg">
+            Add to Cart
+          </Button>
         </div>
       </GlassCard>
     </motion.div>
@@ -449,55 +472,71 @@ export const ShopPage: React.FC = memo(() => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}>
             <GlassCard className="p-4 sm:p-6">
-              <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
-                {/* Categories */}
-                <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => handleCategoryChange(category)}
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 touch-manipulation ${
-                        selectedCategory === category
-                          ? "bg-accent-gold text-black"
-                          : "bg-white/80 text-gray-600 hover:bg-accent-gold/20"
-                      }`}>
-                      {category}
-                    </button>
-                  ))}
+              <div className="flex flex-col space-y-4">
+                {/* Search Bar */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <HiSearch className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-sm"
+                  />
                 </div>
 
-                {/* Sort and View Options */}
-                <div className="flex gap-2 sm:gap-3 items-center justify-center lg:justify-end">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => handleSortChange(e.target.value)}
-                    className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-xs sm:text-sm">
-                    <option value="name">Sort by Name</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="rating">Highest Rated</option>
-                    <option value="newest">Newest First</option>
-                  </select>
+                <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
+                  {/* Categories */}
+                  <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => handleCategoryChange(category)}
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 touch-manipulation ${
+                          selectedCategory === category
+                            ? "bg-accent-gold text-black"
+                            : "bg-white/80 text-gray-600 hover:bg-accent-gold/20"
+                        }`}>
+                        {category}
+                      </button>
+                    ))}
+                  </div>
 
-                  <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => handleViewModeChange("grid")}
-                      className={`p-2 touch-manipulation ${
-                        viewMode === "grid"
-                          ? "bg-accent-gold text-black"
-                          : "bg-white text-gray-600 hover:bg-gray-50"
-                      }`}>
-                      <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleViewModeChange("list")}
-                      className={`p-2 touch-manipulation ${
-                        viewMode === "list"
-                          ? "bg-accent-gold text-black"
-                          : "bg-white text-gray-600 hover:bg-gray-50"
-                      }`}>
-                      <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
+                  {/* Sort and View Options */}
+                  <div className="flex gap-2 sm:gap-3 items-center justify-center lg:justify-end">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => handleSortChange(e.target.value)}
+                      className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-xs sm:text-sm">
+                      <option value="name">Sort by Name</option>
+                      <option value="price-low">Price: Low to High</option>
+                      <option value="price-high">Price: High to Low</option>
+                      <option value="rating">Highest Rated</option>
+                      <option value="newest">Newest First</option>
+                    </select>
+
+                    <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => handleViewModeChange("grid")}
+                        className={`p-2 touch-manipulation ${
+                          viewMode === "grid"
+                            ? "bg-accent-gold text-black"
+                            : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}>
+                        <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleViewModeChange("list")}
+                        className={`p-2 touch-manipulation ${
+                          viewMode === "list"
+                            ? "bg-accent-gold text-black"
+                            : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}>
+                        <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

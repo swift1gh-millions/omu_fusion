@@ -6,7 +6,6 @@ import { CollectionsGridSection } from "../components/sections/CollectionsGridSe
 import { FeaturedProductsSection } from "../components/sections/FeaturedProductsSection";
 import { ModernCategoriesSection } from "../components/sections/ModernCategoriesSection";
 import { BrandStorySection } from "../components/sections/BrandStorySection";
-import { NewsletterSection } from "../components/sections/NewsletterSection";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { useScrollAnimation } from "../components/ui/ScrollAnimation";
 
@@ -40,16 +39,6 @@ export const HomePage: React.FC = memo(() => {
 
       <LazyLoadWrapper>
         <ModernCategoriesSection />
-      </LazyLoadWrapper>
-
-      <section id="about">
-        <LazyLoadWrapper>
-          <BrandStorySection />
-        </LazyLoadWrapper>
-      </section>
-
-      <LazyLoadWrapper>
-        <NewsletterSection />
       </LazyLoadWrapper>
     </div>
   );

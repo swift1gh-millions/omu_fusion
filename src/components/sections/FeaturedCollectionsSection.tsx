@@ -237,7 +237,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <GlassCard
       hover
-      className="group overflow-hidden animate-fade-in-up"
+      className="group overflow-hidden animate-fade-in-up relative"
       style={{ animationDelay: `${index * 0.1}s` }}>
       {/* Product Image */}
       <div className="relative overflow-hidden">
@@ -280,23 +280,43 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </svg>
         </button>
 
-        {/* Quick Add Button */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <Button variant="primary" size="sm">
+        {/* Quick Add Button - Positioned at bottom right */}
+        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <Button
+            variant="primary"
+            size="sm"
+            className="hidden sm:block shadow-lg">
             Quick Add
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            className="sm:hidden px-2 py-1.5 shadow-lg">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
           </Button>
         </div>
       </div>
 
       {/* Product Info */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         {/* Category */}
         <span className="text-xs text-accent-gold uppercase tracking-wide font-medium">
           {product.category}
         </span>
 
         {/* Name */}
-        <h4 className="font-display text-lg font-semibold text-white group-hover:text-accent-gold transition-colors duration-300">
+        <h4 className="font-display text-base sm:text-lg font-semibold text-white group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
           {product.name}
         </h4>
 
@@ -306,7 +326,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             {[...Array(5)].map((_, i) => (
               <svg
                 key={i}
-                className={`w-4 h-4 ${
+                className={`w-3 h-3 sm:w-4 sm:h-4 ${
                   i < Math.floor(product.rating)
                     ? "text-yellow-400"
                     : "text-gray-600"
@@ -317,11 +337,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
               </svg>
             ))}
           </div>
-          <span className="text-sm text-gray-400">({product.rating})</span>
+          <span className="text-xs sm:text-sm text-gray-400">
+            ({product.rating})
+          </span>
         </div>
 
-        {/* Price */}
-        <div className="flex items-center space-x-2">
+        {/* Price - stacked on mobile, inline on larger screens */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
           <span className="text-xl font-bold text-white">₵{product.price}</span>
           {product.originalPrice && (
             <span className="text-sm text-gray-500 line-through">
