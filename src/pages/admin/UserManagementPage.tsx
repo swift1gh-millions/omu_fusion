@@ -198,7 +198,7 @@ export const UserManagementPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 lg:space-y-8 px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="space-y-6 lg:space-y-8">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-800/50 to-indigo-800/50 backdrop-blur-xl rounded-2xl p-4 lg:p-8 border border-slate-700/50 shadow-2xl">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">

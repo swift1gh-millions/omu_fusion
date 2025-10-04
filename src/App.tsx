@@ -36,10 +36,10 @@ import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { ProductUploadPage } from "./pages/admin/ProductUploadPage";
 import { ProductManagementPage } from "./pages/admin/ProductManagementPage";
+import { CategoryManagementPage } from "./pages/admin/CategoryManagementPage";
 import { OrderManagementPage } from "./pages/admin/OrderManagementPage";
 import { UserManagementPage } from "./pages/admin/UserManagementPage";
 import { AnalyticsPage } from "./pages/admin/AnalyticsPage";
-import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
 
 function AppContent() {
   // Initialize scroll animations
@@ -124,6 +124,14 @@ function AppContent() {
             }
           />
           <Route
+            path="/admin/categories"
+            element={
+              <AdminRoute>
+                <CategoryManagementPage />
+              </AdminRoute>
+            }
+          />
+          <Route
             path="/admin/orders"
             element={
               <AdminRoute>
@@ -144,14 +152,6 @@ function AppContent() {
             element={
               <AdminRoute>
                 <AnalyticsPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/settings"
-            element={
-              <AdminRoute>
-                <AdminSettingsPage />
               </AdminRoute>
             }
           />

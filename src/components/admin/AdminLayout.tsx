@@ -7,11 +7,11 @@ import {
   ShoppingCart,
   Users,
   BarChart3,
-  Settings,
   LogOut,
   Plus,
   Menu,
   X,
+  Folder,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -37,16 +37,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: "Dashboard", href: "/admin/dashboard", icon: Home },
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Add Product", href: "/admin/products/add", icon: Plus },
+    { name: "Categories", href: "/admin/categories", icon: Folder },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -89,7 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-800/95 to-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:static lg:inset-0`}>
+        } lg:translate-x-0 lg:relative lg:flex lg:flex-col`}>
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-700/50 px-6">
@@ -163,8 +163,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64 pt-16 lg:pt-0">
-        <main className="min-h-screen">{children}</main>
+      <div className="flex-1 lg:flex lg:flex-col">
+        {/* Mobile header spacer */}
+        <div className="lg:hidden h-16"></div>
+        <main className="flex-1 bg-transparent overflow-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

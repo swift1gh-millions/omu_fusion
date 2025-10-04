@@ -137,7 +137,7 @@ const mockProducts: Product[] = [
     reviews: 256,
   },
   {
-    id: 4,
+    id: 11,
     name: "Leather Handbag",
     price: 179.99,
     image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
@@ -146,7 +146,7 @@ const mockProducts: Product[] = [
     reviews: 73,
   },
   {
-    id: 5,
+    id: 12,
     name: "Eco-Friendly Notebook",
     price: 24.99,
     image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400",
@@ -156,7 +156,7 @@ const mockProducts: Product[] = [
     reviews: 41,
   },
   {
-    id: 6,
+    id: 13,
     name: "Smart Fitness Tracker",
     price: 149.99,
     originalPrice: 199.99,
@@ -212,13 +212,10 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
             </span>
           )}
         </div>
-        <div className="p-3 sm:p-4 lg:p-6 pb-16">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
+        <div className="p-3 sm:p-4 lg:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
             {product.name}
           </h3>
-          <p className="text-gray-600 text-xs sm:text-sm mb-3">
-            {product.category}
-          </p>
 
           <div className="flex items-center mb-3">
             <div className="flex text-yellow-400">
@@ -239,45 +236,40 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
             </span>
           </div>
 
-          <div className="flex flex-col space-y-1">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-              <span className="text-lg sm:text-xl font-bold text-gray-900">
-                ₵{product.price}
-              </span>
-              {product.originalPrice && (
-                <span className="text-sm text-gray-500 line-through">
-                  ₵{product.originalPrice}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-lg sm:text-xl font-bold text-gray-900">
+                  ₵{product.price}
                 </span>
-              )}
+                {product.originalPrice && (
+                  <span className="text-sm text-gray-500 line-through">
+                    ₵{product.originalPrice}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Add to Cart Button - Positioned at bottom right */}
-        <div className="absolute bottom-3 right-3">
-          <Button
-            variant="primary"
-            size="sm"
-            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm touch-manipulation sm:hidden shadow-lg">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm touch-manipulation hidden sm:block shadow-lg">
-            Add to Cart
-          </Button>
+            {/* Add to Cart Button - Inline with price */}
+            <Button
+              variant="primary"
+              size="sm"
+              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 text-xs sm:text-sm touch-manipulation shadow-lg hover:shadow-xl transform hover:scale-105">
+              <span className="hidden sm:inline">Add to Cart</span>
+              <svg
+                className="w-4 h-4 sm:hidden"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+            </Button>
+          </div>
         </div>
       </GlassCard>
     </motion.div>
@@ -346,7 +338,7 @@ export const ShopPage: React.FC = memo(() => {
   const filteredProducts = useMemo(() => {
     setIsLoading(true);
 
-    let filtered = products;
+    let filtered = [...products]; // Create a new array to avoid mutations
 
     // Filter by category
     if (selectedCategory !== "All") {
@@ -545,6 +537,7 @@ export const ShopPage: React.FC = memo(() => {
 
           {/* Products Grid */}
           <motion.div
+            key={`products-${selectedCategory}-${filteredProducts.length}`}
             className={`grid gap-4 sm:gap-6 ${
               viewMode === "grid"
                 ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -554,7 +547,10 @@ export const ShopPage: React.FC = memo(() => {
             initial="hidden"
             animate="visible">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard
+                key={`product-${product.id}-${selectedCategory}`}
+                product={product}
+              />
             ))}
           </motion.div>
 

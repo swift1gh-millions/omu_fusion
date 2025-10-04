@@ -55,20 +55,22 @@ export const AdminDashboardPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-800/50 to-indigo-800/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-slate-800/50 to-indigo-800/50 backdrop-blur-xl rounded-2xl p-4 sm:p-6 lg:p-8 border border-slate-700/50 shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-              <p className="text-slate-300">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">
+                Dashboard
+              </h1>
+              <p className="text-slate-300 text-sm sm:text-base">
                 Welcome back! Here's what's happening with your store today.
               </p>
             </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm text-slate-400">Today</p>
-                <p className="text-lg font-semibold text-white">
+            <div className="flex items-center space-x-4">
+              <div className="text-left sm:text-right">
+                <p className="text-xs sm:text-sm text-slate-400">Today</p>
+                <p className="text-sm sm:text-lg font-semibold text-white">
                   {new Date().toLocaleDateString("en-US", {
                     weekday: "long",
                     year: "numeric",
@@ -82,104 +84,120 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {/* Total Products */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-2xl shadow-blue-500/25 border border-blue-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <Package className="h-8 w-8 text-blue-200 mb-4" />
-                <p className="text-blue-100 text-sm font-medium">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-2xl shadow-blue-500/25 border border-blue-500/20">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-blue-200 mb-2 lg:mb-4" />
+                <p className="text-blue-100 text-xs sm:text-sm font-medium">
                   Total Products
                 </p>
-                <p className="text-3xl font-bold">{stats.totalProducts}</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                  {stats.totalProducts}
+                </p>
               </div>
-              <div className="text-right">
+              <div className="mt-2 lg:mt-0 lg:text-right">
                 <div className="flex items-center text-blue-200">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  <span className="text-sm">+4.75%</span>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="text-xs sm:text-sm">+4.75%</span>
                 </div>
-                <p className="text-xs text-blue-200">from last month</p>
+                <p className="text-xs text-blue-200 hidden sm:block">
+                  from last month
+                </p>
               </div>
             </div>
           </div>
 
           {/* Total Orders */}
-          <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white shadow-2xl shadow-emerald-500/25 border border-emerald-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <ShoppingCart className="h-8 w-8 text-emerald-200 mb-4" />
-                <p className="text-emerald-100 text-sm font-medium">
+          <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-2xl shadow-emerald-500/25 border border-emerald-500/20">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-emerald-200 mb-2 lg:mb-4" />
+                <p className="text-emerald-100 text-xs sm:text-sm font-medium">
                   Total Orders
                 </p>
-                <p className="text-3xl font-bold">{stats.totalOrders}</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                  {stats.totalOrders}
+                </p>
               </div>
-              <div className="text-right">
+              <div className="mt-2 lg:mt-0 lg:text-right">
                 <div className="flex items-center text-emerald-200">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  <span className="text-sm">+54.02%</span>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="text-xs sm:text-sm">+54.02%</span>
                 </div>
-                <p className="text-xs text-emerald-200">from last month</p>
+                <p className="text-xs text-emerald-200 hidden sm:block">
+                  from last month
+                </p>
               </div>
             </div>
           </div>
 
           {/* Total Users */}
-          <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-6 text-white shadow-2xl shadow-purple-500/25 border border-purple-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <Users className="h-8 w-8 text-purple-200 mb-4" />
-                <p className="text-purple-100 text-sm font-medium">
+          <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-2xl shadow-purple-500/25 border border-purple-500/20">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-purple-200 mb-2 lg:mb-4" />
+                <p className="text-purple-100 text-xs sm:text-sm font-medium">
                   Total Users
                 </p>
-                <p className="text-3xl font-bold">{stats.totalUsers}</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                  {stats.totalUsers}
+                </p>
               </div>
-              <div className="text-right">
+              <div className="mt-2 lg:mt-0 lg:text-right">
                 <div className="flex items-center text-purple-200">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  <span className="text-sm">+14.05%</span>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="text-xs sm:text-sm">+14.05%</span>
                 </div>
-                <p className="text-xs text-purple-200">from last month</p>
+                <p className="text-xs text-purple-200 hidden sm:block">
+                  from last month
+                </p>
               </div>
             </div>
           </div>
 
           {/* Total Revenue */}
-          <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl p-6 text-white shadow-2xl shadow-amber-500/25 border border-amber-500/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <DollarSign className="h-8 w-8 text-amber-200 mb-4" />
-                <p className="text-amber-100 text-sm font-medium">
+          <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-2xl shadow-amber-500/25 border border-amber-500/20">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-amber-200 mb-2 lg:mb-4" />
+                <p className="text-amber-100 text-xs sm:text-sm font-medium">
                   Total Revenue
                 </p>
-                <p className="text-3xl font-bold">GH₵{stats.totalRevenue}</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                  GH₵{stats.totalRevenue}
+                </p>
               </div>
-              <div className="text-right">
+              <div className="mt-2 lg:mt-0 lg:text-right">
                 <div className="flex items-center text-amber-200">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  <span className="text-sm">+28.14%</span>
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="text-xs sm:text-sm">+28.14%</span>
                 </div>
-                <p className="text-xs text-amber-200">from last month</p>
+                <p className="text-xs text-amber-200 hidden sm:block">
+                  from last month
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Alert Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           {/* Pending Orders */}
-          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl p-6 border border-orange-500/30 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 border border-orange-500/30 shadow-2xl">
             <div className="flex items-center">
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-xl shadow-lg">
-                <AlertCircle className="h-8 w-8 text-white" />
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-3 lg:p-4 rounded-xl shadow-lg">
+                <AlertCircle className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
               </div>
-              <div className="ml-6">
-                <p className="text-slate-300 text-sm font-medium">
+              <div className="ml-4 lg:ml-6">
+                <p className="text-slate-300 text-xs sm:text-sm font-medium">
                   Pending Orders
                 </p>
-                <p className="text-4xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                   {stats.pendingOrders}
                 </p>
-                <p className="text-orange-400 text-sm mt-1">
+                <p className="text-orange-400 text-xs sm:text-sm mt-1">
                   Orders awaiting processing
                 </p>
               </div>
@@ -187,19 +205,19 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
 
           {/* Low Stock Products */}
-          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 border border-red-500/30 shadow-2xl">
             <div className="flex items-center">
-              <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 rounded-xl shadow-lg">
-                <Package className="h-8 w-8 text-white" />
+              <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 lg:p-4 rounded-xl shadow-lg">
+                <Package className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
               </div>
-              <div className="ml-6">
-                <p className="text-slate-300 text-sm font-medium">
+              <div className="ml-4 lg:ml-6">
+                <p className="text-slate-300 text-xs sm:text-sm font-medium">
                   Low Stock Products
                 </p>
-                <p className="text-4xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                   {stats.lowStockProducts}
                 </p>
-                <p className="text-red-400 text-sm mt-1">
+                <p className="text-red-400 text-xs sm:text-sm mt-1">
                   Products with less than 10 items
                 </p>
               </div>
