@@ -14,18 +14,20 @@ import {
   HiCheck,
   HiX,
 } from "react-icons/hi";
+import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { useAuth } from "../context/AppContext";
+import { UserProfileService } from "../utils/userProfileService";
+import { AuthService } from "../utils/authService";
 
 interface UserProfile {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
-  address?: string;
-  city?: string;
-  zipCode?: string;
+  digitalAddress?: string;
+  apartment?: string;
   country?: string;
 }
 
@@ -126,16 +128,53 @@ export const ProfilePage: React.FC = () => {
     "profile"
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     email: user?.email || "",
-    phone: "",
-    address: "",
-    city: "",
-    zipCode: "",
-    country: "",
+    phone: user?.phone || "",
+    digitalAddress: user?.digitalAddress || "",
+    apartment: user?.apartment || "",
+    country: user?.country || "Ghana",
   });
+
+  // Load full profile data from Firestore
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user?.id) {
+        setIsLoading(true);
+        try {
+          const userProfile = await UserProfileService.getUserProfile(user.id);
+          if (userProfile) {
+            setProfileData({
+              firstName: userProfile.firstName,
+              lastName: userProfile.lastName,
+              email: userProfile.email,
+              phone: userProfile.phoneNumber || "",
+              digitalAddress:
+                userProfile.addresses.find((addr) => addr.isDefault)?.address ||
+                "",
+              apartment:
+                userProfile.addresses.find((addr) => addr.isDefault)
+                  ?.apartment || "",
+              country:
+                userProfile.addresses.find((addr) => addr.isDefault)?.country ||
+                "Ghana",
+            });
+          }
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+          toast.error("Failed to load profile data");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user?.id]);
 
   // Handle tab parameter from URL
   useEffect(() => {
@@ -156,25 +195,107 @@ export const ProfilePage: React.FC = () => {
     navigate("/");
   };
 
-  const handleSaveProfile = () => {
-    updateUser({
-      firstName: profileData.firstName,
-      lastName: profileData.lastName,
-    });
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    setIsSaving(true);
+    try {
+      // Update basic profile info
+      await UserProfileService.updateUserProfile(user.id, {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        phoneNumber: profileData.phone,
+      });
+
+      // Update or add address if digitalAddress is provided
+      if (profileData.digitalAddress || profileData.apartment) {
+        const currentProfile = await UserProfileService.getUserProfile(user.id);
+        if (currentProfile) {
+          const defaultAddress = currentProfile.addresses.find(
+            (addr) => addr.isDefault
+          );
+
+          if (defaultAddress) {
+            // Update existing default address
+            await UserProfileService.updateAddress(user.id, defaultAddress.id, {
+              address: profileData.digitalAddress,
+              apartment: profileData.apartment,
+              country: profileData.country,
+            });
+          } else {
+            // Add new default address
+            await UserProfileService.addAddress(user.id, {
+              type: "home",
+              firstName: profileData.firstName,
+              lastName: profileData.lastName,
+              address: profileData.digitalAddress || "",
+              city: "", // You might want to add a city field
+              state: "", // You might want to add a state field
+              zipCode: "", // You might want to add a zipCode field
+              country: profileData.country || "Ghana",
+              isDefault: true,
+              apartment: profileData.apartment || "",
+            });
+          }
+        }
+      }
+
+      // Update local user context
+      await updateUser({
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        phone: profileData.phone,
+        digitalAddress: profileData.digitalAddress,
+        apartment: profileData.apartment,
+        country: profileData.country,
+      });
+
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to update profile. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleCancelEdit = () => {
-    setProfileData({
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
-      phone: "",
-      address: "",
-      city: "",
-      zipCode: "",
-      country: "",
-    });
+  const handleCancelEdit = async () => {
+    // Reset to current data from Firestore
+    if (user?.id) {
+      try {
+        const userProfile = await UserProfileService.getUserProfile(user.id);
+        if (userProfile) {
+          setProfileData({
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            email: userProfile.email,
+            phone: userProfile.phoneNumber || "",
+            digitalAddress:
+              userProfile.addresses.find((addr) => addr.isDefault)?.address ||
+              "",
+            apartment:
+              userProfile.addresses.find((addr) => addr.isDefault)?.apartment ||
+              "",
+            country:
+              userProfile.addresses.find((addr) => addr.isDefault)?.country ||
+              "Ghana",
+          });
+        }
+      } catch (error) {
+        console.error("Error resetting profile data:", error);
+        // Fallback to user context data
+        setProfileData({
+          firstName: user?.firstName || "",
+          lastName: user?.lastName || "",
+          email: user?.email || "",
+          phone: user?.phone || "",
+          digitalAddress: user?.digitalAddress || "",
+          apartment: user?.apartment || "",
+          country: user?.country || "Ghana",
+        });
+      }
+    }
     setIsEditing(false);
   };
 
@@ -310,202 +431,214 @@ export const ProfilePage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}>
                 <GlassCard className="p-8 backdrop-blur-xl bg-white/80 border border-white/30 shadow-2xl">
-                  <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                      Profile Information
-                    </h2>
-                    {!isEditing ? (
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}>
-                        <Button
-                          onClick={() => setIsEditing(true)}
-                          variant="outline"
-                          className="flex items-center bg-gradient-to-r from-accent-gold to-accent-orange hover:from-accent-orange hover:to-accent-gold text-black border-none shadow-lg hover:shadow-xl transition-all duration-300">
-                          <HiPencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </Button>
-                      </motion.div>
-                    ) : (
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={handleSaveProfile}
-                          className="flex items-center bg-green-600 hover:bg-green-700">
-                          <HiCheck className="mr-2 h-4 w-4" />
-                          Save
-                        </Button>
-                        <Button
-                          onClick={handleCancelEdit}
-                          variant="outline"
-                          className="flex items-center">
-                          <HiX className="mr-2 h-4 w-4" />
-                          Cancel
-                        </Button>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-gold"></div>
+                      <span className="ml-3 text-lg text-gray-600">
+                        Loading profile...
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                          Profile Information
+                        </h2>
+                        {!isEditing ? (
+                          <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}>
+                            <Button
+                              onClick={() => setIsEditing(true)}
+                              variant="outline"
+                              className="flex items-center bg-gradient-to-r from-accent-gold to-accent-orange hover:from-accent-orange hover:to-accent-gold text-black border-none shadow-lg hover:shadow-xl transition-all duration-300">
+                              <HiPencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </Button>
+                          </motion.div>
+                        ) : (
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={handleSaveProfile}
+                              disabled={isSaving}
+                              className="flex items-center bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                              <HiCheck className="mr-2 h-4 w-4" />
+                              {isSaving ? "Saving..." : "Save"}
+                            </Button>
+                            <Button
+                              onClick={handleCancelEdit}
+                              variant="outline"
+                              className="flex items-center">
+                              <HiX className="mr-2 h-4 w-4" />
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        First Name
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={profileData.firstName}
-                          onChange={(e) =>
-                            setProfileData({
-                              ...profileData,
-                              firstName: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
-                        />
-                      ) : (
-                        <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
-                          <HiUser className="mr-2 h-5 w-5 text-gray-400" />
-                          {profileData.firstName}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            First Name
+                          </label>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={profileData.firstName}
+                              onChange={(e) =>
+                                setProfileData({
+                                  ...profileData,
+                                  firstName: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                            />
+                          ) : (
+                            <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
+                              <HiUser className="mr-2 h-5 w-5 text-gray-400" />
+                              {profileData.firstName}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={profileData.lastName}
-                          onChange={(e) =>
-                            setProfileData({
-                              ...profileData,
-                              lastName: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
-                        />
-                      ) : (
-                        <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
-                          <HiUser className="mr-2 h-5 w-5 text-gray-400" />
-                          {profileData.lastName}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Last Name
+                          </label>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={profileData.lastName}
+                              onChange={(e) =>
+                                setProfileData({
+                                  ...profileData,
+                                  lastName: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                            />
+                          ) : (
+                            <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
+                              <HiUser className="mr-2 h-5 w-5 text-gray-400" />
+                              {profileData.lastName}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                      </label>
-                      <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
-                        <HiMail className="mr-2 h-5 w-5 text-gray-400" />
-                        {profileData.email}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Email
+                          </label>
+                          <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
+                            <HiMail className="mr-2 h-5 w-5 text-gray-400" />
+                            {profileData.email}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone
+                          </label>
+                          {isEditing ? (
+                            <input
+                              type="tel"
+                              value={profileData.phone}
+                              onChange={(e) =>
+                                setProfileData({
+                                  ...profileData,
+                                  phone: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                              placeholder="Add phone number"
+                            />
+                          ) : (
+                            <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
+                              <HiPhone className="mr-2 h-5 w-5 text-gray-400" />
+                              {profileData.phone || "Not provided"}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Digital Address
+                          </label>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={profileData.digitalAddress}
+                              onChange={(e) =>
+                                setProfileData({
+                                  ...profileData,
+                                  digitalAddress: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
+                              placeholder="e.g. GA-123-4567 or GE-456-7890"
+                            />
+                          ) : (
+                            <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
+                              <HiLocationMarker className="mr-2 h-5 w-5 text-gray-400" />
+                              {profileData.digitalAddress || "Not provided"}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="tel"
-                          value={profileData.phone}
-                          onChange={(e) =>
-                            setProfileData({
-                              ...profileData,
-                              phone: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
-                          placeholder="Add phone number"
-                        />
-                      ) : (
-                        <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
-                          <HiPhone className="mr-2 h-5 w-5 text-gray-400" />
-                          {profileData.phone || "Not provided"}
+                      {/* Statistics */}
+                      <div className="mt-8 pt-8 border-t border-gray-200/50">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">
+                          Account Summary
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <motion.div
+                            className="bg-gradient-to-br from-accent-gold via-accent-orange to-yellow-500 p-6 rounded-2xl text-center shadow-xl shadow-accent-gold/20 hover:shadow-2xl hover:shadow-accent-gold/30 transition-all duration-300"
+                            whileHover={{ scale: 1.05, y: -5 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 20,
+                            }}>
+                            <div className="text-3xl font-black text-black mb-2">
+                              {totalOrders}
+                            </div>
+                            <div className="text-sm font-semibold text-black/80">
+                              Total Orders
+                            </div>
+                          </motion.div>
+                          <motion.div
+                            className="bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-green-500/20 hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-300"
+                            whileHover={{ scale: 1.05, y: -5 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 20,
+                            }}>
+                            <div className="text-3xl font-black mb-2">
+                              ${totalSpent.toFixed(2)}
+                            </div>
+                            <div className="text-sm font-semibold text-white/90">
+                              Total Spent
+                            </div>
+                          </motion.div>
+                          <motion.div
+                            className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300"
+                            whileHover={{ scale: 1.05, y: -5 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 20,
+                            }}>
+                            <div className="text-3xl font-black mb-2">0</div>
+                            <div className="text-sm font-semibold text-white/90">
+                              Wishlist Items
+                            </div>
+                          </motion.div>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={profileData.address}
-                          onChange={(e) =>
-                            setProfileData({
-                              ...profileData,
-                              address: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-gold"
-                          placeholder="Add address"
-                        />
-                      ) : (
-                        <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
-                          <HiLocationMarker className="mr-2 h-5 w-5 text-gray-400" />
-                          {profileData.address || "Not provided"}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Statistics */}
-                  <div className="mt-8 pt-8 border-t border-gray-200/50">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6">
-                      Account Summary
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <motion.div
-                        className="bg-gradient-to-br from-accent-gold via-accent-orange to-yellow-500 p-6 rounded-2xl text-center shadow-xl shadow-accent-gold/20 hover:shadow-2xl hover:shadow-accent-gold/30 transition-all duration-300"
-                        whileHover={{ scale: 1.05, y: -5 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 20,
-                        }}>
-                        <div className="text-3xl font-black text-black mb-2">
-                          {totalOrders}
-                        </div>
-                        <div className="text-sm font-semibold text-black/80">
-                          Total Orders
-                        </div>
-                      </motion.div>
-                      <motion.div
-                        className="bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-green-500/20 hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-300"
-                        whileHover={{ scale: 1.05, y: -5 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 20,
-                        }}>
-                        <div className="text-3xl font-black mb-2">
-                          ${totalSpent.toFixed(2)}
-                        </div>
-                        <div className="text-sm font-semibold text-white/90">
-                          Total Spent
-                        </div>
-                      </motion.div>
-                      <motion.div
-                        className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300"
-                        whileHover={{ scale: 1.05, y: -5 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 20,
-                        }}>
-                        <div className="text-3xl font-black mb-2">0</div>
-                        <div className="text-sm font-semibold text-white/90">
-                          Wishlist Items
-                        </div>
-                      </motion.div>
-                    </div>
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </GlassCard>
               </motion.div>
             )}

@@ -5,6 +5,12 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import {
+  AuthService,
+  AuthUser,
+  SignUpData,
+  SignInData,
+} from "../utils/authService";
 
 // Types
 export interface CartItem {
@@ -24,11 +30,12 @@ export interface User {
   lastName: string;
   avatar?: string;
   phone?: string;
-  address?: string;
-  city?: string;
-  zipCode?: string;
+  digitalAddress?: string;
+  apartment?: string;
   country?: string;
   createdAt?: string;
+  emailVerified?: boolean;
+  isAdmin?: boolean;
 }
 
 export interface AppState {
@@ -55,15 +62,19 @@ export type AppAction =
   | { type: "LOGOUT" }
   | { type: "UPDATE_USER"; payload: Partial<User> };
 
-// Initial state with localStorage check
+// Initial state with localStorage check but no user persistence
 const getInitialState = (): AppState => {
   try {
     const savedState = localStorage.getItem("omu_app_state");
     if (savedState) {
       const parsed = JSON.parse(savedState);
       return {
-        ...parsed,
+        cart: parsed.cart || [],
+        user: null, // Don't persist user - will be set by Firebase Auth
+        isAuthenticated: false, // Will be set by Firebase Auth
         isCartOpen: false, // Always start with cart closed
+        cartItemCount: parsed.cartItemCount || 0,
+        cartTotal: parsed.cartTotal || 0,
       };
     }
   } catch (error) {
@@ -246,18 +257,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Persist state to localStorage
+  // Set up Firebase Auth state listener
+  useEffect(() => {
+    const unsubscribe = AuthService.onAuthStateChanged((user) => {
+      if (user) {
+        dispatch({ type: "LOGIN", payload: user });
+      } else {
+        dispatch({ type: "LOGOUT" });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Persist cart state to localStorage (not user state)
   useEffect(() => {
     try {
       const stateToSave = {
-        ...state,
-        isCartOpen: false, // Don't persist cart open state
+        cart: state.cart,
+        cartItemCount: state.cartItemCount,
+        cartTotal: state.cartTotal,
       };
       localStorage.setItem("omu_app_state", JSON.stringify(stateToSave));
     } catch (error) {
       console.error("Error saving state:", error);
     }
-  }, [state]);
+  }, [state.cart, state.cartItemCount, state.cartTotal]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
@@ -330,55 +355,63 @@ export const useAuth = () => {
     dispatch({ type: "LOGIN", payload: userWithTimestamp });
   };
 
-  const logout = () => {
-    dispatch({ type: "LOGOUT" });
-    // Clear localStorage on logout
+  const logout = async () => {
     try {
-      localStorage.removeItem("omu_app_state");
+      await AuthService.signOut();
+      // Firebase auth state listener will handle dispatch
     } catch (error) {
-      console.error("Error clearing saved state:", error);
+      console.error("Logout error:", error);
     }
   };
 
-  const updateUser = (updates: Partial<User>) => {
-    dispatch({ type: "UPDATE_USER", payload: updates });
+  const updateUser = async (updates: Partial<User>) => {
+    if (state.user) {
+      try {
+        await AuthService.updateUserProfile(state.user.id, updates);
+        dispatch({ type: "UPDATE_USER", payload: updates });
+      } catch (error) {
+        console.error("Update user error:", error);
+        throw error;
+      }
+    }
   };
 
-  const register = async (userData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-  }) => {
-    // This would normally be an API call
-    // For now, we'll simulate registration
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
-      createdAt: new Date().toISOString(),
-    };
-
-    login(newUser);
-    return newUser;
+  const register = async (userData: SignUpData) => {
+    try {
+      const user = await AuthService.signUp(userData);
+      // Firebase auth state listener will handle login dispatch
+      return user;
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   };
 
-  const signIn = async (credentials: { email: string; password: string }) => {
-    // This would normally be an API call
-    // For demo purposes, we'll accept any email/password
-    const user: User = {
-      id: `user-${Date.now()}`,
-      email: credentials.email,
-      firstName: "Demo",
-      lastName: "User",
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${credentials.email}`,
-      createdAt: new Date().toISOString(),
-    };
+  const signIn = async (credentials: SignInData) => {
+    try {
+      const user = await AuthService.signIn(credentials);
+      // Firebase auth state listener will handle login dispatch
+      return user;
+    } catch (error) {
+      console.error("Sign in error:", error);
+      throw error;
+    }
+  };
 
-    login(user);
-    return user;
+  const resetPassword = async (email: string) => {
+    try {
+      await AuthService.resetPassword(email);
+    } catch (error) {
+      console.error("Password reset error:", error);
+      throw error;
+    }
+  };
+
+  const isAdmin = () => {
+    return (
+      state.user?.isAdmin === true ||
+      state.user?.email === "admin@omufusion.com"
+    );
   };
 
   return {
@@ -389,5 +422,7 @@ export const useAuth = () => {
     updateUser,
     register,
     signIn,
+    resetPassword,
+    isAdmin,
   };
 };

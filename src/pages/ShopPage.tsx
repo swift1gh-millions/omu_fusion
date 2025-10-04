@@ -494,10 +494,10 @@ export const ShopPage: React.FC = memo(() => {
                       <button
                         key={category}
                         onClick={() => handleCategoryChange(category)}
-                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 touch-manipulation ${
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation shadow-md hover:shadow-lg ${
                           selectedCategory === category
-                            ? "bg-accent-gold text-black"
-                            : "bg-white/80 text-gray-600 hover:bg-accent-gold/20"
+                            ? "bg-accent-gold text-black border-2 border-accent-gold shadow-lg"
+                            : "bg-white text-gray-800 border-2 border-gray-200 hover:bg-accent-gold hover:text-black hover:border-accent-gold"
                         }`}>
                         {category}
                       </button>
@@ -509,7 +509,7 @@ export const ShopPage: React.FC = memo(() => {
                     <select
                       value={sortBy}
                       onChange={(e) => handleSortChange(e.target.value)}
-                      className="px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-xs sm:text-sm">
+                      className="px-3 sm:px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-accent-gold text-xs sm:text-sm text-gray-800 font-semibold bg-white shadow-md hover:shadow-lg transition-all duration-300">
                       <option value="name">Sort by Name</option>
                       <option value="price-low">Price: Low to High</option>
                       <option value="price-high">Price: High to Low</option>
@@ -517,22 +517,22 @@ export const ShopPage: React.FC = memo(() => {
                       <option value="newest">Newest First</option>
                     </select>
 
-                    <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="flex border-2 border-gray-200 rounded-lg overflow-hidden shadow-md">
                       <button
                         onClick={() => handleViewModeChange("grid")}
-                        className={`p-2 touch-manipulation ${
+                        className={`p-2 touch-manipulation transition-all duration-300 ${
                           viewMode === "grid"
-                            ? "bg-accent-gold text-black"
-                            : "bg-white text-gray-600 hover:bg-gray-50"
+                            ? "bg-accent-gold text-black border-r border-accent-gold"
+                            : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black border-r border-gray-200"
                         }`}>
                         <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
                       <button
                         onClick={() => handleViewModeChange("list")}
-                        className={`p-2 touch-manipulation ${
+                        className={`p-2 touch-manipulation transition-all duration-300 ${
                           viewMode === "list"
                             ? "bg-accent-gold text-black"
-                            : "bg-white text-gray-600 hover:bg-gray-50"
+                            : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black"
                         }`}>
                         <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>

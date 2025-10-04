@@ -21,7 +21,7 @@ interface FormErrors {
 export const SignInPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const darkBg = useDarkBackground("SignInPage", 0.85);
 
   const [formData, setFormData] = useState<FormData>({
@@ -76,49 +76,22 @@ export const SignInPage: React.FC = () => {
     setErrors({});
 
     try {
-      // Simulate API call - replace with actual authentication
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Mock authentication logic
-          if (
-            formData.email === "demo@example.com" &&
-            formData.password === "password"
-          ) {
-            resolve(true);
-          } else {
-            reject(new Error("Invalid credentials"));
-          }
-        }, 1500);
-      });
-
-      // Create user object
-      const user = {
-        id: "user-123",
+      // Use real Firebase authentication
+      await signIn({
         email: formData.email,
-        firstName: "Demo",
-        lastName: "User",
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.email}`,
-      };
-
-      // Login user
-      login(user);
+        password: formData.password,
+      });
 
       // Redirect to the intended page or home
       navigate(from, { replace: true });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Sign in error:", error);
       setErrors({
-        general: "Invalid email or password. Try demo@example.com / password",
+        general: error.message || "Invalid email or password",
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDemoLogin = () => {
-    setFormData({
-      email: "demo@example.com",
-      password: "password",
-    });
   };
 
   return (
@@ -131,9 +104,7 @@ export const SignInPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}>
           <div className="text-center">
-            <h2 className="mt-6 text-3xl font-extrabold text-white">
-              Welcome Back
-            </h2>
+            <h2 className="mt-6 text-3xl font-extrabold text-white">Login</h2>
             <p className="mt-2 text-sm text-gray-300">
               Sign in to your account to continue
             </p>
@@ -228,15 +199,6 @@ export const SignInPage: React.FC = () => {
                 className="w-full bg-accent-gold hover:bg-accent-orange text-black font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
-
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={handleDemoLogin}
-                  className="w-full text-sm text-gray-400 hover:text-white transition-colors duration-200 py-2 border border-gray-600 rounded-lg hover:border-gray-500">
-                  Use Demo Credentials
-                </button>
-              </div>
 
               <div className="text-center">
                 <p className="text-sm text-gray-400">

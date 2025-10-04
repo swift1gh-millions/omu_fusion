@@ -156,7 +156,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
 
           {/* CTA Button */}
           <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-            <button className="bg-white bg-opacity-20 backdrop-blur-sm text-white font-semibold py-2 px-6 rounded-full hover:bg-accent-gold hover:text-black transition-all duration-300">
+            <button className="bg-white/30 backdrop-blur-sm text-white font-bold py-2 px-6 rounded-full hover:bg-accent-gold hover:text-black transition-all duration-300 shadow-lg border border-white/40 text-shadow">
               Explore More
             </button>
           </div>

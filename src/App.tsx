@@ -5,6 +5,7 @@ import {
   Route,
   useLocation,
 } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { MinimalFooter } from "./components/layout/MinimalFooter";
@@ -29,6 +30,17 @@ import { PrivacyPage } from "./pages/PrivacyPage";
 import { TermsPage } from "./pages/TermsPage";
 import { CookiesPage } from "./pages/CookiesPage";
 
+// Admin Pages
+import { AdminRoute } from "./components/AdminRoute";
+import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
+import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
+import { ProductUploadPage } from "./pages/admin/ProductUploadPage";
+import { ProductManagementPage } from "./pages/admin/ProductManagementPage";
+import { OrderManagementPage } from "./pages/admin/OrderManagementPage";
+import { UserManagementPage } from "./pages/admin/UserManagementPage";
+import { AnalyticsPage } from "./pages/admin/AnalyticsPage";
+import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
+
 function AppContent() {
   // Initialize scroll animations
   useScrollAnimation();
@@ -36,11 +48,12 @@ function AppContent() {
 
   // Determine which footer to show based on current route
   const showFullFooter = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <div className="min-h-screen bg-white">
       <ScrollToTop />
-      <Header />
+      {!isAdminRoute && <Header />}
       <main className="relative">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -48,7 +61,14 @@ function AppContent() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
@@ -76,10 +96,70 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboardPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <AdminRoute>
+                <ProductManagementPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/products/add"
+            element={
+              <AdminRoute>
+                <ProductUploadPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <AdminRoute>
+                <OrderManagementPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <UserManagementPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminRoute>
+                <AnalyticsPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminRoute>
+                <AdminSettingsPage />
+              </AdminRoute>
+            }
+          />
+
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
-      {showFullFooter ? <Footer /> : <MinimalFooter />}
+      {!isAdminRoute && (showFullFooter ? <Footer /> : <MinimalFooter />)}
     </div>
   );
 }
@@ -90,6 +170,39 @@ function App() {
       <Router>
         <SearchProvider>
           <AppContent />
+          <Toaster
+            position="top-center"
+            reverseOrder={false}
+            gutter={8}
+            containerClassName=""
+            containerStyle={{}}
+            toastOptions={{
+              // Define default options
+              className: "",
+              duration: 4000,
+              style: {
+                background: "rgba(0, 0, 0, 0.8)",
+                color: "#fff",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "12px",
+                padding: "16px",
+              },
+              // Default options for specific types
+              success: {
+                duration: 3000,
+                style: {
+                  background: "rgba(34, 197, 94, 0.9)",
+                },
+              },
+              error: {
+                duration: 5000,
+                style: {
+                  background: "rgba(239, 68, 68, 0.9)",
+                },
+              },
+            }}
+          />
         </SearchProvider>
       </Router>
     </AppProvider>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { HiEye, HiEyeOff, HiMail, HiLockClosed, HiUser } from "react-icons/hi";
+import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { useAuth } from "../context/AppContext";
@@ -28,7 +29,7 @@ interface FormErrors {
 
 export const SignUpPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const darkBg = useDarkBackground("SignUpPage", 0.85);
 
   const [formData, setFormData] = useState<FormData>({
@@ -117,38 +118,63 @@ export const SignUpPage: React.FC = () => {
     setErrors({});
 
     try {
-      // Simulate API call - replace with actual registration
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Mock registration logic - check if email already exists
-          if (formData.email === "existing@example.com") {
-            reject(new Error("Email already exists"));
-          } else {
-            resolve(true);
-          }
-        }, 2000);
-      });
-
-      // Create user object
-      const user = {
-        id: `user-${Date.now()}`,
-        email: formData.email,
+      // Use real Firebase authentication
+      console.log("Starting registration process...");
+      await register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.email}`,
-      };
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Login user immediately after registration
-      login(user);
+      console.log("Registration successful!");
 
-      // Redirect to home or dashboard
-      navigate("/", { replace: true });
+      // Show success toast
+      toast.success("Account created successfully! Welcome to OMU Fusion! 🎉", {
+        duration: 4000,
+        position: "top-center",
+      });
+
+      // Redirect to profile page after successful signup
+      navigate("/profile", { replace: true });
     } catch (error: any) {
-      if (error.message === "Email already exists") {
-        setErrors({ email: "An account with this email already exists" });
+      console.error("Registration error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+
+      let errorMessage = "Registration failed. Please try again.";
+
+      // Handle specific Firebase error codes
+      if (error.code) {
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            errorMessage = "An account with this email already exists.";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "Invalid email address.";
+            break;
+          case "auth/operation-not-allowed":
+            errorMessage = "Email/password accounts are not enabled.";
+            break;
+          case "auth/weak-password":
+            errorMessage = "Password is too weak.";
+            break;
+          default:
+            errorMessage = error.message || errorMessage;
+        }
       } else {
-        setErrors({ general: "Registration failed. Please try again." });
+        errorMessage = error.message || errorMessage;
       }
+
+      setErrors({
+        general: errorMessage,
+      });
+
+      // Show error toast for better UX
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -1,24 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { HiLockClosed, HiCreditCard, HiTruck } from "react-icons/hi";
+import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
+import { useAuth } from "../context/AppContext";
 
 interface CheckoutFormData {
   // Contact Information
   email: string;
+  phone: string;
 
   // Shipping Address
   firstName: string;
   lastName: string;
-  address: string;
+  digitalAddress: string;
   apartment: string;
-  city: string;
-  state: string;
-  zipCode: string;
   country: string;
 
   // Payment Information
+  paymentMethod: "card" | "mobile_money";
+  // Mobile Money fields
+  mobileMoneyProvider?: "mtn" | "telecel" | "airteltigo";
+  mobileMoneyNumber?: string;
+  // Card fields for bank payment
   cardNumber: string;
   expiryDate: string;
   cvv: string;
@@ -48,17 +54,20 @@ const orderItems = [
 ];
 
 export const CheckoutPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CheckoutFormData>({
-    email: "",
-    firstName: "",
-    lastName: "",
-    address: "",
-    apartment: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "United States",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    digitalAddress: user?.digitalAddress || "",
+    apartment: user?.apartment || "",
+    country: "Ghana",
+    paymentMethod: "mobile_money",
+    mobileMoneyProvider: "mtn",
+    mobileMoneyNumber: "",
     cardNumber: "",
     expiryDate: "",
     cvv: "",
@@ -70,6 +79,13 @@ export const CheckoutPage: React.FC = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/signin", { state: { from: { pathname: "/checkout" } } });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -86,11 +102,33 @@ export const CheckoutPage: React.FC = () => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      // Save checkout information to user profile if requested
+      if (formData.saveInfo && user) {
+        try {
+          await updateUser({
+            phone: formData.phone,
+            digitalAddress: formData.digitalAddress,
+            apartment: formData.apartment,
+            country: formData.country,
+          });
+          toast.success("Profile information saved!");
+        } catch (saveError) {
+          console.error("Error saving profile:", saveError);
+          toast.error("Failed to save profile information");
+        }
+      }
 
-    setIsProcessing(false);
-    setOrderComplete(true);
+      // Simulate payment processing
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      setIsProcessing(false);
+      setOrderComplete(true);
+    } catch (error) {
+      console.error("Order processing failed:", error);
+      setIsProcessing(false);
+      // Handle error appropriately
+    }
   };
 
   const subtotal = orderItems.reduce(
@@ -100,6 +138,11 @@ export const CheckoutPage: React.FC = () => {
   const shipping = 9.99;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
+
+  // Don't render checkout if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const steps = [
     { number: 1, title: "Contact", description: "Email and shipping details" },
@@ -127,14 +170,14 @@ export const CheckoutPage: React.FC = () => {
                 confirmed.
               </p>
               <p className="text-gray-600 mb-8">
-                You'll receive a confirmation email shortly with tracking
+                You'll receive a confirmation message shortly with order
                 information.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="primary" size="lg">
-                  Track Your Order
-                </Button>
-                <Button variant="secondary" size="lg">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => navigate("/shop")}>
                   Continue Shopping
                 </Button>
               </div>
@@ -239,6 +282,21 @@ export const CheckoutPage: React.FC = () => {
                         />
                       </div>
 
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          required
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                          placeholder="+233 XX XXX XXXX"
+                        />
+                      </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -270,16 +328,16 @@ export const CheckoutPage: React.FC = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Address
+                          Digital Address
                         </label>
                         <input
                           type="text"
-                          name="address"
+                          name="digitalAddress"
                           required
-                          value={formData.address}
+                          value={formData.digitalAddress}
                           onChange={handleInputChange}
                           className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                          placeholder="123 Main Street"
+                          placeholder="e.g. GA-123-4567 or GE-456-7890"
                         />
                       </div>
 
@@ -296,46 +354,21 @@ export const CheckoutPage: React.FC = () => {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            City
-                          </label>
-                          <input
-                            type="text"
-                            name="city"
-                            required
-                            value={formData.city}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            State
-                          </label>
-                          <input
-                            type="text"
-                            name="state"
-                            required
-                            value={formData.state}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            ZIP Code
-                          </label>
-                          <input
-                            type="text"
-                            name="zipCode"
-                            required
-                            value={formData.zipCode}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                          />
-                        </div>
+                      {/* Save Information Checkbox */}
+                      <div className="flex items-center space-x-3 p-4 bg-accent-gold/5 rounded-lg border border-accent-gold/20">
+                        <input
+                          type="checkbox"
+                          id="saveInfo"
+                          name="saveInfo"
+                          checked={formData.saveInfo}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-accent-gold focus:ring-accent-gold border-gray-300 rounded"
+                        />
+                        <label
+                          htmlFor="saveInfo"
+                          className="text-sm text-gray-700 cursor-pointer">
+                          Save this information for faster checkout next time
+                        </label>
                       </div>
                     </div>
                   </GlassCard>
@@ -366,73 +399,169 @@ export const CheckoutPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-6">
+                      {/* Payment Method Selection */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Card Number
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Select Payment Method
                         </label>
-                        <input
-                          type="text"
-                          name="cardNumber"
-                          required
-                          value={formData.cardNumber}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                          placeholder="1234 5678 9012 3456"
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                paymentMethod: "mobile_money",
+                              }))
+                            }
+                            className={`p-4 border-2 rounded-lg transition-all duration-300 ${
+                              formData.paymentMethod === "mobile_money"
+                                ? "border-accent-gold bg-accent-gold/10 text-accent-gold"
+                                : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            }`}>
+                            <div className="text-center">
+                              <h3 className="font-semibold mb-1">
+                                Mobile Money
+                              </h3>
+                              <p className="text-sm opacity-75">
+                                MTN, Telecel, AirtelTigo
+                              </p>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                paymentMethod: "card",
+                              }))
+                            }
+                            className={`p-4 border-2 rounded-lg transition-all duration-300 ${
+                              formData.paymentMethod === "card"
+                                ? "border-accent-gold bg-accent-gold/10 text-accent-gold"
+                                : "border-gray-200 hover:border-gray-300 text-gray-700"
+                            }`}>
+                            <div className="text-center">
+                              <h3 className="font-semibold mb-1">
+                                Card Payment
+                              </h3>
+                              <p className="text-sm opacity-75">
+                                Credit/Debit card
+                              </p>
+                            </div>
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Expiry Date
-                          </label>
-                          <input
-                            type="text"
-                            name="expiryDate"
-                            required
-                            value={formData.expiryDate}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                            placeholder="MM/YY"
-                          />
+                      {/* Mobile Money Fields */}
+                      {formData.paymentMethod === "mobile_money" && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Mobile Money Provider
+                            </label>
+                            <select
+                              name="mobileMoneyProvider"
+                              value={formData.mobileMoneyProvider}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent">
+                              <option value="mtn">MTN MoMo</option>
+                              <option value="telecel">Telecel Cash</option>
+                              <option value="airteltigo">
+                                AirtelTigo Money
+                              </option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Mobile Money Number
+                            </label>
+                            <input
+                              type="tel"
+                              name="mobileMoneyNumber"
+                              required
+                              value={formData.mobileMoneyNumber}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                              placeholder="0XX XXX XXXX"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            CVV
-                          </label>
-                          <input
-                            type="text"
-                            name="cvv"
-                            required
-                            value={formData.cvv}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                            placeholder="123"
-                          />
-                        </div>
-                      </div>
+                      )}
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Name on Card
-                        </label>
-                        <input
-                          type="text"
-                          name="nameOnCard"
-                          required
-                          value={formData.nameOnCard}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                        />
-                      </div>
+                      {/* Card Payment Fields */}
+                      {formData.paymentMethod === "card" && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Card Number
+                            </label>
+                            <input
+                              type="text"
+                              name="cardNumber"
+                              required
+                              value={formData.cardNumber}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                              placeholder="1234 5678 9012 3456"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Expiry Date
+                              </label>
+                              <input
+                                type="text"
+                                name="expiryDate"
+                                required
+                                value={formData.expiryDate}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                                placeholder="MM/YY"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                CVV
+                              </label>
+                              <input
+                                type="text"
+                                name="cvv"
+                                required
+                                value={formData.cvv}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                                placeholder="123"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Name on Card
+                            </label>
+                            <input
+                              type="text"
+                              name="nameOnCard"
+                              required
+                              value={formData.nameOnCard}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                              placeholder="John Doe"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </GlassCard>
 
                   <div className="flex justify-between">
                     <Button
                       type="button"
-                      variant="secondary"
-                      onClick={() => setCurrentStep(1)}>
+                      variant="outline"
+                      onClick={() => setCurrentStep(1)}
+                      className="text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white">
                       Back
                     </Button>
                     <Button
@@ -468,10 +597,10 @@ export const CheckoutPage: React.FC = () => {
                           <p className="font-medium">
                             {formData.firstName} {formData.lastName}
                           </p>
-                          <p>{formData.address}</p>
+                          <p>{formData.digitalAddress}</p>
                           {formData.apartment && <p>{formData.apartment}</p>}
-                          <p>
-                            {formData.city}, {formData.state} {formData.zipCode}
+                          <p className="text-sm text-gray-600">
+                            Phone: {formData.phone}
                           </p>
                         </div>
                       </div>
@@ -481,10 +610,32 @@ export const CheckoutPage: React.FC = () => {
                           Payment Method
                         </h3>
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <p>•••• •••• •••• {formData.cardNumber.slice(-4)}</p>
-                          <p className="text-sm text-gray-600">
-                            Expires {formData.expiryDate}
-                          </p>
+                          {formData.paymentMethod === "mobile_money" ? (
+                            <>
+                              <p className="font-medium">
+                                {formData.mobileMoneyProvider === "mtn" &&
+                                  "MTN MoMo"}
+                                {formData.mobileMoneyProvider === "telecel" &&
+                                  "Telecel Cash"}
+                                {formData.mobileMoneyProvider ===
+                                  "airteltigo" && "AirtelTigo Money"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {formData.mobileMoneyNumber}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-medium">Card Payment</p>
+                              <p className="text-sm text-gray-600">
+                                •••• •••• •••• {formData.cardNumber.slice(-4)}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {formData.nameOnCard} - Expires{" "}
+                                {formData.expiryDate}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -493,8 +644,9 @@ export const CheckoutPage: React.FC = () => {
                   <div className="flex justify-between">
                     <Button
                       type="button"
-                      variant="secondary"
-                      onClick={() => setCurrentStep(2)}>
+                      variant="outline"
+                      onClick={() => setCurrentStep(2)}
+                      className="text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white">
                       Back
                     </Button>
                     <Button

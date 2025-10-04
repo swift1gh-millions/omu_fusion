@@ -4,7 +4,7 @@ import { useAccessibleAnimations } from "../../hooks/useAccessibleAnimations";
 
 interface ButtonProps {
   children: React.ReactNode;
-  variant?: "glass" | "primary" | "secondary" | "outline";
+  variant?: "glass" | "primary" | "secondary" | "outline" | "danger";
   size?: "sm" | "md" | "lg";
   className?: string;
   onClick?: () => void;
@@ -35,12 +35,15 @@ export const Button: React.FC<ButtonProps> = memo(
     );
 
     const variantClasses = {
-      glass: "btn-glass text-white hover:text-accent-gold backdrop-blur-md",
+      glass:
+        "btn-glass text-white hover:text-black backdrop-blur-md font-semibold shadow-lg",
       primary: "btn-primary text-white font-semibold shadow-lg hover:shadow-xl",
       secondary:
-        "bg-transparent border-2 border-white text-white hover:bg-white hover:text-black shadow-md hover:shadow-lg",
+        "bg-gray-800 border-2 border-gray-800 text-white hover:bg-white hover:text-gray-800 shadow-md hover:shadow-lg font-semibold transition-all duration-300",
       outline:
-        "bg-white/80 backdrop-blur-md border-2 border-gray-200 text-gray-700 hover:bg-white hover:border-gray-300 shadow-md hover:shadow-lg hover:scale-105",
+        "bg-white backdrop-blur-md border-2 border-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white hover:border-gray-800 shadow-md hover:shadow-lg hover:scale-105 font-semibold",
+      danger:
+        "bg-red-600 border-2 border-red-600 text-white hover:bg-red-700 hover:border-red-700 shadow-md hover:shadow-lg font-semibold transition-all duration-300",
     };
 
     const sizeClasses = {
