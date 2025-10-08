@@ -3,7 +3,7 @@ import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
 import { OptimizedImage } from "../ui/OptimizedImage";
 import { useNavigate } from "react-router-dom";
-import { useCart, CartItem } from "../../context/AppContext";
+import { useCart, CartItem } from "../../context/EnhancedAppContext";
 
 interface Product {
   id: string;

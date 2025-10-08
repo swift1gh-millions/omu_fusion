@@ -1,6 +1,7 @@
-import React, { useState, useCallback, memo, useMemo } from "react";
+import React, { useState, useCallback, memo, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAccessibleAnimations } from "../../hooks/useAccessibleAnimations";
+import EnhancedImageService from "../../utils/enhancedImageService";
 
 interface OptimizedImageProps {
   src: string;
@@ -14,6 +15,10 @@ interface OptimizedImageProps {
   onLoad?: () => void;
   onError?: () => void;
   priority?: boolean;
+  quality?: number;
+  format?: "webp" | "jpeg" | "png";
+  responsive?: boolean;
+  sizes?: string;
 }
 
 export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
@@ -29,12 +34,38 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
     onLoad,
     onError,
     priority = false,
+    quality = 80,
+    format = "webp",
+    responsive = true,
+    sizes,
   }) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [hasError, setHasError] = useState(false);
     const [currentSrc, setCurrentSrc] = useState(src);
+    const [optimizedSrc, setOptimizedSrc] = useState<string>(src);
+    const [responsiveSrcs, setResponsiveSrcs] = useState<
+      Record<string, string>
+    >({});
 
     const { fadeIn } = useAccessibleAnimations();
+
+    // Generate optimized and responsive URLs
+    useEffect(() => {
+      // Generate optimized URL
+      const optimizedUrl = EnhancedImageService.buildCDNUrl(src, {
+        width,
+        height,
+        quality,
+        format,
+      });
+      setOptimizedSrc(optimizedUrl);
+
+      // Generate responsive URLs if needed
+      if (responsive) {
+        const responsiveUrls = EnhancedImageService.generateResponsiveUrls(src);
+        setResponsiveSrcs(responsiveUrls);
+      }
+    }, [src, width, height, quality, format, responsive]);
 
     const handleLoad = useCallback(() => {
       setIsLoaded(true);

@@ -40,6 +40,7 @@ export default {
         "fade-in": "fadeIn 0.6s ease-out",
         "slide-up": "slideUp 0.8s ease-out",
         "glass-shine": "glassShine 2s ease-in-out infinite",
+        shimmer: "shimmer 3s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -53,6 +54,10 @@ export default {
         glassShine: {
           "0%, 100%": { backgroundPosition: "-200% 0" },
           "50%": { backgroundPosition: "200% 0" },
+        },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(200%)" },
         },
       },
     },

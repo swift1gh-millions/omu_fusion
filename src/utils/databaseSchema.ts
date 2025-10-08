@@ -3,6 +3,15 @@ import { collection, doc, setDoc, addDoc, Timestamp } from "firebase/firestore";
 
 // Database schema and initialization for OMU Fusion
 
+export type UserRole = "customer" | "admin" | "moderator";
+export type AccountStatus = "active" | "suspended" | "pending_verification";
+export type ProductStatus = "none" | "new" | "sale";
+
+export interface Permission {
+  resource: string;
+  actions: string[];
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -12,6 +21,16 @@ export interface UserProfile {
   avatar?: string;
   addresses: Address[];
   preferences: UserPreferences;
+  role: UserRole;
+  permissions: Permission[];
+  accountStatus: AccountStatus;
+  loginCount: number;
+  lastLoginAt?: Timestamp;
+  metadata: {
+    ipAddress?: string;
+    userAgent?: string;
+    registrationSource?: string;
+  };
   createdAt: Timestamp;
   updatedAt: Timestamp;
   emailVerified: boolean;
@@ -42,14 +61,77 @@ export interface UserPreferences {
   favoriteCategories: string[];
 }
 
+export interface Product {
+  id?: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  subcategory?: string;
+  brand?: string;
+  sku?: string;
+  stock: number;
+  images: string[];
+  thumbnail?: string;
+  tags: string[];
+  featured?: boolean;
+  isActive?: boolean;
+  status?: ProductStatus; // New field for product status
+  weight?: number;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  seo: {
+    title?: string;
+    description?: string;
+    keywords?: string[];
+  };
+  variants?: ProductVariant[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  createdBy: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  stock: number;
+  attributes: Record<string, string>; // e.g., { "color": "red", "size": "M" }
+  images?: string[];
+}
+
+export interface Category {
+  id?: string;
+  name: string;
+  description?: string;
+  slug: string;
+  parentId?: string;
+  image?: string;
+  isActive: boolean;
+  sortOrder: number;
+  seo: {
+    title?: string;
+    description?: string;
+    keywords?: string[];
+  };
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 export interface CartItem {
   productId: string;
   productName: string;
+  productImage: string;
   price: number;
   quantity: number;
   size?: string;
   color?: string;
-  image: string;
+  variantId?: string;
+  addedAt: Timestamp;
 }
 
 export interface Cart {
@@ -162,7 +244,7 @@ export class DatabaseInitializer {
       email: userData.email || "",
       firstName: userData.firstName || "",
       lastName: userData.lastName || "",
-      phoneNumber: userData.phoneNumber,
+      phoneNumber: userData.phoneNumber || "",
       addresses: userData.addresses || [],
       preferences: userData.preferences || {
         newsletter: true,
@@ -174,6 +256,11 @@ export class DatabaseInitializer {
         sizePreference: [],
         favoriteCategories: [],
       },
+      role: userData.role || "customer",
+      permissions: userData.permissions || [],
+      accountStatus: userData.accountStatus || "active",
+      loginCount: userData.loginCount || 0,
+      metadata: userData.metadata || {},
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       emailVerified: false,

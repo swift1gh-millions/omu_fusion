@@ -149,7 +149,7 @@ export const HeroSection: React.FC = () => {
           {/* Main Title */}
           <SplitText
             text="Omu Fusion"
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold tracking-wide mb-8 leading-tight font-handwritten"
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold tracking-wide mb-8 leading-tight font-handwritten cursor-default select-none"
             delay={80}
             duration={0.8}
             ease="power3.out"

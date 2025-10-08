@@ -1,17 +1,19 @@
 import React, { useState } from "react";
-import { useAuth } from "../../context/AppContext";
+import { useAuth } from "../../context/EnhancedAppContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Shield, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
+import backgroundImage from "../../assets/backgrounds/dark7.avif";
 
 export const AdminLoginPage: React.FC = () => {
+  const [email, setEmail] = useState("admin@omufusion.com");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,31 +22,8 @@ export const AdminLoginPage: React.FC = () => {
     setError("");
 
     try {
-      // Use Firebase Auth directly for admin login
-      const { signInWithEmailAndPassword } = await import("firebase/auth");
-      const { auth } = await import("../../utils/firebase");
-
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        "admin@omufusion.com",
-        password
-      );
-
-      const firebaseUser = userCredential.user;
-
-      // Create admin user object for context
-      const adminUser = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email!,
-        firstName: "Admin",
-        lastName: "User",
-        isAdmin: true,
-        emailVerified: firebaseUser.emailVerified,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Set user in context
-      login(adminUser);
+      // Use the enhanced auth service with the provided email
+      await signIn(email, password);
 
       toast.success("Welcome, Admin!");
       navigate("/admin/dashboard");
@@ -62,7 +41,7 @@ export const AdminLoginPage: React.FC = () => {
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative flex items-center justify-center px-4 sm:px-6 lg:px-8"
       style={{
-        backgroundImage: `url('/src/assets/backgrounds/dark7.avif')`,
+        backgroundImage: `url(${backgroundImage})`,
       }}>
       {/* Dark overlay for better readability */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
@@ -85,6 +64,24 @@ export const AdminLoginPage: React.FC = () => {
         {/* Login Form */}
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl p-6 sm:p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-white mb-2">
+                Admin Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm"
+                placeholder="Enter admin email"
+              />
+            </div>
             <div>
               <label
                 htmlFor="password"

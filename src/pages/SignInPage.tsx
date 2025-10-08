@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HiEye, HiEyeOff, HiMail, HiLockClosed } from "react-icons/hi";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { useAuth } from "../context/AppContext";
+import { useAuth } from "../context/EnhancedAppContext";
 import { useDarkBackground } from "../utils/backgroundUtils";
 
 interface FormData {
@@ -77,10 +77,7 @@ export const SignInPage: React.FC = () => {
 
     try {
       // Use real Firebase authentication
-      await signIn({
-        email: formData.email,
-        password: formData.password,
-      });
+      await signIn(formData.email, formData.password);
 
       // Redirect to the intended page or home
       navigate(from, { replace: true });

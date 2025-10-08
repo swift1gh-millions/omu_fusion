@@ -5,7 +5,7 @@ import { HiLockClosed, HiCreditCard, HiTruck } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { useAuth } from "../context/AppContext";
+import { useAuth } from "../context/EnhancedAppContext";
 
 interface CheckoutFormData {
   // Contact Information
@@ -55,15 +55,15 @@ const orderItems = [
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, updateUser } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || "",
     phone: user?.phone || "",
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
-    digitalAddress: user?.digitalAddress || "",
-    apartment: user?.apartment || "",
+    digitalAddress: "", // Not available in EnhancedAuthService AuthUser
+    apartment: "", // Not available in EnhancedAuthService AuthUser
     country: "Ghana",
     paymentMethod: "mobile_money",
     mobileMoneyProvider: "mtn",
@@ -106,13 +106,16 @@ export const CheckoutPage: React.FC = () => {
       // Save checkout information to user profile if requested
       if (formData.saveInfo && user) {
         try {
+          // TODO: Implement updateUser in EnhancedAppContext
+          /*
           await updateUser({
             phone: formData.phone,
             digitalAddress: formData.digitalAddress,
             apartment: formData.apartment,
             country: formData.country,
           });
-          toast.success("Profile information saved!");
+          */
+          toast.success("Order placed successfully!");
         } catch (saveError) {
           console.error("Error saving profile:", saveError);
           toast.error("Failed to save profile information");

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
-import { useAuth } from "../../context/AppContext";
+import { useAuth } from "../../context/EnhancedAppContext";
 import { updatePassword, updateEmail } from "firebase/auth";
 import { auth } from "../../utils/firebase";
 import toast from "react-hot-toast";

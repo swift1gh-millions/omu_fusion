@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AppContext";
+import { useAuth } from "../../context/EnhancedAppContext";
 import {
   Home,
   Package,
@@ -46,7 +46,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -85,11 +85,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed on desktop, mobile overlay */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-800/95 to-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:relative lg:flex lg:flex-col`}>
+        } lg:translate-x-0`}>
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-700/50 px-6">
@@ -162,11 +162,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 lg:flex lg:flex-col">
+      {/* Main content - with left margin on desktop to account for fixed sidebar */}
+      <div className="lg:ml-64">
         {/* Mobile header spacer */}
         <div className="lg:hidden h-16"></div>
-        <main className="flex-1 bg-transparent overflow-auto">
+        <main className="min-h-screen bg-transparent">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
             {children}
           </div>

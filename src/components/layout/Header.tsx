@@ -12,7 +12,7 @@ import {
   HiHeart,
   HiCog,
 } from "react-icons/hi";
-import { useCart, useAuth } from "../../context/AppContext";
+import { useCart, useAuth } from "../../context/EnhancedAppContext";
 import { useSearch } from "../../context/SearchContext";
 import { SearchModal } from "../ui/SearchModal";
 import logoBlack from "../../assets/logo_black.png";

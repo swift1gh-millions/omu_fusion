@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../../utils/firebase";
+import { EnhancedProductService } from "../../utils/enhancedProductService";
+import { CategoryService } from "../../utils/categoryService";
+import { useAuth } from "../../context/EnhancedAppContext";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import {
+  Upload,
+  X,
+  Image as ImageIcon,
+  AlertCircle,
+  CheckCircle,
+  RefreshCw,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 interface ProductFormData {
   name: string;
@@ -16,16 +24,6 @@ interface ProductFormData {
   stock: number;
   images: File[];
 }
-
-const categories = [
-  "Sneakers",
-  "Boots",
-  "Sandals",
-  "Formal Shoes",
-  "Casual Shoes",
-  "Athletic Shoes",
-  "Accessories",
-];
 
 export const ProductUploadPage: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>({
@@ -37,10 +35,47 @@ export const ProductUploadPage: React.FC = () => {
     images: [],
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Load categories on component mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const categoryNames = await CategoryService.getCategoryNames();
+      setCategories(categoryNames);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+      toast.error("Failed to load categories");
+      // Use fallback categories
+      setCategories([
+        "Sneakers",
+        "Pants",
+        "Caps",
+        "Boots",
+        "Hoodies",
+        "T-Shirts",
+        "Jackets",
+        "Sandals",
+        "Formal Shoes",
+        "Casual Shoes",
+        "Athletic Shoes",
+        "Accessories",
+      ]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -77,19 +112,6 @@ export const ProductUploadPage: React.FC = () => {
     setImagePreview(newPreviews);
   };
 
-  const uploadImages = async (images: File[]): Promise<string[]> => {
-    const uploadPromises = images.map(async (image, index) => {
-      const imageRef = ref(
-        storage,
-        `products/${Date.now()}_${index}_${image.name}`
-      );
-      await uploadBytes(imageRef, image);
-      return getDownloadURL(imageRef);
-    });
-
-    return Promise.all(uploadPromises);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -98,8 +120,8 @@ export const ProductUploadPage: React.FC = () => {
     try {
       // Validate form
       if (
-        !formData.name ||
-        !formData.description ||
+        !formData.name.trim() ||
+        !formData.description.trim() ||
         !formData.category ||
         formData.price <= 0
       ) {
@@ -110,23 +132,58 @@ export const ProductUploadPage: React.FC = () => {
         throw new Error("Please add at least one product image");
       }
 
-      // Upload images
-      const imageUrls = await uploadImages(formData.images);
+      // Validate image files
+      const validImageTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ];
+      const invalidImages = formData.images.filter(
+        (img) => !validImageTypes.includes(img.type)
+      );
+      if (invalidImages.length > 0) {
+        throw new Error(
+          "Please upload only valid image files (JPEG, PNG, GIF, WebP)"
+        );
+      }
 
-      // Save product to Firestore
-      const productData = {
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
-        category: formData.category,
-        stock: formData.stock,
-        images: imageUrls,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      };
+      // Check file sizes (10MB each)
+      const oversizedImages = formData.images.filter(
+        (img) => img.size > 10 * 1024 * 1024
+      );
+      if (oversizedImages.length > 0) {
+        throw new Error(
+          "Some images are too large. Please keep images under 10MB each."
+        );
+      }
 
-      await addDoc(collection(db, "products"), productData);
+      toast.loading("Uploading product images...", { id: "upload" });
 
+      // Upload images using the service
+      const imageUrls = await EnhancedProductService.uploadProductImages(
+        formData.images
+      );
+
+      toast.loading("Saving product details...", { id: "upload" });
+
+      // Save product using the service
+      const productId = await EnhancedProductService.addProduct(
+        {
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          price: Number(formData.price),
+          category: formData.category,
+          stock: Number(formData.stock),
+          images: imageUrls,
+          featured: false,
+          isActive: true,
+        },
+        user?.id || "admin"
+      );
+
+      toast.success("Product uploaded successfully!", { id: "upload" });
       setSuccess(true);
 
       // Reset form
@@ -139,13 +196,18 @@ export const ProductUploadPage: React.FC = () => {
         images: [],
       });
       setImagePreview([]);
+      setUploadProgress([]);
 
       // Redirect after success
       setTimeout(() => {
         navigate("/admin/products");
       }, 2000);
     } catch (error: any) {
-      setError(error.message);
+      console.error("Upload error:", error);
+      const errorMessage =
+        error.message || "An unexpected error occurred. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage, { id: "upload" });
     } finally {
       setUploading(false);
     }
@@ -264,20 +326,36 @@ export const ProductUploadPage: React.FC = () => {
 
             {/* Category */}
             <div>
-              <label
-                htmlFor="category"
-                className="block text-sm font-semibold text-white mb-2">
-                Category *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-semibold text-white">
+                  Category *
+                </label>
+                <button
+                  type="button"
+                  onClick={loadCategories}
+                  disabled={loadingCategories}
+                  className="text-blue-400 hover:text-blue-300 transition-colors duration-200 disabled:opacity-50">
+                  <RefreshCw
+                    className={`h-4 w-4 ${
+                      loadingCategories ? "animate-spin" : ""
+                    }`}
+                  />
+                </button>
+              </div>
               <select
                 id="category"
                 name="category"
                 required
                 value={formData.category}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base">
+                disabled={loadingCategories}
+                className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base disabled:opacity-50">
                 <option value="" className="bg-slate-800 text-white">
-                  Select a category
+                  {loadingCategories
+                    ? "Loading categories..."
+                    : "Select a category"}
                 </option>
                 {categories.map((category) => (
                   <option
@@ -288,12 +366,18 @@ export const ProductUploadPage: React.FC = () => {
                   </option>
                 ))}
               </select>
+              {categories.length === 0 && !loadingCategories && (
+                <p className="mt-1 text-sm text-yellow-400">
+                  No categories found. Please add categories in the Categories
+                  section first.
+                </p>
+              )}
             </div>
 
             {/* Images */}
             <div>
               <label className="block text-sm font-semibold text-white mb-2">
-                Product Images * (Max 5 images)
+                Product Images * (Max 5 images, 10MB each)
               </label>
               <div className="border-2 border-dashed border-white/30 rounded-lg p-4 sm:p-6 lg:p-8 text-center bg-white/5 backdrop-blur-sm hover:border-white/40 transition-all duration-200">
                 <div className="space-y-3">
@@ -301,16 +385,19 @@ export const ProductUploadPage: React.FC = () => {
                   <div className="flex text-xs sm:text-sm text-gray-300 justify-center">
                     <label
                       htmlFor="images"
-                      className="relative cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg px-3 sm:px-4 py-2 font-medium hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-xs sm:text-sm">
+                      className={`relative cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg px-3 sm:px-4 py-2 font-medium hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-xs sm:text-sm ${
+                        uploading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}>
                       <span>Upload images</span>
                       <input
                         id="images"
                         name="images"
                         type="file"
                         multiple
-                        accept="image/*"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                         className="sr-only"
                         onChange={handleImageChange}
+                        disabled={uploading}
                       />
                     </label>
                     <p className="pl-2 sm:pl-3 self-center text-xs sm:text-sm">
@@ -318,29 +405,47 @@ export const ProductUploadPage: React.FC = () => {
                     </p>
                   </div>
                   <p className="text-xs text-gray-400">
-                    PNG, JPG, GIF up to 10MB each
+                    PNG, JPG, GIF, WebP up to 10MB each
                   </p>
                 </div>
               </div>
 
               {/* Image Preview */}
               {imagePreview.length > 0 && (
-                <div className="mt-4 sm:mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
-                  {imagePreview.map((preview, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 object-cover rounded-lg border border-white/20 shadow-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transform hover:scale-110 transition-all duration-200 shadow-lg opacity-0 group-hover:opacity-100">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="mt-4 sm:mt-6">
+                  <h4 className="text-sm font-medium text-white mb-3">
+                    Selected Images ({imagePreview.length})
+                  </h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
+                    {imagePreview.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 object-cover rounded-lg border border-white/20 shadow-lg"
+                        />
+                        {uploading && uploadProgress[index] !== undefined && (
+                          <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                            {uploadProgress[index] === 100 ? (
+                              <CheckCircle className="h-6 w-6 text-green-400" />
+                            ) : (
+                              <div className="text-white text-xs font-bold">
+                                {uploadProgress[index]}%
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!uploading && (
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transform hover:scale-110 transition-all duration-200 shadow-lg opacity-0 group-hover:opacity-100">
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

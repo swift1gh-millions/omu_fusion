@@ -8,179 +8,37 @@ import { OptimizedImage } from "../components/ui/OptimizedImage";
 import { PageBackground } from "../components/ui/PageBackground";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import {
+  ProductsLoader,
+  ModernProductsLoader,
+} from "../components/ui/ProductsLoader";
+import {
+  EnhancedProductService,
+  ProductFilter,
+} from "../utils/enhancedProductService";
+import { Product } from "../utils/databaseSchema";
+import {
   useDebounce,
   useAnimationVariants,
   useDebouncedValue,
 } from "../hooks/usePerformance";
+import white3 from "../assets/backgrounds/white7.jpg";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
+// Extend database Product interface for shop display
+interface ShopProduct extends Omit<Product, "id"> {
+  id: string;
+  image: string; // Primary image for display
   originalPrice?: number;
-  image: string;
-  category: string;
   isNew?: boolean;
   isOnSale?: boolean;
-  rating: number;
-  reviews: number;
+  rating?: number;
+  reviews?: number;
 }
 
-const mockProducts: Product[] = [
-  // Featured Products from homepage
-  {
-    id: 1,
-    name: "Premium Oversized Hoodie",
-    price: 129,
-    image:
-      "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Hoodies",
-    isNew: true,
-    rating: 4.8,
-    reviews: 124,
-  },
-  {
-    id: 2,
-    name: "Classic Denim Jeans",
-    price: 125,
-    image:
-      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Jeans",
-    rating: 4.7,
-    reviews: 89,
-  },
-  {
-    id: 3,
-    name: "Essential Cotton T-Shirt",
-    price: 99,
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "T-Shirts",
-    isNew: true,
-    rating: 4.9,
-    reviews: 156,
-  },
-  {
-    id: 4,
-    name: "Snapback Baseball Cap",
-    price: 59,
-    image:
-      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Caps",
-    isOnSale: true,
-    rating: 4.6,
-    reviews: 203,
-  },
-  {
-    id: 5,
-    name: "Street Essential Tee",
-    price: 45,
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "T-Shirts",
-    rating: 4.8,
-    reviews: 124,
-  },
-  {
-    id: 6,
-    name: "Urban Cargo Pants",
-    price: 89,
-    image:
-      "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Pants",
-    rating: 4.7,
-    reviews: 167,
-  },
-  {
-    id: 7,
-    name: "Premium Denim Jacket",
-    price: 149,
-    originalPrice: 199,
-    image:
-      "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    category: "Jackets",
-    isOnSale: true,
-    rating: 4.9,
-    reviews: 234,
-  },
-  // Additional products
-  {
-    id: 8,
-    name: "Premium Cotton T-Shirt",
-    price: 49.99,
-    originalPrice: 69.99,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-    category: "T-Shirts",
-    isOnSale: true,
-    rating: 4.8,
-    reviews: 124,
-  },
-  {
-    id: 9,
-    name: "Minimalist Watch",
-    price: 299.99,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
-    category: "Accessories",
-    isNew: true,
-    rating: 4.9,
-    reviews: 89,
-  },
-  {
-    id: 10,
-    name: "Wireless Headphones",
-    price: 199.99,
-    originalPrice: 249.99,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
-    category: "Electronics",
-    isOnSale: true,
-    rating: 4.7,
-    reviews: 256,
-  },
-  {
-    id: 11,
-    name: "Leather Handbag",
-    price: 179.99,
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400",
-    category: "Accessories",
-    rating: 4.6,
-    reviews: 73,
-  },
-  {
-    id: 12,
-    name: "Eco-Friendly Notebook",
-    price: 24.99,
-    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400",
-    category: "Stationery",
-    isNew: true,
-    rating: 4.5,
-    reviews: 41,
-  },
-  {
-    id: 13,
-    name: "Smart Fitness Tracker",
-    price: 149.99,
-    originalPrice: 199.99,
-    image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400",
-    category: "Electronics",
-    isOnSale: true,
-    rating: 4.4,
-    reviews: 189,
-  },
-];
-
-const categories = [
-  "All",
-  "Hoodies",
-  "T-Shirts",
-  "Jeans",
-  "Caps",
-  "Jackets",
-  "Pants",
-  "Accessories",
-];
+// Dynamic categories will be generated from actual products
+// const categories = [...] - removed hardcoded categories
 
 // Memoized ProductCard component for better performance
-const ProductCard = React.memo(({ product }: { product: Product }) => {
+const ProductCard = React.memo(({ product }: { product: ShopProduct }) => {
   return (
     <motion.div
       id={`product-${product.id}`}
@@ -201,12 +59,12 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
             width={400}
             height={256}
           />
-          {product.isNew && (
+          {product.status === "new" && (
             <span className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-green-500 text-white px-2 py-1 text-xs font-bold rounded">
               NEW
             </span>
           )}
-          {product.isOnSale && (
+          {product.status === "sale" && (
             <span className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-red-500 text-white px-2 py-1 text-xs font-bold rounded">
               SALE
             </span>
@@ -223,7 +81,7 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
                 <span
                   key={i}
                   className={`text-xs sm:text-sm ${
-                    i < Math.floor(product.rating)
+                    i < Math.floor(product.rating || 0)
                       ? "text-yellow-400"
                       : "text-gray-300"
                   }`}>
@@ -232,7 +90,7 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
               ))}
             </div>
             <span className="text-gray-500 text-xs ml-2">
-              ({product.reviews})
+              ({product.reviews || 0})
             </span>
           </div>
 
@@ -278,9 +136,10 @@ const ProductCard = React.memo(({ product }: { product: Product }) => {
 
 ProductCard.displayName = "ProductCard";
 
-export const ShopPage: React.FC = memo(() => {
+export const ShopPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<ShopProduct[]>([]);
+  const [categories, setCategories] = useState<string[]>(["All"]); // Dynamic categories
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get("category") || "All"
   );
@@ -291,11 +150,74 @@ export const ShopPage: React.FC = memo(() => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
-  const [isLoading, setIsLoading] = useState(false);
-  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [focusedProduct, setFocusedProduct] = useState<string | null>(
     searchParams.get("product")
   );
+
+  // Load products from Firestore
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+
+        // Use simpler query until indexes are built, then filter client-side
+        const productsResponse = await EnhancedProductService.getProducts(
+          {}, // No server-side filtering to avoid index requirements
+          { field: "name", direction: "asc" } // Use simpler sorting
+        );
+
+        // Filter active products client-side
+        const activeProducts = productsResponse.products.filter(
+          (product) => product.isActive !== false // Include products that are true or undefined
+        );
+
+        // Convert products to shop display format
+        const shopProducts: ShopProduct[] = activeProducts.map((product) => ({
+          ...product,
+          id: product.id || "",
+          image: product.images && product.images[0] ? product.images[0] : "", // Use first image as primary
+          rating: 4.5 + Math.random() * 0.5, // Generate rating 4.5-5.0
+          reviews: Math.floor(Math.random() * 200) + 50, // Generate 50-250 reviews
+          // Status badges now controlled by admin through product.status field
+        }));
+
+        console.log("Products loaded:", shopProducts.length);
+
+        setProducts(shopProducts);
+
+        // Generate dynamic categories from actual products
+        const uniqueCategories = new Set<string>();
+        shopProducts.forEach((product) => {
+          if (product.category) {
+            uniqueCategories.add(product.category);
+          }
+        });
+
+        // Sort categories alphabetically and add "All" at the beginning
+        const dynamicCategories = [
+          "All",
+          ...Array.from(uniqueCategories).sort(),
+        ];
+        setCategories(dynamicCategories);
+      } catch (error) {
+        console.error("❌ Failed to load products:", error);
+        setProducts([]); // Set empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  // Validate selected category when categories change
+  useEffect(() => {
+    if (categories.length > 0 && !categories.includes(selectedCategory)) {
+      setSelectedCategory("All");
+    }
+  }, [categories, selectedCategory]);
 
   // Handle URL parameters for category and product focus
   useEffect(() => {
@@ -336,8 +258,6 @@ export const ShopPage: React.FC = memo(() => {
 
   // Memoized filtered and sorted products
   const filteredProducts = useMemo(() => {
-    setIsLoading(true);
-
     let filtered = [...products]; // Create a new array to avoid mutations
 
     // Filter by category
@@ -374,21 +294,19 @@ export const ShopPage: React.FC = memo(() => {
         case "price-high":
           return b.price - a.price;
         case "rating":
-          return b.rating - a.rating;
+          return (b.rating || 0) - (a.rating || 0);
         case "newest":
-          return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
+          return (b.status === "new" ? 1 : 0) - (a.status === "new" ? 1 : 0);
         default:
           return a.name.localeCompare(b.name);
       }
     });
 
-    // Simulate loading delay for better UX
-    setTimeout(() => setIsLoading(false), 300);
     return sorted;
   }, [products, selectedCategory, debouncedSearchTerm, sortBy, priceRange]);
 
   // Wishlist functionality
-  const toggleWishlist = useCallback((productId: number) => {
+  const toggleWishlist = useCallback((productId: string) => {
     setWishlist((prev) =>
       prev.includes(productId)
         ? prev.filter((id) => id !== productId)
@@ -439,8 +357,18 @@ export const ShopPage: React.FC = memo(() => {
   };
 
   return (
-    <PageBackground variant="light">
-      <div className="pt-32 pb-12 sm:pb-16">
+    <div
+      className="min-h-screen relative"
+      style={{
+        backgroundImage: `url(${white3})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+      }}>
+      {/* Light overlay */}
+      <div className="absolute inset-0 bg-white/20 backdrop-blur-[0.5px]"></div>
+      <div className="relative z-10 pt-32 pb-12 sm:pb-16">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-40 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
@@ -451,10 +379,6 @@ export const ShopPage: React.FC = memo(() => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
               Shop Our Collection
             </h1>
-            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-              Discover premium products crafted with excellence and designed for
-              modern living.
-            </p>
           </motion.div>
 
           {/* Filters*/}
@@ -535,27 +459,29 @@ export const ShopPage: React.FC = memo(() => {
             </GlassCard>
           </motion.div>
 
-          {/* Products Grid */}
-          <motion.div
-            key={`products-${selectedCategory}-${filteredProducts.length}`}
-            className={`grid gap-4 sm:gap-6 ${
-              viewMode === "grid"
-                ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "grid-cols-1"
-            }`}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={`product-${product.id}-${selectedCategory}`}
-                product={product}
-              />
-            ))}
-          </motion.div>
-
-          {/* Empty State */}
-          {filteredProducts.length === 0 && (
+          {/* Products Grid or Loading State */}
+          {isLoading ? (
+            <ProductsLoader viewMode={viewMode} />
+          ) : filteredProducts.length > 0 ? (
+            <motion.div
+              key={`products-${selectedCategory}-${filteredProducts.length}`}
+              className={`grid gap-4 sm:gap-6 ${
+                viewMode === "grid"
+                  ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "grid-cols-1"
+              }`}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={`product-${product.id}-${selectedCategory}`}
+                  product={product}
+                />
+              ))}
+            </motion.div>
+          ) : (
+            /* Empty State */
             <motion.div
               className="text-center py-16"
               initial={{ opacity: 0 }}
@@ -574,8 +500,8 @@ export const ShopPage: React.FC = memo(() => {
           )}
         </div>
       </div>
-    </PageBackground>
+    </div>
   );
-});
+};
 
 ShopPage.displayName = "ShopPage";

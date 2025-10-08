@@ -5,7 +5,7 @@ import { HiEye, HiEyeOff, HiMail, HiLockClosed, HiUser } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { useAuth } from "../context/AppContext";
+import { useAuth } from "../context/EnhancedAppContext";
 import { useDarkBackground } from "../utils/backgroundUtils";
 
 interface FormData {
@@ -29,7 +29,7 @@ interface FormErrors {
 
 export const SignUpPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { signUp } = useAuth();
   const darkBg = useDarkBackground("SignUpPage", 0.85);
 
   const [formData, setFormData] = useState<FormData>({
@@ -120,12 +120,12 @@ export const SignUpPage: React.FC = () => {
     try {
       // Use real Firebase authentication
       console.log("Starting registration process...");
-      await register({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email,
-        password: formData.password,
-      });
+      await signUp(
+        formData.firstName.trim(),
+        formData.lastName.trim(),
+        formData.email,
+        formData.password
+      );
 
       console.log("Registration successful!");
 

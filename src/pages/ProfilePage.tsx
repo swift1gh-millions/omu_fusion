@@ -17,9 +17,11 @@ import {
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { useAuth } from "../context/AppContext";
+import { useAuth } from "../context/EnhancedAppContext";
 import { UserProfileService } from "../utils/userProfileService";
-import { AuthService } from "../utils/authService";
+import EnhancedAuthService from "../utils/enhancedAuthService";
+import { UserStatsService, UserStatistics } from "../utils/userStatsService";
+import { Order } from "../utils/orderService";
 
 interface UserProfile {
   firstName: string;
@@ -35,7 +37,7 @@ interface PurchaseItem {
   id: string;
   orderId: string;
   date: string;
-  status: "delivered" | "shipped" | "processing" | "cancelled";
+  status: "delivered" | "shipped" | "processing" | "cancelled" | "pending";
   total: number;
   items: {
     id: string;
@@ -48,79 +50,8 @@ interface PurchaseItem {
   }[];
 }
 
-// Mock purchase history data
-const mockPurchaseHistory: PurchaseItem[] = [
-  {
-    id: "order-001",
-    orderId: "OMU-2024-001",
-    date: "2024-09-15",
-    status: "delivered",
-    total: 259.97,
-    items: [
-      {
-        id: "1",
-        name: "Premium Cotton T-Shirt",
-        image:
-          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-        price: 49.99,
-        quantity: 2,
-        size: "M",
-        color: "Black",
-      },
-      {
-        id: "2",
-        name: "Designer Jeans",
-        image:
-          "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400",
-        price: 159.99,
-        quantity: 1,
-        size: "32",
-        color: "Indigo",
-      },
-    ],
-  },
-  {
-    id: "order-002",
-    orderId: "OMU-2024-002",
-    date: "2024-09-28",
-    status: "shipped",
-    total: 89.99,
-    items: [
-      {
-        id: "3",
-        name: "Casual Sneakers",
-        image:
-          "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400",
-        price: 89.99,
-        quantity: 1,
-        size: "10",
-        color: "White",
-      },
-    ],
-  },
-  {
-    id: "order-003",
-    orderId: "OMU-2024-003",
-    date: "2024-10-01",
-    status: "processing",
-    total: 199.98,
-    items: [
-      {
-        id: "4",
-        name: "Winter Jacket",
-        image:
-          "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400",
-        price: 199.98,
-        quantity: 1,
-        size: "L",
-        color: "Navy",
-      },
-    ],
-  },
-];
-
 export const ProfilePage: React.FC = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -130,14 +61,29 @@ export const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [userStats, setUserStats] = useState<UserStatistics>({
+    totalOrders: 0,
+    totalSpent: 0,
+    wishlistItems: 0,
+    ordersByStatus: {
+      pending: 0,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    },
+    recentOrdersCount: 0,
+  });
+  const [orderHistory, setOrderHistory] = useState<PurchaseItem[]>([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     email: user?.email || "",
     phone: user?.phone || "",
-    digitalAddress: user?.digitalAddress || "",
-    apartment: user?.apartment || "",
-    country: user?.country || "Ghana",
+    digitalAddress: "", // Not available in EnhancedAuthService AuthUser
+    apartment: "", // Not available in EnhancedAuthService AuthUser
+    country: "Ghana", // Not available in EnhancedAuthService AuthUser
   });
 
   // Load full profile data from Firestore
@@ -174,6 +120,34 @@ export const ProfilePage: React.FC = () => {
     };
 
     loadUserProfile();
+  }, [user?.id]);
+
+  // Load user statistics and order history
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user?.id) {
+        setIsLoadingStats(true);
+        try {
+          // Load user statistics
+          const stats = await UserStatsService.getUserStatistics(user.id);
+          setUserStats(stats);
+
+          // Load order history
+          const orders = await UserStatsService.getUserOrderHistory(user.id);
+          const formattedOrders = orders.map((order) =>
+            UserStatsService.formatOrderForDisplay(order)
+          );
+          setOrderHistory(formattedOrders);
+        } catch (error) {
+          console.error("Error loading user data:", error);
+          toast.error("Failed to load user statistics");
+        } finally {
+          setIsLoadingStats(false);
+        }
+      }
+    };
+
+    loadUserData();
   }, [user?.id]);
 
   // Handle tab parameter from URL
@@ -241,6 +215,8 @@ export const ProfilePage: React.FC = () => {
       }
 
       // Update local user context
+      // TODO: Implement updateUser in EnhancedAppContext
+      /*
       await updateUser({
         firstName: profileData.firstName,
         lastName: profileData.lastName,
@@ -249,6 +225,7 @@ export const ProfilePage: React.FC = () => {
         apartment: profileData.apartment,
         country: profileData.country,
       });
+      */
 
       toast.success("Profile updated successfully!");
       setIsEditing(false);
@@ -290,9 +267,9 @@ export const ProfilePage: React.FC = () => {
           lastName: user?.lastName || "",
           email: user?.email || "",
           phone: user?.phone || "",
-          digitalAddress: user?.digitalAddress || "",
-          apartment: user?.apartment || "",
-          country: user?.country || "Ghana",
+          digitalAddress: "", // Not available in EnhancedAuthService AuthUser
+          apartment: "", // Not available in EnhancedAuthService AuthUser
+          country: "Ghana", // Not available in EnhancedAuthService AuthUser
         });
       }
     }
@@ -321,12 +298,6 @@ export const ProfilePage: React.FC = () => {
       day: "numeric",
     });
   };
-
-  const totalSpent = mockPurchaseHistory
-    .filter((order) => order.status === "delivered")
-    .reduce((sum, order) => sum + order.total, 0);
-
-  const totalOrders = mockPurchaseHistory.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 pt-32 pb-12 relative overflow-hidden">
@@ -591,51 +562,62 @@ export const ProfilePage: React.FC = () => {
                         <h3 className="text-xl font-bold text-gray-900 mb-6">
                           Account Summary
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <motion.div
-                            className="bg-gradient-to-br from-accent-gold via-accent-orange to-yellow-500 p-6 rounded-2xl text-center shadow-xl shadow-accent-gold/20 hover:shadow-2xl hover:shadow-accent-gold/30 transition-all duration-300"
-                            whileHover={{ scale: 1.05, y: -5 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 20,
-                            }}>
-                            <div className="text-3xl font-black text-black mb-2">
-                              {totalOrders}
-                            </div>
-                            <div className="text-sm font-semibold text-black/80">
-                              Total Orders
-                            </div>
-                          </motion.div>
-                          <motion.div
-                            className="bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-green-500/20 hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-300"
-                            whileHover={{ scale: 1.05, y: -5 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 20,
-                            }}>
-                            <div className="text-3xl font-black mb-2">
-                              ${totalSpent.toFixed(2)}
-                            </div>
-                            <div className="text-sm font-semibold text-white/90">
-                              Total Spent
-                            </div>
-                          </motion.div>
-                          <motion.div
-                            className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300"
-                            whileHover={{ scale: 1.05, y: -5 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 20,
-                            }}>
-                            <div className="text-3xl font-black mb-2">0</div>
-                            <div className="text-sm font-semibold text-white/90">
-                              Wishlist Items
-                            </div>
-                          </motion.div>
-                        </div>
+                        {isLoadingStats ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-gold mr-3"></div>
+                            <span className="text-gray-600">
+                              Loading statistics...
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <motion.div
+                              className="bg-gradient-to-br from-accent-gold via-accent-orange to-yellow-500 p-6 rounded-2xl text-center shadow-xl shadow-accent-gold/20 hover:shadow-2xl hover:shadow-accent-gold/30 transition-all duration-300"
+                              whileHover={{ scale: 1.05, y: -5 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                              }}>
+                              <div className="text-3xl font-black text-black mb-2">
+                                {userStats.totalOrders}
+                              </div>
+                              <div className="text-sm font-semibold text-black/80">
+                                Total Orders
+                              </div>
+                            </motion.div>
+                            <motion.div
+                              className="bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-green-500/20 hover:shadow-2xl hover:shadow-green-500/30 transition-all duration-300"
+                              whileHover={{ scale: 1.05, y: -5 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                              }}>
+                              <div className="text-3xl font-black mb-2">
+                                ${userStats.totalSpent.toFixed(2)}
+                              </div>
+                              <div className="text-sm font-semibold text-white/90">
+                                Total Spent
+                              </div>
+                            </motion.div>
+                            <motion.div
+                              className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 p-6 rounded-2xl text-center text-white shadow-xl shadow-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300"
+                              whileHover={{ scale: 1.05, y: -5 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                              }}>
+                              <div className="text-3xl font-black mb-2">
+                                {userStats.wishlistItems}
+                              </div>
+                              <div className="text-sm font-semibold text-white/90">
+                                Wishlist Items
+                              </div>
+                            </motion.div>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -653,86 +635,97 @@ export const ProfilePage: React.FC = () => {
                     Order History
                   </h2>
 
-                  <div className="space-y-6">
-                    {mockPurchaseHistory.map((order) => (
-                      <div
-                        key={order.id}
-                        className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              Order #{order.orderId}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              Placed on {formatDate(order.date)}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                                order.status
-                              )}`}>
-                              {order.status.charAt(0).toUpperCase() +
-                                order.status.slice(1)}
-                            </span>
-                            <p className="text-lg font-bold text-gray-900 mt-1">
-                              ${order.total.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          {order.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center space-x-4">
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-16 h-16 object-cover rounded-lg"
-                              />
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">
-                                  {item.name}
-                                </h4>
+                  {isLoadingStats ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-gold mr-3"></div>
+                      <span className="text-lg text-gray-600">
+                        Loading orders...
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-6">
+                        {orderHistory.map((order) => (
+                          <div
+                            key={order.id}
+                            className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  Order #{order.orderId}
+                                </h3>
                                 <p className="text-sm text-gray-600">
-                                  {item.size && `Size: ${item.size}`}{" "}
-                                  {item.color && `• Color: ${item.color}`}
+                                  Placed on {formatDate(order.date)}
                                 </p>
-                                <p className="text-sm text-gray-600">
-                                  Qty: {item.quantity} • $
-                                  {item.price.toFixed(2)} each
+                              </div>
+                              <div className="text-right">
+                                <span
+                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                    order.status
+                                  )}`}>
+                                  {order.status.charAt(0).toUpperCase() +
+                                    order.status.slice(1)}
+                                </span>
+                                <p className="text-lg font-bold text-gray-900 mt-1">
+                                  ${order.total.toFixed(2)}
                                 </p>
                               </div>
                             </div>
-                          ))}
-                        </div>
 
-                        <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                          {order.status === "delivered" && (
-                            <Button size="sm">Reorder</Button>
-                          )}
-                        </div>
+                            <div className="space-y-3">
+                              {order.items.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex items-center space-x-4">
+                                  <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="w-16 h-16 object-cover rounded-lg"
+                                  />
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-gray-900">
+                                      {item.name}
+                                    </h4>
+                                    <p className="text-sm text-gray-600">
+                                      {item.size && `Size: ${item.size}`}{" "}
+                                      {item.color && `• Color: ${item.color}`}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Qty: {item.quantity} • $
+                                      {item.price.toFixed(2)} each
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                              <Button variant="outline" size="sm">
+                                View Details
+                              </Button>
+                              {order.status === "delivered" && (
+                                <Button size="sm">Reorder</Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
 
-                  {mockPurchaseHistory.length === 0 && (
-                    <div className="text-center py-12">
-                      <HiShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        No orders yet
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        Start shopping to see your orders here
-                      </p>
-                      <Button onClick={() => navigate("/shop")}>
-                        Start Shopping
-                      </Button>
-                    </div>
+                      {orderHistory.length === 0 && !isLoadingStats && (
+                        <div className="text-center py-12">
+                          <HiShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            No orders yet
+                          </h3>
+                          <p className="text-gray-600 mb-6">
+                            Start shopping to see your orders here
+                          </p>
+                          <Button onClick={() => navigate("/shop")}>
+                            Start Shopping
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </GlassCard>
               </motion.div>

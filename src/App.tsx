@@ -9,11 +9,15 @@ import { Toaster } from "react-hot-toast";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { MinimalFooter } from "./components/layout/MinimalFooter";
-import { AppProvider } from "./context/AppContext";
+import { AppProvider } from "./context/EnhancedAppContext";
 import { SearchProvider } from "./context/SearchContext";
 import { ScrollToTop } from "./components/ui/ScrollToTop";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { EnhancedAdminRoute } from "./components/EnhancedAdminRoute";
 import { useScrollAnimation } from "./components/ui/ScrollAnimation";
+import { ErrorBoundary } from "react-error-boundary";
+import monitoringService from "./utils/monitoringService";
+import { useAnalytics } from "./hooks/useAnalytics";
 
 // Pages
 import { HomePage } from "./pages/HomePage";
@@ -31,7 +35,6 @@ import { TermsPage } from "./pages/TermsPage";
 import { CookiesPage } from "./pages/CookiesPage";
 
 // Admin Pages
-import { AdminRoute } from "./components/AdminRoute";
 import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { ProductUploadPage } from "./pages/admin/ProductUploadPage";
@@ -41,10 +44,51 @@ import { OrderManagementPage } from "./pages/admin/OrderManagementPage";
 import { UserManagementPage } from "./pages/admin/UserManagementPage";
 import { AnalyticsPage } from "./pages/admin/AnalyticsPage";
 
+// Error Fallback Component
+function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) {
+  // Track error in monitoring service
+  React.useEffect(() => {
+    monitoringService.trackError(error, {
+      component: "ErrorBoundary",
+      recovery: "fallback_displayed",
+    });
+  }, [error]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Something went wrong
+        </h2>
+        <p className="text-gray-600 mb-4">{error.message}</p>
+        <button
+          onClick={() => {
+            monitoringService.trackEvent("error_recovery_attempt", {
+              error_message: error.message,
+            });
+            resetErrorBoundary();
+          }}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   // Initialize scroll animations
   useScrollAnimation();
   const location = useLocation();
+
+  // Initialize analytics
+  const { trackError } = useAnalytics({ trackPageViews: true });
 
   // Determine which footer to show based on current route
   const showFullFooter = location.pathname === "/";
@@ -102,57 +146,57 @@ function AppContent() {
           <Route
             path="/admin/dashboard"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <AdminDashboardPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
           <Route
             path="/admin/products"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <ProductManagementPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
           <Route
             path="/admin/products/add"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <ProductUploadPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
           <Route
             path="/admin/categories"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <CategoryManagementPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
           <Route
             path="/admin/orders"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <OrderManagementPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
           <Route
             path="/admin/users"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <UserManagementPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
           <Route
             path="/admin/analytics"
             element={
-              <AdminRoute>
+              <EnhancedAdminRoute>
                 <AnalyticsPage />
-              </AdminRoute>
+              </EnhancedAdminRoute>
             }
           />
 
@@ -166,46 +210,48 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProvider>
-      <Router>
-        <SearchProvider>
-          <AppContent />
-          <Toaster
-            position="top-center"
-            reverseOrder={false}
-            gutter={8}
-            containerClassName=""
-            containerStyle={{}}
-            toastOptions={{
-              // Define default options
-              className: "",
-              duration: 4000,
-              style: {
-                background: "rgba(0, 0, 0, 0.8)",
-                color: "#fff",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: "12px",
-                padding: "16px",
-              },
-              // Default options for specific types
-              success: {
-                duration: 3000,
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <AppProvider>
+        <Router>
+          <SearchProvider>
+            <AppContent />
+            <Toaster
+              position="top-center"
+              reverseOrder={false}
+              gutter={8}
+              containerClassName=""
+              containerStyle={{}}
+              toastOptions={{
+                // Define default options
+                className: "",
+                duration: 4000,
                 style: {
-                  background: "rgba(34, 197, 94, 0.9)",
+                  background: "rgba(0, 0, 0, 0.8)",
+                  color: "#fff",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "16px",
                 },
-              },
-              error: {
-                duration: 5000,
-                style: {
-                  background: "rgba(239, 68, 68, 0.9)",
+                // Default options for specific types
+                success: {
+                  duration: 3000,
+                  style: {
+                    background: "rgba(34, 197, 94, 0.9)",
+                  },
                 },
-              },
-            }}
-          />
-        </SearchProvider>
-      </Router>
-    </AppProvider>
+                error: {
+                  duration: 5000,
+                  style: {
+                    background: "rgba(239, 68, 68, 0.9)",
+                  },
+                },
+              }}
+            />
+          </SearchProvider>
+        </Router>
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
 
