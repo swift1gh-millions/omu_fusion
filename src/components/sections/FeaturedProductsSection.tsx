@@ -1,111 +1,224 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
 import { OptimizedImage } from "../ui/OptimizedImage";
 import { useNavigate } from "react-router-dom";
 import { useCart, CartItem } from "../../context/EnhancedAppContext";
+import { EnhancedProductService } from "../../utils/enhancedProductService";
+import { Product } from "../../utils/databaseSchema";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  images: string[];
+// Extended interface for display purposes (includes UI-specific properties)
+interface ProductDisplay extends Product {
   badge?: string;
   isTrending?: boolean;
-  category: string;
+  originalPrice?: number;
 }
 
 export const FeaturedProductsSection: React.FC = () => {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const mustHaveProducts: Product[] = [
+  const { addToCart, cart } = useCart();
+  const [featuredProducts, setFeaturedProducts] = useState<ProductDisplay[]>(
+    []
+  );
+  const [popularProducts, setPopularProducts] = useState<ProductDisplay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+
+        // Fetch featured products from database
+        const featuredResponse = await EnhancedProductService.getProducts(
+          { isActive: true, featured: true },
+          { field: "createdAt", direction: "desc" },
+          { pageSize: 4 }
+        );
+
+        // Fetch popular products from database
+        const popularResponse = await EnhancedProductService.getProducts(
+          { isActive: true },
+          { field: "createdAt", direction: "desc" },
+          { pageSize: 4 }
+        );
+
+        // Convert to ProductDisplay and add UI-specific properties
+        const featuredDisplayProducts: ProductDisplay[] =
+          featuredResponse.products.map((product, index) => ({
+            ...product,
+            badge:
+              index === 0
+                ? "FEATURED"
+                : product.status === "new"
+                ? "NEW"
+                : product.status === "sale"
+                ? "SALE"
+                : undefined,
+          }));
+
+        const popularDisplayProducts: ProductDisplay[] =
+          popularResponse.products.map((product, index) => ({
+            ...product,
+            isTrending: index < 3, // Mark first 3 as trending
+            originalPrice:
+              product.status === "sale"
+                ? Math.round(product.price * 1.25)
+                : undefined, // Calculate original price for sale items
+          }));
+
+        setFeaturedProducts(featuredDisplayProducts);
+        setPopularProducts(popularDisplayProducts);
+      } catch (error) {
+        console.error("Error loading products:", error);
+        // Fallback to sample data if database fails
+        setFeaturedProducts(getFallbackFeaturedProducts());
+        setPopularProducts(getFallbackPopularProducts());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  // Fallback data in case database is empty or fails
+  const getFallbackFeaturedProducts = (): ProductDisplay[] => [
     {
-      id: "1",
+      id: "sample-1",
       name: "Premium Hoodie",
+      description: "High-quality cotton hoodie",
       price: 129,
       images: [
         "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1583743814966-8936f37f4082?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       badge: "MUST HAVE",
       category: "Hoodies",
+      stock: 10,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
     {
-      id: "2",
+      id: "sample-2",
       name: "Classic Denim Jeans",
+      description: "Comfortable denim jeans",
       price: 125,
       images: [
         "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       badge: "LIMITED",
       category: "Jeans",
+      stock: 5,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
     {
-      id: "3",
+      id: "sample-3",
       name: "Essential Cotton T-Shirt",
+      description: "Soft cotton t-shirt",
       price: 99,
       images: [
         "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1583743814966-8936f37f4082?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1571945153237-4929e783af4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       badge: "NEW",
       category: "T-Shirts",
+      stock: 20,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
     {
-      id: "4",
+      id: "sample-4",
       name: "Snapback Baseball Cap",
+      description: "Stylish baseball cap",
       price: 59,
       images: [
         "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1614252234630-a41b1a1bdab1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       badge: "SALE",
       category: "Caps",
+      stock: 15,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
   ];
 
-  const popularProducts: Product[] = [
+  const getFallbackPopularProducts = (): ProductDisplay[] => [
     {
-      id: "5",
+      id: "sample-5",
       name: "Street Essential Tee",
+      description: "Essential street style t-shirt",
       price: 45,
       images: [
         "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1571945153237-4929e783af4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       isTrending: true,
       category: "T-Shirts",
+      stock: 25,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
     {
-      id: "6",
+      id: "sample-6",
       name: "Urban Cargo Pants",
+      description: "Comfortable cargo pants",
       price: 89,
       images: [
         "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       isTrending: true,
       category: "Pants",
+      stock: 12,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
     {
-      id: "7",
+      id: "sample-7",
       name: "Premium Denim Jacket",
+      description: "High-quality denim jacket",
       price: 149,
       originalPrice: 199,
       images: [
         "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1594633313593-bab3825d0caf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
       isTrending: true,
       category: "Jackets",
+      stock: 8,
+      createdAt: new Date() as any,
+      updatedAt: new Date() as any,
+      createdBy: "system",
+      seo: {},
+      tags: [],
     },
   ];
+
+  if (isLoading) {
+    return (
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-700 rounded-t-3xl">
+        <div className="max-w-7xl mx-auto flex justify-center">
+          <LoadingSpinner />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-700 rounded-t-3xl">
@@ -135,12 +248,13 @@ export const FeaturedProductsSection: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {mustHaveProducts.map((product, index) => (
+            {featuredProducts.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 index={index}
                 addToCart={addToCart}
+                cart={cart}
               />
             ))}
           </div>
@@ -165,6 +279,7 @@ export const FeaturedProductsSection: React.FC = () => {
                 product={product}
                 index={index}
                 addToCart={addToCart}
+                cart={cart}
               />
             ))}
           </div>
@@ -186,19 +301,35 @@ export const FeaturedProductsSection: React.FC = () => {
 };
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductDisplay;
   index: number;
-  addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
+  addToCart: (
+    item: Omit<CartItem, "quantity"> & { quantity?: number }
+  ) => Promise<void>;
+  cart: any[];
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   index,
   addToCart,
+  cart,
 }) => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [isAddingToCart, setIsAddingToCart] = React.useState(false);
+  const [isAddedToCart, setIsAddedToCart] = React.useState(false);
+
+  // Check if product is in cart
+  React.useEffect(() => {
+    const inCart = cart.some(
+      (item) =>
+        item.productId === product.id ||
+        (product.id && item.id === parseInt(product.id))
+    );
+    setIsAddedToCart(inCart);
+  }, [cart, product.id]);
 
   React.useEffect(() => {
     const checkMobile = () => {
@@ -212,6 +343,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleCardClick = () => {
     if (isMobile) {
       navigate(`/shop?product=${product.id}`);
+    }
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isAddedToCart || isAddingToCart) return;
+
+    setIsAddingToCart(true);
+    try {
+      await addToCart({
+        id: product.id ? parseInt(product.id) : 0,
+        name: product.name,
+        price: product.price,
+        image: product.images[0],
+        productId: product.id || "",
+      });
+      setIsAddedToCart(true);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -271,12 +423,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
             variant="primary"
             size="sm"
             className="text-xs py-1.5 px-2 sm:hidden opacity-90 hover:opacity-100 shadow-lg"
-            onClick={() => {
-              addToCart({
+            onClick={async () => {
+              if (!product.id) return;
+              await addToCart({
                 id: parseInt(product.id),
                 name: product.name,
                 price: product.price,
                 image: product.images[0],
+                productId: product.id,
               });
             }}>
             <svg
@@ -296,12 +450,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
             variant="primary"
             size="sm"
             className="text-xs py-1.5 px-3 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg"
-            onClick={() => {
-              addToCart({
+            onClick={async () => {
+              if (!product.id) return;
+              await addToCart({
                 id: parseInt(product.id),
                 name: product.name,
                 price: product.price,
                 image: product.images[0],
+                productId: product.id,
               });
             }}>
             Add
@@ -405,12 +561,14 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
               variant="primary"
               size="sm"
               className="text-xs py-1.5 px-2 sm:hidden opacity-90 hover:opacity-100 shadow-lg"
-              onClick={() => {
-                addToCart({
+              onClick={async () => {
+                if (!product.id) return;
+                await addToCart({
                   id: parseInt(product.id),
                   name: product.name,
                   price: product.price,
                   image: product.images[0],
+                  productId: product.id,
                 });
               }}>
               <svg
@@ -430,12 +588,14 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
               variant="primary"
               size="sm"
               className="text-xs py-1.5 px-3 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg"
-              onClick={() => {
-                addToCart({
+              onClick={async () => {
+                if (!product.id) return;
+                await addToCart({
                   id: parseInt(product.id),
                   name: product.name,
                   price: product.price,
                   image: product.images[0],
+                  productId: product.id,
                 });
               }}>
               Add

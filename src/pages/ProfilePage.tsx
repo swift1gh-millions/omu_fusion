@@ -13,10 +13,12 @@ import {
   HiPencil,
   HiCheck,
   HiX,
+  HiCamera,
 } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
+import { AvatarSelector } from "../components/ui/AvatarSelector";
 import { useAuth } from "../context/EnhancedAppContext";
 import { UserProfileService } from "../utils/userProfileService";
 import EnhancedAuthService from "../utils/enhancedAuthService";
@@ -76,6 +78,8 @@ export const ProfilePage: React.FC = () => {
   });
   const [orderHistory, setOrderHistory] = useState<PurchaseItem[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -158,9 +162,35 @@ export const ProfilePage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Redirect if not authenticated
+  // Avatar handlers
+  const handleAvatarEdit = () => {
+    setIsAvatarSelectorOpen(true);
+  };
+
+  const handleAvatarSelect = async (avatarUrl: string, avatarId: string) => {
+    if (!user?.id) return;
+
+    setIsUpdatingAvatar(true);
+    try {
+      await UserProfileService.updateAvatar(user.id, avatarUrl);
+
+      // Update the user context/state here if needed
+      toast.success("Avatar updated successfully!");
+      setIsAvatarSelectorOpen(false);
+
+      // Refresh the page to show updated avatar
+      window.location.reload();
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      toast.error("Failed to update avatar. Please try again.");
+    } finally {
+      setIsUpdatingAvatar(false);
+    }
+  };
+
+  // This should not happen since ProfilePage is wrapped in ProtectedRoute,
+  // but adding this check for TypeScript null safety
   if (!user) {
-    navigate("/signin");
     return null;
   }
 
@@ -319,7 +349,7 @@ export const ProfilePage: React.FC = () => {
               <GlassCard className="p-6 sticky top-8 backdrop-blur-xl bg-white/70 border border-white/20 shadow-xl">
                 <div className="text-center mb-6">
                   <motion.div
-                    className="w-24 h-24 mx-auto mb-4 relative"
+                    className="w-24 h-24 mx-auto mb-4 relative group"
                     whileHover={{ scale: 1.05 }}
                     transition={{
                       type: "spring",
@@ -335,11 +365,22 @@ export const ProfilePage: React.FC = () => {
                       className="w-full h-full rounded-full object-cover ring-4 ring-accent-gold/30 shadow-lg"
                     />
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-md"></div>
+
+                    {/* Avatar Edit Button */}
+                    <motion.button
+                      onClick={handleAvatarEdit}
+                      className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}>
+                      <HiCamera className="w-6 h-6 text-white" />
+                    </motion.button>
                   </motion.div>
                   <h3 className="text-xl font-bold text-gray-900 mb-1">
                     {user.firstName} {user.lastName}
                   </h3>
-                  <p className="text-sm text-gray-600 font-medium">
+                  <p
+                    className="text-sm text-gray-600 font-medium truncate max-w-[250px]"
+                    title={user.email}>
                     {user.email}
                   </p>
                 </div>
@@ -422,7 +463,7 @@ export const ProfilePage: React.FC = () => {
                             <Button
                               onClick={() => setIsEditing(true)}
                               variant="outline"
-                              className="flex items-center bg-gradient-to-r from-accent-gold to-accent-orange hover:from-accent-orange hover:to-accent-gold text-black border-none shadow-lg hover:shadow-xl transition-all duration-300">
+                              className="flex items-center bg-gradient-to-r from-accent-gold to-accent-orange hover:from-accent-orange hover:to-accent-gold !text-gray-700 hover:!text-black border-none shadow-lg hover:shadow-xl transition-all duration-300">
                               <HiPencil className="mr-2 h-4 w-4" />
                               Edit
                             </Button>
@@ -432,14 +473,14 @@ export const ProfilePage: React.FC = () => {
                             <Button
                               onClick={handleSaveProfile}
                               disabled={isSaving}
-                              className="flex items-center bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                              className="flex items-center bg-green-600 hover:bg-green-700 !text-white disabled:opacity-50 disabled:cursor-not-allowed">
                               <HiCheck className="mr-2 h-4 w-4" />
                               {isSaving ? "Saving..." : "Save"}
                             </Button>
                             <Button
                               onClick={handleCancelEdit}
                               variant="outline"
-                              className="flex items-center">
+                              className="flex items-center !text-gray-700 hover:!text-white">
                               <HiX className="mr-2 h-4 w-4" />
                               Cancel
                             </Button>
@@ -700,11 +741,18 @@ export const ProfilePage: React.FC = () => {
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                              <Button variant="outline" size="sm">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="!text-gray-800 hover:!text-white">
                                 View Details
                               </Button>
                               {order.status === "delivered" && (
-                                <Button size="sm">Reorder</Button>
+                                <Button
+                                  size="sm"
+                                  className="!text-white hover:!text-black">
+                                  Reorder
+                                </Button>
                               )}
                             </div>
                           </div>
@@ -720,7 +768,12 @@ export const ProfilePage: React.FC = () => {
                           <p className="text-gray-600 mb-6">
                             Start shopping to see your orders here
                           </p>
-                          <Button onClick={() => navigate("/shop")}>
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={() => navigate("/shop")}
+                            icon={<HiShoppingBag className="w-5 h-5" />}
+                            className="bg-gradient-to-r from-accent-gold via-yellow-500 to-accent-gold hover:from-yellow-500 hover:via-accent-gold hover:to-yellow-500 text-white font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-0">
                             Start Shopping
                           </Button>
                         </div>
@@ -792,12 +845,12 @@ export const ProfilePage: React.FC = () => {
                       <div className="space-y-3">
                         <Button
                           variant="outline"
-                          className="w-full justify-start">
+                          className="w-full justify-start !text-gray-800 hover:!text-white">
                           Change Password
                         </Button>
                         <Button
                           variant="outline"
-                          className="w-full justify-start">
+                          className="w-full justify-start !text-gray-800 hover:!text-white">
                           Two-Factor Authentication
                         </Button>
                       </div>
@@ -812,7 +865,7 @@ export const ProfilePage: React.FC = () => {
                       </p>
                       <Button
                         variant="outline"
-                        className="w-full justify-start border-red-300 text-red-600 hover:bg-red-50">
+                        className="w-full justify-start border-red-300 !text-red-600 hover:!text-red-700 hover:bg-red-50">
                         Delete Account
                       </Button>
                     </div>
@@ -823,6 +876,15 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Avatar Selector Modal */}
+      <AvatarSelector
+        isOpen={isAvatarSelectorOpen}
+        onClose={() => setIsAvatarSelectorOpen(false)}
+        currentAvatar={user.avatar}
+        onAvatarSelect={handleAvatarSelect}
+        isLoading={isUpdatingAvatar}
+      />
     </div>
   );
 };

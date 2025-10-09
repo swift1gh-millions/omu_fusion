@@ -1,107 +1,81 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { HiX, HiPlus, HiMinus, HiTrash } from "react-icons/hi";
+import { HiX, HiPlus, HiMinus, HiTrash, HiShoppingCart } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-  size?: string;
-  color?: string;
-}
-
-const mockCartItems: CartItem[] = [
-  {
-    id: 1,
-    name: "Premium Cotton T-Shirt",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-    quantity: 2,
-    size: "M",
-    color: "Black",
-  },
-  {
-    id: 2,
-    name: "Minimalist Watch",
-    price: 299.99,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
-    quantity: 1,
-    color: "Silver",
-  },
-  {
-    id: 3,
-    name: "Wireless Headphones",
-    price: 199.99,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
-    quantity: 1,
-    color: "White",
-  },
-];
+import { useAuth, useCart } from "../context/EnhancedAppContext";
+import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import toast from "react-hot-toast";
 
 export const CartPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem("cart");
-    return savedCart ? JSON.parse(savedCart) : mockCartItems;
-  });
+  const { user, isAuthenticated } = useAuth();
+  const {
+    cart: cartItems,
+    cartTotal,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+  } = useCart();
+  const [isLoading, setIsLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
-  const [savedForLater, setSavedForLater] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem("savedForLater");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [savedForLater, setSavedForLater] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
 
-  // Persist cart to localStorage
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  // Persist saved items to localStorage
-  useEffect(() => {
-    localStorage.setItem("savedForLater", JSON.stringify(savedForLater));
-  }, [savedForLater]);
-
-  const updateQuantity = (id: number, newQuantity: number) => {
+  const handleUpdateQuantity = async (id: number, newQuantity: number) => {
     if (newQuantity === 0) {
-      removeItem(id);
+      const item = cartItems.find((item) => item.id === id);
+      if (item?.productId) {
+        await handleRemoveItem(item.productId);
+      }
       return;
     }
 
     setIsUpdating((prev) => ({ ...prev, [id]: true }));
-
-    // Simulate API call delay
-    setTimeout(() => {
-      setCartItems((items) =>
-        items.map((item) =>
-          item.id === id ? { ...item, quantity: newQuantity } : item
-        )
-      );
+    try {
+      await updateQuantity(id, newQuantity);
+      toast.success("Quantity updated");
+    } catch (error) {
+      toast.error("Failed to update quantity");
+    } finally {
       setIsUpdating((prev) => ({ ...prev, [id]: false }));
-    }, 300);
+    }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  const handleRemoveItem = async (productId: string) => {
+    try {
+      await removeFromCart(productId);
+      toast.success("Item removed from cart");
+    } catch (error) {
+      toast.error("Failed to remove item");
+    }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+      toast.success("Cart cleared");
+    } catch (error) {
+      toast.error("Failed to clear cart");
+    }
   };
 
   const saveForLater = (id: number) => {
     const item = cartItems.find((item) => item.id === id);
     if (item) {
       setSavedForLater((prev) => [...prev, { ...item, quantity: 1 }]);
-      removeItem(id);
+      if (item.productId) {
+        handleRemoveItem(item.productId);
+      }
     }
   };
 
   const moveToCart = (id: number) => {
     const item = savedForLater.find((item) => item.id === id);
     if (item) {
-      setCartItems((prev) => [...prev, item]);
       setSavedForLater((prev) => prev.filter((item) => item.id !== id));
+      // Note: This would need to be implemented as addToCart in a real scenario
     }
   };
 
@@ -117,10 +91,7 @@ export const CartPage: React.FC = () => {
     }
   };
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const subtotal = cartTotal;
   const discount = appliedPromo === "WELCOME10" ? subtotal * 0.1 : 0;
   const shipping = subtotal > 100 ? 0 : 9.99;
   const tax = (subtotal - discount) * 0.08;
@@ -157,7 +128,9 @@ export const CartPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}>
             <GlassCard className="p-12">
-              <div className="text-6xl mb-6">🛒</div>
+              <div className="text-6xl mb-6 text-gray-400">
+                <HiShoppingCart className="w-16 h-16 mx-auto" />
+              </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
                 Your Cart is Empty
               </h1>
@@ -225,7 +198,7 @@ export const CartPage: React.FC = () => {
                           {item.name}
                         </h3>
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => handleRemoveItem(item.productId!)}
                           className="p-2 text-gray-400 hover:text-red-500 transition-colors duration-300">
                           <HiTrash className="h-5 w-5" />
                         </button>
@@ -251,19 +224,21 @@ export const CartPage: React.FC = () => {
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                           <button
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
+                              handleUpdateQuantity(item.id, item.quantity - 1)
                             }
-                            className="p-2 hover:bg-gray-100 transition-colors duration-300">
+                            disabled={isUpdating[item.id]}
+                            className="p-2 hover:bg-gray-100 transition-colors duration-300 disabled:opacity-50">
                             <HiMinus className="h-4 w-4" />
                           </button>
                           <span className="px-4 py-2 font-medium min-w-[3rem] text-center">
-                            {item.quantity}
+                            {isUpdating[item.id] ? "..." : item.quantity}
                           </span>
                           <button
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
+                              handleUpdateQuantity(item.id, item.quantity + 1)
                             }
-                            className="p-2 hover:bg-gray-100 transition-colors duration-300">
+                            disabled={isUpdating[item.id]}
+                            className="p-2 hover:bg-gray-100 transition-colors duration-300 disabled:opacity-50">
                             <HiPlus className="h-4 w-4" />
                           </button>
                         </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { HiShieldCheck, HiLightBulb, HiUsers, HiHeart } from "react-icons/hi";
 import { Button } from "../components/ui/Button";
 
 export const AboutPage: React.FC = () => {
@@ -32,25 +33,25 @@ export const AboutPage: React.FC = () => {
       title: "Quality",
       description:
         "We never compromise on quality. Every product is crafted with meticulous attention to detail.",
-      icon: "🎯",
+      icon: HiShieldCheck,
     },
     {
       title: "Sustainability",
       description:
         "Environmental responsibility is at the core of everything we do.",
-      icon: "🌱",
+      icon: HiHeart,
     },
     {
       title: "Innovation",
       description:
         "We continuously push boundaries to create products that improve lives.",
-      icon: "💡",
+      icon: HiLightBulb,
     },
     {
       title: "Community",
       description:
         "Building meaningful connections with our customers and partners.",
-      icon: "🤝",
+      icon: HiUsers,
     },
   ];
 
@@ -197,8 +198,8 @@ export const AboutPage: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-accent-gold/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
 
                   <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 text-center h-full shadow-2xl group-hover:border-white/20 transition-all duration-300">
-                    <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">
-                      {value.icon}
+                    <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300 text-accent-gold">
+                      <value.icon className="w-12 h-12 mx-auto" />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-accent-gold transition-colors duration-300">
                       {value.title}

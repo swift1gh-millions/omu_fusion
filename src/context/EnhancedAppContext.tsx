@@ -5,8 +5,13 @@ import EnhancedAuthService, {
 } from "../utils/enhancedAuthService";
 import ErrorService from "../utils/errorService";
 import CacheService from "../utils/cacheService";
+import {
+  CartService,
+  CartItem as FirestoreCartItem,
+} from "../utils/cartService";
+import toast from "react-hot-toast";
 
-// Cart Item interface
+// Cart Item interface (compatible with Firestore CartItem)
 export interface CartItem {
   id: number;
   name: string;
@@ -15,7 +20,14 @@ export interface CartItem {
   quantity: number;
   size?: string;
   color?: string;
+  productId?: string; // For compatibility with Firestore
 }
+
+// Helper function to generate consistent IDs from productId
+const generateCartItemId = (productId: string, index: number = 0): number => {
+  const numericId = parseInt(productId);
+  return isNaN(numericId) ? Date.now() + index : numericId;
+};
 
 // State interface
 interface AppState {
@@ -51,10 +63,14 @@ type AppAction =
   | { type: "MARK_NOTIFICATION_READ"; payload: string }
   | { type: "CLEAR_NOTIFICATIONS" }
   | {
+      type: "SET_CART";
+      payload: { items: CartItem[]; itemCount: number; total: number };
+    }
+  | {
       type: "ADD_TO_CART";
       payload: Omit<CartItem, "quantity"> & { quantity?: number };
     }
-  | { type: "REMOVE_FROM_CART"; payload: { id: number } }
+  | { type: "REMOVE_FROM_CART"; payload: { productId: string } }
   | { type: "UPDATE_CART_QUANTITY"; payload: { id: number; quantity: number } }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_CART" }
@@ -120,6 +136,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case "CLEAR_NOTIFICATIONS":
       return { ...state, notifications: [] };
 
+    case "SET_CART":
+      return {
+        ...state,
+        cart: action.payload.items,
+        cartItemCount: action.payload.itemCount,
+        cartTotal: action.payload.total,
+      };
+
     case "ADD_TO_CART": {
       const existingItem = state.cart.find(
         (item) =>
@@ -167,7 +191,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case "REMOVE_FROM_CART": {
       const newCart = state.cart.filter(
-        (item) => item.id !== action.payload.id
+        (item) => item.productId !== action.payload.productId
       );
       const cartItemCount = newCart.reduce(
         (total, item) => total + item.quantity,
@@ -188,10 +212,17 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case "UPDATE_CART_QUANTITY": {
       if (action.payload.quantity <= 0) {
-        return appReducer(state, {
-          type: "REMOVE_FROM_CART",
-          payload: { id: action.payload.id },
-        });
+        // Find the productId for the given id to remove it
+        const itemToRemove = state.cart.find(
+          (item) => item.id === action.payload.id
+        );
+        if (itemToRemove?.productId) {
+          return appReducer(state, {
+            type: "REMOVE_FROM_CART",
+            payload: { productId: itemToRemove.productId },
+          });
+        }
+        return state;
       }
 
       const newCart = state.cart.map((item) =>
@@ -273,10 +304,12 @@ interface AppContextType extends AppState {
   clearError: () => void;
 
   // Cart methods
-  addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
-  removeFromCart: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (
+    item: Omit<CartItem, "quantity"> & { quantity?: number }
+  ) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  updateQuantity: (id: number, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   toggleCart: () => void;
   setCartOpen: (isOpen: boolean) => void;
 }
@@ -309,6 +342,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch({ type: "SET_THEME", payload: savedTheme });
     }
   }, []);
+
+  // Load guest cart from localStorage if user is not authenticated
+  useEffect(() => {
+    if (!state.user?.id && !state.isLoading) {
+      const guestCart = localStorage.getItem("guestCart");
+      if (guestCart) {
+        try {
+          const cartItems: CartItem[] = JSON.parse(guestCart);
+          const itemCount = cartItems.reduce(
+            (total, item) => total + item.quantity,
+            0
+          );
+          const total = cartItems.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
+          );
+
+          dispatch({
+            type: "SET_CART",
+            payload: { items: cartItems, itemCount, total },
+          });
+        } catch (error) {
+          console.error("Error loading guest cart:", error);
+          localStorage.removeItem("guestCart");
+        }
+      }
+    }
+  }, [state.user?.id, state.isLoading]);
 
   // Apply theme to document
   useEffect(() => {
@@ -446,23 +507,271 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "SET_ERROR", payload: null });
   };
 
+  // Load user cart when user changes
+  useEffect(() => {
+    const loadUserCart = async () => {
+      if (state.user?.id) {
+        try {
+          const userCart = await CartService.getUserCart(state.user.id);
+          if (userCart) {
+            // Convert Firestore cart items to local cart items
+            const cartItems: CartItem[] = userCart.items.map((item, index) => ({
+              id: generateCartItemId(item.productId, index),
+              name: item.productName,
+              price: item.price,
+              image: item.productImage,
+              quantity: item.quantity,
+              productId: item.productId,
+            }));
+
+            const itemCount = cartItems.reduce(
+              (total, item) => total + item.quantity,
+              0
+            );
+            const total = cartItems.reduce(
+              (total, item) => total + item.price * item.quantity,
+              0
+            );
+
+            dispatch({
+              type: "SET_CART",
+              payload: { items: cartItems, itemCount, total },
+            });
+          } else {
+            // No cart exists, start with empty cart
+            dispatch({
+              type: "SET_CART",
+              payload: { items: [], itemCount: 0, total: 0 },
+            });
+          }
+        } catch (error) {
+          console.error("Error loading user cart:", error);
+          addNotification("error", "Failed to load your cart");
+        }
+      } else {
+        // User not logged in, clear cart
+        dispatch({
+          type: "SET_CART",
+          payload: { items: [], itemCount: 0, total: 0 },
+        });
+      }
+    };
+
+    loadUserCart();
+  }, [state.user?.id]);
+
   // Cart methods
-  const addToCart = (
+  const addToCart = async (
     item: Omit<CartItem, "quantity"> & { quantity?: number }
-  ): void => {
-    dispatch({ type: "ADD_TO_CART", payload: item });
+  ): Promise<void> => {
+    const cartItem: CartItem = {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      quantity: item.quantity || 1,
+      size: item.size,
+      color: item.color,
+      productId: item.productId || item.id.toString(),
+    };
+
+    if (state.user?.id) {
+      // Authenticated user - use database
+      try {
+        const firestoreCartItem = {
+          productId: cartItem.productId || cartItem.id.toString(),
+          productName: cartItem.name,
+          productImage: cartItem.image,
+          price: cartItem.price,
+          quantity: cartItem.quantity,
+        };
+
+        await CartService.addToCart(state.user.id, firestoreCartItem);
+
+        // Reload cart from database
+        const userCart = await CartService.getUserCart(state.user.id);
+        if (userCart) {
+          const cartItems: CartItem[] = userCart.items.map((dbItem, index) => ({
+            id: generateCartItemId(dbItem.productId, index),
+            name: dbItem.productName,
+            price: dbItem.price,
+            image: dbItem.productImage,
+            quantity: dbItem.quantity,
+            productId: dbItem.productId,
+          }));
+
+          const itemCount = cartItems.reduce(
+            (total, item) => total + item.quantity,
+            0
+          );
+          const total = cartItems.reduce(
+            (total, item) => total + item.price * item.quantity,
+            0
+          );
+
+          dispatch({
+            type: "SET_CART",
+            payload: { items: cartItems, itemCount, total },
+          });
+        }
+
+        addNotification("success", `${item.name} added to cart!`);
+      } catch (error) {
+        console.error("Error adding to cart:", error);
+        addNotification("error", "Failed to add item to cart");
+      }
+    } else {
+      // Guest user - use localStorage
+      try {
+        const existingItem = state.cart.find(
+          (existing) =>
+            existing.id === cartItem.id &&
+            existing.size === cartItem.size &&
+            existing.color === cartItem.color
+        );
+
+        let newCart: CartItem[];
+        if (existingItem) {
+          newCart = state.cart.map((existing) =>
+            existing.id === cartItem.id &&
+            existing.size === cartItem.size &&
+            existing.color === cartItem.color
+              ? { ...existing, quantity: existing.quantity + cartItem.quantity }
+              : existing
+          );
+        } else {
+          newCart = [...state.cart, cartItem];
+        }
+
+        // Save to localStorage for guests
+        localStorage.setItem("guestCart", JSON.stringify(newCart));
+
+        const itemCount = newCart.reduce(
+          (total, item) => total + item.quantity,
+          0
+        );
+        const total = newCart.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
+
+        dispatch({
+          type: "SET_CART",
+          payload: { items: newCart, itemCount, total },
+        });
+
+        addNotification("success", `${item.name} added to cart!`);
+      } catch (error) {
+        console.error("Error adding to guest cart:", error);
+        addNotification("error", "Failed to add item to cart");
+      }
+    }
   };
 
-  const removeFromCart = (id: number): void => {
-    dispatch({ type: "REMOVE_FROM_CART", payload: { id } });
+  const removeFromCart = async (productId: string): Promise<void> => {
+    if (!state.user?.id) {
+      addNotification("error", "Please sign in to manage your cart");
+      return;
+    }
+
+    try {
+      await CartService.removeFromCart(state.user.id, productId);
+
+      // Reload cart from database
+      const userCart = await CartService.getUserCart(state.user.id);
+      if (userCart) {
+        const cartItems: CartItem[] = userCart.items.map((item, index) => ({
+          id: generateCartItemId(item.productId, index),
+          name: item.productName,
+          price: item.price,
+          image: item.productImage,
+          quantity: item.quantity,
+          productId: item.productId,
+        }));
+
+        const itemCount = cartItems.reduce(
+          (total, item) => total + item.quantity,
+          0
+        );
+        const total = cartItems.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
+
+        dispatch({
+          type: "SET_CART",
+          payload: { items: cartItems, itemCount, total },
+        });
+      }
+
+      addNotification("success", "Item removed from cart");
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+      addNotification("error", "Failed to remove item from cart");
+    }
   };
 
-  const updateQuantity = (id: number, quantity: number): void => {
-    dispatch({ type: "UPDATE_CART_QUANTITY", payload: { id, quantity } });
+  const updateQuantity = async (
+    id: number,
+    quantity: number
+  ): Promise<void> => {
+    if (!state.user?.id) {
+      addNotification("error", "Please sign in to manage your cart");
+      return;
+    }
+
+    try {
+      await CartService.updateQuantity(state.user.id, id.toString(), quantity);
+
+      // Reload cart from database
+      const userCart = await CartService.getUserCart(state.user.id);
+      if (userCart) {
+        const cartItems: CartItem[] = userCart.items.map((item, index) => ({
+          id: generateCartItemId(item.productId, index),
+          name: item.productName,
+          price: item.price,
+          image: item.productImage,
+          quantity: item.quantity,
+          productId: item.productId,
+        }));
+
+        const itemCount = cartItems.reduce(
+          (total, item) => total + item.quantity,
+          0
+        );
+        const total = cartItems.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
+
+        dispatch({
+          type: "SET_CART",
+          payload: { items: cartItems, itemCount, total },
+        });
+      }
+    } catch (error) {
+      console.error("Error updating cart quantity:", error);
+      addNotification("error", "Failed to update item quantity");
+    }
   };
 
-  const clearCart = (): void => {
-    dispatch({ type: "CLEAR_CART" });
+  const clearCart = async (): Promise<void> => {
+    if (!state.user?.id) {
+      addNotification("error", "Please sign in to manage your cart");
+      return;
+    }
+
+    try {
+      await CartService.clearCart(state.user.id);
+      dispatch({
+        type: "SET_CART",
+        payload: { items: [], itemCount: 0, total: 0 },
+      });
+      addNotification("success", "Cart cleared");
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      addNotification("error", "Failed to clear cart");
+    }
   };
 
   const toggleCart = (): void => {

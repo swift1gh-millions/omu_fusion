@@ -29,6 +29,7 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { SignInPage } from "./pages/SignInPage";
 import { SignUpPage } from "./pages/SignUpPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { WishlistPage } from "./pages/WishlistPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { TermsPage } from "./pages/TermsPage";
@@ -43,6 +44,7 @@ import { CategoryManagementPage } from "./pages/admin/CategoryManagementPage";
 import { OrderManagementPage } from "./pages/admin/OrderManagementPage";
 import { UserManagementPage } from "./pages/admin/UserManagementPage";
 import { AnalyticsPage } from "./pages/admin/AnalyticsPage";
+import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
 
 // Error Fallback Component
 function ErrorFallback({
@@ -104,7 +106,14 @@ function AppContent() {
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="/cart" element={<CartPage />} />
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <CartPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/checkout"
             element={
@@ -137,6 +146,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <WishlistPage />
               </ProtectedRoute>
             }
           />
@@ -196,6 +213,14 @@ function AppContent() {
             element={
               <EnhancedAdminRoute>
                 <AnalyticsPage />
+              </EnhancedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <EnhancedAdminRoute>
+                <AdminSettingsPage />
               </EnhancedAdminRoute>
             }
           />

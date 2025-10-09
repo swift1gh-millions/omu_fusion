@@ -14,6 +14,7 @@ import {
 } from "react-icons/hi";
 import { useCart, useAuth } from "../../context/EnhancedAppContext";
 import { useSearch } from "../../context/SearchContext";
+import { useWishlist } from "../../hooks/useWishlist";
 import { SearchModal } from "../ui/SearchModal";
 import logoBlack from "../../assets/logo_black.png";
 import logoWhite from "../../assets/logo_white.png";
@@ -25,6 +26,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const { cartItemCount, toggleCart } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
+  const { wishlistCount } = useWishlist();
   const { openSearch } = useSearch();
 
   // Determine if we're on a page with light background
@@ -250,10 +252,12 @@ export const Header: React.FC = () => {
                             transition={{ duration: 0.2 }}
                             className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                             <div className="px-4 py-2 border-b border-gray-100">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-gray-900 truncate">
                                 {user?.firstName} {user?.lastName}
                               </p>
-                              <p className="text-sm text-gray-500 truncate">
+                              <p
+                                className="text-sm text-gray-500 truncate max-w-[180px]"
+                                title={user?.email}>
                                 {user?.email}
                               </p>
                             </div>
@@ -274,9 +278,16 @@ export const Header: React.FC = () => {
                             <Link
                               to="/wishlist"
                               onClick={() => setShowUserMenu(false)}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200">
-                              <HiHeart className="mr-3 h-4 w-4" />
-                              Wishlist
+                              className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                              <div className="flex items-center">
+                                <HiHeart className="mr-3 h-4 w-4" />
+                                Wishlist
+                              </div>
+                              {wishlistCount > 0 && (
+                                <span className="bg-accent-gold text-white text-xs font-medium px-2 py-1 rounded-full">
+                                  {wishlistCount}
+                                </span>
+                              )}
                             </Link>
                             <Link
                               to="/profile?tab=settings"

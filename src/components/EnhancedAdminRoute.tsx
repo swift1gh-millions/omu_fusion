@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/EnhancedAppContext";
-import { LoadingSpinner } from "./ui/LoadingSpinner";
+import { FullscreenLoader } from "./ui/ModernLoader";
 
 interface EnhancedAdminRouteProps {
   children: React.ReactNode;
@@ -27,14 +27,10 @@ export const EnhancedAdminRoute: React.FC<EnhancedAdminRouteProps> = ({
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-        <div className="text-center">
-          <LoadingSpinner />
-          <p className="mt-4 text-white text-lg">
-            Checking access permissions...
-          </p>
-        </div>
-      </div>
+      <FullscreenLoader
+        message="Verifying Access"
+        submessage="Checking admin permissions..."
+      />
     );
   }
 

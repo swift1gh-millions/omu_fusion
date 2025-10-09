@@ -20,6 +20,18 @@ export interface Order {
   }>;
   total: number;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  shippingAddress?: {
+    firstName: string;
+    lastName: string;
+    digitalAddress: string;
+    apartment: string;
+    country: string;
+  };
+  contactInfo?: {
+    email: string;
+    phone: string;
+  };
+  paymentMethod?: "card" | "mobile_money";
   createdAt: Timestamp;
 }
 

@@ -347,8 +347,12 @@ export const UserManagementPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 flex items-center">
-                          <Mail className="h-4 w-4 mr-1" />
-                          {user.email}
+                          <Mail className="h-4 w-4 mr-1 flex-shrink-0" />
+                          <span
+                            className="truncate max-w-[200px]"
+                            title={user.email}>
+                            {user.email}
+                          </span>
                         </div>
                         {user.phoneNumber && (
                           <div className="text-sm text-gray-500 flex items-center mt-1">
@@ -447,7 +451,9 @@ export const UserManagementPage: React.FC = () => {
                     <label className="text-sm font-medium text-gray-500">
                       Email
                     </label>
-                    <p className="text-sm text-gray-900">
+                    <p
+                      className="text-sm text-gray-900 truncate max-w-[300px]"
+                      title={selectedUser.email}>
                       {selectedUser.email}
                     </p>
                   </div>

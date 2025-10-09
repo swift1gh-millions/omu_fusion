@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion } from "framer-motion";
-import { HiViewGrid, HiViewList, HiFilter, HiSearch } from "react-icons/hi";
+import {
+  HiViewGrid,
+  HiViewList,
+  HiFilter,
+  HiSearch,
+  HiHeart,
+} from "react-icons/hi";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { OptimizedImage } from "../components/ui/OptimizedImage";
 import { PageBackground } from "../components/ui/PageBackground";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
+import { ProductModal } from "../components/ui/ProductModal";
 import {
   ProductsLoader,
   ModernProductsLoader,
@@ -21,6 +28,8 @@ import {
   useAnimationVariants,
   useDebouncedValue,
 } from "../hooks/usePerformance";
+import { useCart } from "../context/EnhancedAppContext";
+import { useWishlist } from "../hooks/useWishlist";
 import white3 from "../assets/backgrounds/white7.jpg";
 
 // Extend database Product interface for shop display
@@ -38,101 +47,200 @@ interface ShopProduct extends Omit<Product, "id"> {
 // const categories = [...] - removed hardcoded categories
 
 // Memoized ProductCard component for better performance
-const ProductCard = React.memo(({ product }: { product: ShopProduct }) => {
-  return (
-    <motion.div
-      id={`product-${product.id}`}
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 },
-      }}
-      whileHover={{ y: -5 }}
-      className="group touch-manipulation"
-      style={{ scrollMarginTop: "100px" }}>
-      <GlassCard className="overflow-hidden h-full relative">
-        <div className="relative">
-          <OptimizedImage
-            src={product.image}
-            alt={product.name}
-            className="w-full h-48 sm:h-56 lg:h-64 object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-            width={400}
-            height={256}
-          />
-          {product.status === "new" && (
-            <span className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-green-500 text-white px-2 py-1 text-xs font-bold rounded">
-              NEW
-            </span>
-          )}
-          {product.status === "sale" && (
-            <span className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-red-500 text-white px-2 py-1 text-xs font-bold rounded">
-              SALE
-            </span>
-          )}
-        </div>
-        <div className="p-3 sm:p-4 lg:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
-            {product.name}
-          </h3>
+const ProductCard = React.memo(
+  ({
+    product,
+    addToCart,
+    onProductClick,
+    cart,
+    isInWishlist,
+    toggleWishlist,
+  }: {
+    product: ShopProduct;
+    addToCart: (item: any) => Promise<void>;
+    onProductClick: (product: ShopProduct) => void;
+    cart: any[];
+    isInWishlist: (productId: string) => boolean;
+    toggleWishlist: (product: {
+      id: string;
+      name: string;
+      image: string;
+      price: number;
+    }) => Promise<void>;
+  }) => {
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [isAddedToCart, setIsAddedToCart] = useState(false);
 
-          <div className="flex items-center mb-3">
-            <div className="flex text-yellow-400">
-              {Array.from({ length: 5 }, (_, i) => (
-                <span
-                  key={i}
-                  className={`text-xs sm:text-sm ${
-                    i < Math.floor(product.rating || 0)
-                      ? "text-yellow-400"
-                      : "text-gray-300"
-                  }`}>
-                  ★
-                </span>
-              ))}
-            </div>
-            <span className="text-gray-500 text-xs ml-2">
-              ({product.reviews || 0})
-            </span>
+    // Check if product is in cart
+    useEffect(() => {
+      const inCart = cart.some(
+        (item) =>
+          item.productId === product.id || item.id === parseInt(product.id)
+      );
+      setIsAddedToCart(inCart);
+    }, [cart, product.id]);
+
+    const handleAddToCart = async (e?: React.MouseEvent) => {
+      e?.stopPropagation(); // Prevent opening modal if event is provided
+      if (isAddedToCart || isAddingToCart) return;
+
+      setIsAddingToCart(true);
+      try {
+        await addToCart({
+          id: parseInt(product.id),
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          productId: product.id,
+        });
+        setIsAddedToCart(true);
+      } catch (error) {
+        console.error("Error adding to cart:", error);
+      } finally {
+        setIsAddingToCart(false);
+      }
+    };
+
+    return (
+      <motion.div
+        id={`product-${product.id}`}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
+        whileHover={{ y: -5 }}
+        className="group touch-manipulation cursor-pointer"
+        style={{ scrollMarginTop: "100px" }}
+        onClick={() => onProductClick(product)}>
+        <GlassCard className="overflow-hidden h-full relative">
+          <div className="relative">
+            <OptimizedImage
+              src={product.image}
+              alt={product.name}
+              className="w-full h-48 sm:h-56 lg:h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+              width={400}
+              height={256}
+            />
+            {product.status === "new" && (
+              <span className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-green-500 text-white px-2 py-1 text-xs font-bold rounded">
+                NEW
+              </span>
+            )}
+            {product.status === "sale" && (
+              <span className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-red-500 text-white px-2 py-1 text-xs font-bold rounded">
+                SALE
+              </span>
+            )}
+
+            {/* Wishlist Heart Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleWishlist({
+                  id: product.id,
+                  name: product.name,
+                  image: product.image,
+                  price: product.price,
+                });
+              }}
+              className="absolute top-2 sm:top-3 right-2 sm:right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-110 z-10"
+              style={{
+                right: product.status === "sale" ? "60px" : "8px",
+                top: "8px",
+              }}>
+              <HiHeart
+                className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-300 ${
+                  isInWishlist(product.id)
+                    ? "text-red-500 fill-current"
+                    : "text-gray-600 hover:text-red-500"
+                }`}
+              />
+            </button>
           </div>
+          <div className="p-3 sm:p-4 lg:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 group-hover:text-accent-gold transition-colors duration-300 line-clamp-2 leading-tight">
+              {product.name}
+            </h3>
 
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-lg sm:text-xl font-bold text-gray-900">
-                  ₵{product.price}
-                </span>
-                {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through">
-                    ₵{product.originalPrice}
+            <div className="flex items-center mb-3">
+              <div className="flex text-yellow-400">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`text-xs sm:text-sm ${
+                      i < Math.floor(product.rating || 0)
+                        ? "text-yellow-400"
+                        : "text-gray-300"
+                    }`}>
+                    ★
                   </span>
-                )}
+                ))}
               </div>
+              <span className="text-gray-500 text-xs ml-2">
+                ({product.reviews || 0})
+              </span>
             </div>
 
-            {/* Add to Cart Button - Inline with price */}
-            <Button
-              variant="primary"
-              size="sm"
-              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 text-xs sm:text-sm touch-manipulation shadow-lg hover:shadow-xl transform hover:scale-105">
-              <span className="hidden sm:inline">Add to Cart</span>
-              <svg
-                className="w-4 h-4 sm:hidden"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg sm:text-xl font-bold text-gray-900">
+                    ₵{product.price}
+                  </span>
+                  {product.originalPrice && (
+                    <span className="text-sm text-gray-500 line-through">
+                      ₵{product.originalPrice}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Enhanced Add to Cart Button */}
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={isAddingToCart || isAddedToCart}
+                className={`opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 text-xs sm:text-sm touch-manipulation shadow-lg hover:shadow-xl transform hover:scale-105 min-w-[80px] ${
+                  isAddedToCart
+                    ? "bg-green-600 hover:bg-green-700 cursor-default"
+                    : isAddingToCart
+                    ? "bg-accent-gold/70 cursor-wait"
+                    : ""
+                }`}
+                onClick={handleAddToCart}>
+                {isAddingToCart ? (
+                  <div className="flex items-center justify-center space-x-1">
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="hidden sm:inline text-xs">Adding...</span>
+                  </div>
+                ) : isAddedToCart ? (
+                  <span className="text-xs sm:text-sm">Added ✓</span>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Add to Cart</span>
+                    <svg
+                      className="w-4 h-4 sm:hidden"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
-      </GlassCard>
-    </motion.div>
-  );
-});
+        </GlassCard>
+      </motion.div>
+    );
+  }
+);
 
 ProductCard.displayName = "ProductCard";
 
@@ -151,10 +259,43 @@ export const ShopPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [isLoading, setIsLoading] = useState(true);
-  const [wishlist, setWishlist] = useState<string[]>([]);
   const [focusedProduct, setFocusedProduct] = useState<string | null>(
     searchParams.get("product")
   );
+
+  // Hooks
+  const { cart, addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  // Product Modal State
+  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(
+    null
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Handle product click to open modal
+  const handleProductClick = (product: ShopProduct) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  // Get similar products for recommendations
+  const getSimilarProducts = (currentProduct: ShopProduct) => {
+    return products
+      .filter(
+        (p) =>
+          p.id !== currentProduct.id &&
+          (p.category === currentProduct.category ||
+            Math.abs(p.price - currentProduct.price) <= 50)
+      )
+      .slice(0, 4);
+  };
 
   // Load products from Firestore
   useEffect(() => {
@@ -304,15 +445,6 @@ export const ShopPage: React.FC = () => {
 
     return sorted;
   }, [products, selectedCategory, debouncedSearchTerm, sortBy, priceRange]);
-
-  // Wishlist functionality
-  const toggleWishlist = useCallback((productId: string) => {
-    setWishlist((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  }, []);
 
   // Memoized event handlers
   const handleCategoryChange = useCallback((category: string) => {
@@ -477,6 +609,11 @@ export const ShopPage: React.FC = () => {
                 <ProductCard
                   key={`product-${product.id}-${selectedCategory}`}
                   product={product}
+                  addToCart={addToCart}
+                  onProductClick={handleProductClick}
+                  cart={cart}
+                  isInWishlist={isInWishlist}
+                  toggleWishlist={toggleWishlist}
                 />
               ))}
             </motion.div>
@@ -500,6 +637,16 @@ export const ShopPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Product Modal */}
+      <ProductModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        similarProducts={
+          selectedProduct ? getSimilarProducts(selectedProduct) : []
+        }
+      />
     </div>
   );
 };

@@ -5,7 +5,8 @@ import { HiLockClosed, HiCreditCard, HiTruck } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { useAuth } from "../context/EnhancedAppContext";
+import { useAuth, useCart } from "../context/EnhancedAppContext";
+import { OrderService } from "../utils/orderService";
 
 interface CheckoutFormData {
   // Contact Information
@@ -36,26 +37,10 @@ interface CheckoutFormData {
   newsletter: boolean;
 }
 
-const orderItems = [
-  {
-    id: 1,
-    name: "Premium Cotton T-Shirt",
-    price: 49.99,
-    quantity: 2,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-  },
-  {
-    id: 2,
-    name: "Minimalist Watch",
-    price: 299.99,
-    quantity: 1,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
-  },
-];
-
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { cart: cartItems, cartTotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CheckoutFormData>({
     email: user?.email || "",
@@ -79,6 +64,10 @@ export const CheckoutPage: React.FC = () => {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [orderData, setOrderData] = useState<{
+    id: string;
+    total: number;
+  } | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -103,6 +92,60 @@ export const CheckoutPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+
+      // Calculate totals
+      const subtotal = cartItems.reduce(
+        (sum: number, item) => sum + item.price * item.quantity,
+        0
+      );
+      const shipping = 9.99;
+      const tax = subtotal * 0.08;
+      const orderTotal = subtotal + shipping + tax;
+
+      // Prepare order data
+      const orderData = {
+        userId: user.id,
+        items: cartItems.map((item) => ({
+          productId: item.productId || item.id?.toString() || "",
+          productName: item.name,
+          productImage: item.image,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        total: orderTotal,
+        status: "pending" as const,
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          digitalAddress: formData.digitalAddress,
+          apartment: formData.apartment,
+          country: formData.country,
+        },
+        contactInfo: {
+          email: formData.email,
+          phone: formData.phone,
+        },
+        paymentMethod: formData.paymentMethod,
+      };
+
+      // Simulate payment processing
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Save order to database
+      const orderId = await OrderService.placeOrder(orderData);
+
+      // Clear the cart after successful order placement
+      await clearCart();
+
+      // Set order completion data
+      setOrderData({ id: orderId, total: orderTotal });
+      setOrderComplete(true);
+
+      toast.success("Order placed successfully!");
+
       // Save checkout information to user profile if requested
       if (formData.saveInfo && user) {
         try {
@@ -115,27 +158,21 @@ export const CheckoutPage: React.FC = () => {
             country: formData.country,
           });
           */
-          toast.success("Order placed successfully!");
         } catch (saveError) {
           console.error("Error saving profile:", saveError);
-          toast.error("Failed to save profile information");
+          // Don't show error for this as order was successful
         }
       }
-
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      setIsProcessing(false);
-      setOrderComplete(true);
     } catch (error) {
       console.error("Order processing failed:", error);
+      toast.error("Failed to place order. Please try again.");
+    } finally {
       setIsProcessing(false);
-      // Handle error appropriately
     }
   };
 
-  const subtotal = orderItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const subtotal = cartItems.reduce(
+    (sum: number, item) => sum + item.price * item.quantity,
     0
   );
   const shipping = 9.99;
@@ -153,7 +190,7 @@ export const CheckoutPage: React.FC = () => {
     { number: 3, title: "Review", description: "Review your order" },
   ];
 
-  if (orderComplete) {
+  if (orderComplete && orderData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-32 pb-16">
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
@@ -168,15 +205,23 @@ export const CheckoutPage: React.FC = () => {
                 Order Confirmed!
               </h1>
               <p className="text-lg text-gray-600 mb-2">
-                Thank you for your purchase. Your order #OMU-
-                {Math.random().toString(36).substr(2, 9).toUpperCase()} has been
-                confirmed.
+                Thank you for your purchase. Your order #
+                {orderData.id.slice(-8).toUpperCase()} has been confirmed.
+              </p>
+              <p className="text-xl font-semibold text-accent-gold mb-4">
+                Total: ₵{orderData.total.toFixed(2)}
               </p>
               <p className="text-gray-600 mb-8">
                 You'll receive a confirmation message shortly with order
                 information.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate("/profile?tab=orders")}>
+                  View My Orders
+                </Button>
                 <Button
                   variant="secondary"
                   size="lg"
@@ -678,7 +723,7 @@ export const CheckoutPage: React.FC = () => {
                 </h3>
 
                 <div className="space-y-4 mb-6">
-                  {orderItems.map((item) => (
+                  {cartItems.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
                       <img
                         src={item.image}

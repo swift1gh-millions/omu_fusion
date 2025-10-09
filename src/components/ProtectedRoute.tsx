@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/EnhancedAppContext";
-import { LoadingSpinner } from "./ui/LoadingSpinner";
+import { FullscreenLoader } from "./ui/ModernLoader";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,8 +12,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAuth = true,
 }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
+
+  // Show loading spinner while authentication state is being determined
+  if (isLoading) {
+    return (
+      <FullscreenLoader
+        message="Loading..."
+        submessage="Preparing your experience."
+      />
+    );
+  }
 
   // If authentication is required and user is not authenticated
   if (requireAuth && !isAuthenticated) {

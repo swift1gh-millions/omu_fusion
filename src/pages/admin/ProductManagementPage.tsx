@@ -20,7 +20,6 @@ import {
   MoreVertical,
   Package,
 } from "lucide-react";
-import { EnhancedProductService } from "../../utils/enhancedProductService";
 
 interface Product {
   id: string;
@@ -30,7 +29,6 @@ interface Product {
   category: string;
   stock: number;
   images: string[];
-  status?: "none" | "new" | "sale";
   createdAt: any;
   updatedAt: any;
 }
@@ -131,27 +129,6 @@ export const ProductManagementPage: React.FC = () => {
       );
     } catch (error) {
       console.error("Error updating stock:", error);
-    }
-  };
-
-  const updateProductStatus = async (
-    productId: string,
-    newStatus: "none" | "new" | "sale"
-  ) => {
-    try {
-      await EnhancedProductService.updateProductStatus(
-        productId,
-        newStatus,
-        "admin"
-      );
-
-      setProducts(
-        products.map((p) =>
-          p.id === productId ? { ...p, status: newStatus } : p
-        )
-      );
-    } catch (error) {
-      console.error("Error updating product status:", error);
     }
   };
 
@@ -278,67 +255,33 @@ export const ProductManagementPage: React.FC = () => {
                         {product.stock} in stock
                       </span>
                     </div>
-                    {/* Stock Management and Actions */}
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          min="0"
-                          value={product.stock}
-                          onChange={(e) =>
-                            updateProductStock(
-                              product.id,
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          className="flex-1 px-3 py-2 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
-                          placeholder="Stock count"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">Actions:</span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded-lg transition-all duration-200 flex-shrink-0"
-                            title="Edit Product">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setProductToDelete(product);
-                              setShowDeleteModal(true);
-                            }}
-                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-200 flex-shrink-0"
-                            title="Delete Product">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Product Status Selector */}
-                    <div className="mb-3">
-                      <label className="text-xs text-gray-400 mb-2 block">
-                        Product Status
-                      </label>
-                      <select
-                        value={product.status || "none"}
+                    <div className="flex items-center space-x-2 mb-3">
+                      <input
+                        type="number"
+                        min="0"
+                        value={product.stock}
                         onChange={(e) =>
-                          updateProductStatus(
+                          updateProductStock(
                             product.id,
-                            e.target.value as "none" | "new" | "sale"
+                            parseInt(e.target.value) || 0
                           )
                         }
-                        className="w-full px-3 py-2 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200">
-                        <option value="none" className="bg-gray-800 text-white">
-                          None
-                        </option>
-                        <option value="new" className="bg-gray-800 text-white">
-                          New
-                        </option>
-                        <option value="sale" className="bg-gray-800 text-white">
-                          Sale
-                        </option>
-                      </select>
+                        className="flex-1 px-3 py-2 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                      />
+                      <button
+                        className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded-lg transition-all duration-200"
+                        title="Edit Product">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setProductToDelete(product);
+                          setShowDeleteModal(true);
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-200"
+                        title="Delete Product">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                     <div className="text-xs text-gray-400 bg-white/5 rounded-lg px-3 py-2">
                       Category:{" "}

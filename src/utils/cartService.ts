@@ -83,6 +83,45 @@ export class CartService {
     }
   }
 
+  static async updateQuantity(
+    userId: string,
+    productId: string,
+    newQuantity: number
+  ): Promise<void> {
+    if (newQuantity <= 0) {
+      await this.removeFromCart(userId, productId);
+      return;
+    }
+
+    const cartRef = doc(db, this.COLLECTION_NAME, userId);
+    const cartDoc = await getDoc(cartRef);
+    if (cartDoc.exists()) {
+      const cartData = cartDoc.data() as UserCart;
+      const updatedItems = cartData.items.map((item) =>
+        item.productId === productId ? { ...item, quantity: newQuantity } : item
+      );
+      await updateDoc(cartRef, {
+        items: updatedItems,
+        updatedAt: Timestamp.now(),
+      });
+    }
+  }
+
+  static async getCartItemCount(userId: string): Promise<number> {
+    const cart = await this.getUserCart(userId);
+    if (!cart) return 0;
+    return cart.items.reduce((total, item) => total + item.quantity, 0);
+  }
+
+  static async getCartTotal(userId: string): Promise<number> {
+    const cart = await this.getUserCart(userId);
+    if (!cart) return 0;
+    return cart.items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+  }
+
   static async clearCart(userId: string): Promise<void> {
     const cartRef = doc(db, this.COLLECTION_NAME, userId);
     const emptyCart: UserCart = {

@@ -7,6 +7,8 @@ import React, {
   ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { EnhancedProductService } from "../utils/enhancedProductService";
+import { Product as DatabaseProduct } from "../utils/databaseSchema";
 
 // Product interface (should match the one in ShopPage)
 export interface Product {
@@ -139,7 +141,43 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const navigate = useNavigate();
+
+  // Load products from database on mount
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await EnhancedProductService.getProducts(
+          { isActive: true },
+          { field: "createdAt", direction: "desc" },
+          { pageSize: 100 }
+        );
+
+        // Convert database products to local format
+        const convertedProducts: Product[] = response.products.map(
+          (dbProduct) => ({
+            id: parseInt(dbProduct.id || "0"),
+            name: dbProduct.name,
+            price: dbProduct.price,
+            image: dbProduct.images[0] || "",
+            category: dbProduct.category,
+            description: dbProduct.description,
+            tags: dbProduct.tags,
+            rating: 4.5,
+            reviews: 0,
+          })
+        );
+
+        setProducts(convertedProducts);
+      } catch (error) {
+        console.error("Error loading products for search:", error);
+        setProducts([]);
+      }
+    };
+
+    loadProducts();
+  }, []);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -169,7 +207,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   }, []);
 
   const performSearch = useCallback(
-    (term: string, products: Product[] = sampleProducts) => {
+    (term: string, productsToSearch: Product[] = products) => {
       if (!term.trim()) {
         setSearchResults([]);
         setIsSearching(false);
@@ -180,7 +218,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
 
       // Simulate API delay
       setTimeout(() => {
-        const filtered = products.filter((product) => {
+        const filtered = productsToSearch.filter((product) => {
           const searchTermLower = term.toLowerCase();
           return (
             product.name.toLowerCase().includes(searchTermLower) ||
@@ -254,7 +292,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
     const suggestions = new Set<string>();
     const termLower = term.toLowerCase();
 
-    sampleProducts.forEach((product) => {
+    products.forEach((product) => {
       // Add product names that match
       if (product.name.toLowerCase().includes(termLower)) {
         suggestions.add(product.name);
