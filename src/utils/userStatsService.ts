@@ -224,9 +224,9 @@ export class UserStatsService {
       status: order.status,
       total: order.total,
       items: order.items.map((item) => ({
-        id: item.productId,
-        name: item.productName,
-        image: item.productImage,
+        id: item.productId || item.id || `item-${Date.now()}`,
+        name: item.productName || item.name || "Product",
+        image: item.productImage || item.image || "/placeholder-image.jpg",
         price: item.price,
         quantity: item.quantity,
       })),

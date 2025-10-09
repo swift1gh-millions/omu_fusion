@@ -7,6 +7,13 @@
     box-sizing: border-box;
   }
 
+  html {
+    scroll-behavior: smooth;
+    /* Prevent over-scrolling on mobile */
+    overscroll-behavior: none;
+    height: 100%;
+  }
+
   body {
     margin: 0;
     font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -17,10 +24,36 @@
     background-color: #ffffff;
     color: #000000;
     overflow-x: hidden;
+    /* Prevent over-scrolling on mobile */
+    overscroll-behavior: none;
   }
 
-  html {
-    scroll-behavior: smooth;
+  #root {
+    /* Ensure root element takes full height properly */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Prevent mobile over-scrolling/elastic bounce */
+  @media screen and (max-width: 768px) {
+    html {
+      overscroll-behavior-y: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body {
+      overscroll-behavior-y: none;
+      position: relative;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #root {
+      height: 100vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 }
 
@@ -322,6 +355,20 @@
     .motion-safe {
       animation: none !important;
       transition: none !important;
+    }
+  }
+
+  /* Mobile scroll prevention utilities */
+  .prevent-overscroll {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure footer stays at bottom on mobile */
+  @media screen and (max-width: 768px) {
+    footer {
+      margin-top: auto;
+      flex-shrink: 0;
     }
   }
 

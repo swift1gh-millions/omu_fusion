@@ -19,11 +19,12 @@ import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { AvatarSelector } from "../components/ui/AvatarSelector";
+import { OrderDetailsModal } from "../components/ui/OrderDetailsModal";
 import { useAuth } from "../context/EnhancedAppContext";
 import { UserProfileService } from "../utils/userProfileService";
 import EnhancedAuthService from "../utils/enhancedAuthService";
 import { UserStatsService, UserStatistics } from "../utils/userStatsService";
-import { Order } from "../utils/orderService";
+import { Order, OrderService } from "../utils/orderService";
 
 interface UserProfile {
   firstName: string;
@@ -39,7 +40,15 @@ interface PurchaseItem {
   id: string;
   orderId: string;
   date: string;
-  status: "delivered" | "shipped" | "processing" | "cancelled" | "pending";
+  status:
+    | "delivered"
+    | "shipped"
+    | "processing"
+    | "cancelled"
+    | "pending"
+    | "confirmed"
+    | "out_for_delivery"
+    | "returned";
   total: number;
   items: {
     id: string;
@@ -57,9 +66,9 @@ export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "orders" | "settings">(
-    "profile"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "profile" | "orders" | "wishlist" | "settings"
+  >("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -80,6 +89,8 @@ export const ProfilePage: React.FC = () => {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -157,8 +168,11 @@ export const ProfilePage: React.FC = () => {
   // Handle tab parameter from URL
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["profile", "orders", "settings"].includes(tabParam)) {
-      setActiveTab(tabParam as "profile" | "orders" | "settings");
+    if (
+      tabParam &&
+      ["profile", "orders", "wishlist", "settings"].includes(tabParam)
+    ) {
+      setActiveTab(tabParam as "profile" | "orders" | "wishlist" | "settings");
     }
   }, [searchParams]);
 
@@ -186,6 +200,17 @@ export const ProfilePage: React.FC = () => {
     } finally {
       setIsUpdatingAvatar(false);
     }
+  };
+
+  // Order details handlers
+  const handleViewOrderDetails = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setIsOrderDetailsOpen(true);
+  };
+
+  const handleCloseOrderDetails = () => {
+    setIsOrderDetailsOpen(false);
+    setSelectedOrderId(null);
   };
 
   // This should not happen since ProfilePage is wrapped in ProtectedRoute,
@@ -347,7 +372,7 @@ export const ProfilePage: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}>
               <GlassCard className="p-6 sticky top-8 backdrop-blur-xl bg-white/70 border border-white/20 shadow-xl">
-                <div className="text-center mb-6">
+                <div className="flex flex-col text-center mb-6 justify-center">
                   <motion.div
                     className="w-24 h-24 mx-auto mb-4 relative group"
                     whileHover={{ scale: 1.05 }}
@@ -379,7 +404,7 @@ export const ProfilePage: React.FC = () => {
                     {user.firstName} {user.lastName}
                   </h3>
                   <p
-                    className="text-sm text-gray-600 font-medium truncate max-w-[250px]"
+                    className="text-sm text-gray-600 font-medium truncate lg:max-w-[250px]"
                     title={user.email}>
                     {user.email}
                   </p>
@@ -409,6 +434,30 @@ export const ProfilePage: React.FC = () => {
                     }`}>
                     <HiShoppingBag className="mr-3 h-5 w-5" />
                     Orders
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setActiveTab("wishlist")}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
+                      activeTab === "wishlist"
+                        ? "bg-gradient-to-r from-accent-gold to-accent-orange text-black shadow-lg shadow-accent-gold/30"
+                        : "text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 hover:shadow-md"
+                    }`}>
+                    <div className="flex items-center">
+                      <HiHeart className="mr-3 h-5 w-5" />
+                      Wishlist
+                    </div>
+                    {userStats.wishlistItems > 0 && (
+                      <span
+                        className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                          activeTab === "wishlist"
+                            ? "bg-black/20 text-black"
+                            : "bg-accent-gold text-black"
+                        }`}>
+                        {userStats.wishlistItems}
+                      </span>
+                    )}
                   </motion.button>
                   <motion.button
                     onClick={() => setActiveTab("settings")}
@@ -744,6 +793,9 @@ export const ProfilePage: React.FC = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() =>
+                                  handleViewOrderDetails(order.orderId)
+                                }
                                 className="!text-gray-800 hover:!text-white">
                                 View Details
                               </Button>
@@ -780,6 +832,43 @@ export const ProfilePage: React.FC = () => {
                       )}
                     </>
                   )}
+                </GlassCard>
+              </motion.div>
+            )}
+
+            {activeTab === "wishlist" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}>
+                <GlassCard className="p-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      My Wishlist
+                    </h2>
+                    <Button
+                      onClick={() => navigate("/wishlist")}
+                      variant="outline"
+                      size="sm">
+                      View Full Wishlist
+                    </Button>
+                  </div>
+
+                  <div className="text-center py-12">
+                    <HiHeart className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Manage your wishlist
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Your saved items appear here. You currently have{" "}
+                      {userStats.wishlistItems} items in your wishlist.
+                    </p>
+                    <Button
+                      onClick={() => navigate("/wishlist")}
+                      className="bg-gradient-to-r from-accent-gold to-accent-orange hover:from-accent-orange hover:to-accent-gold text-black font-semibold">
+                      Go to Wishlist
+                    </Button>
+                  </div>
                 </GlassCard>
               </motion.div>
             )}
@@ -885,6 +974,15 @@ export const ProfilePage: React.FC = () => {
         onAvatarSelect={handleAvatarSelect}
         isLoading={isUpdatingAvatar}
       />
+
+      {/* Order Details Modal */}
+      {selectedOrderId && isOrderDetailsOpen && (
+        <OrderDetailsModal
+          orderId={selectedOrderId}
+          isOpen={isOrderDetailsOpen}
+          onClose={handleCloseOrderDetails}
+        />
+      )}
     </div>
   );
 };

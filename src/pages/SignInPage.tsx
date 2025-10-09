@@ -79,8 +79,11 @@ export const SignInPage: React.FC = () => {
       // Use real Firebase authentication
       await signIn(formData.email, formData.password);
 
-      // Redirect to the intended page or home
-      navigate(from, { replace: true });
+      // Small delay to ensure context state is updated before navigation
+      setTimeout(() => {
+        // Redirect to the intended page or home
+        navigate(from, { replace: true });
+      }, 100);
     } catch (error: any) {
       console.error("Sign in error:", error);
       setErrors({

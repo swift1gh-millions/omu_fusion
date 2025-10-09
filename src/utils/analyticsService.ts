@@ -658,15 +658,18 @@ export class AnalyticsService {
 
     orders.forEach((order) => {
       order.items?.forEach((item) => {
-        if (!productStats[item.productId]) {
-          productStats[item.productId] = {
+        const productId = item.productId || item.id;
+        if (!productId) return; // Skip items without a valid ID
+
+        if (!productStats[productId]) {
+          productStats[productId] = {
             totalSold: 0,
             revenue: 0,
-            name: item.productName || "Unknown Product",
+            name: item.productName || item.name || "Unknown Product",
           };
         }
-        productStats[item.productId].totalSold += item.quantity;
-        productStats[item.productId].revenue += item.price * item.quantity;
+        productStats[productId].totalSold += item.quantity;
+        productStats[productId].revenue += item.price * item.quantity;
       });
     });
 
@@ -694,7 +697,9 @@ export class AnalyticsService {
     // Aggregate by category
     orders.forEach((order) => {
       order.items?.forEach((item) => {
-        const category = productCategories[item.productId] || "Uncategorized";
+        const productId = item.productId || item.id;
+        const category =
+          (productId ? productCategories[productId] : null) || "Uncategorized";
         if (!categoryStats[category]) {
           categoryStats[category] = { revenue: 0, orders: 0 };
         }

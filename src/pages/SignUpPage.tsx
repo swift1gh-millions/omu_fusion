@@ -135,8 +135,11 @@ export const SignUpPage: React.FC = () => {
         position: "top-center",
       });
 
-      // Redirect to profile page after successful signup
-      navigate("/profile", { replace: true });
+      // Small delay to ensure context state is updated before navigation
+      setTimeout(() => {
+        // Redirect to profile page after successful signup
+        navigate("/profile", { replace: true });
+      }, 100);
     } catch (error: any) {
       console.error("Registration error:", error);
       console.error("Error code:", error.code);

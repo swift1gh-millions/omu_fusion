@@ -97,10 +97,10 @@ function AppContent() {
   const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col prevent-overscroll">
       <ScrollToTop />
       {!isAdminRoute && <Header />}
-      <main className="relative">
+      <main className="relative flex-1 prevent-overscroll">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />

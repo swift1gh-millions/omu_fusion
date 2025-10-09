@@ -385,6 +385,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const user = await EnhancedAuthService.signIn({ email, password });
 
+      // Set the user in the context immediately after successful signin
+      dispatch({ type: "SET_USER", payload: user });
+
       addNotification("success", `Welcome back, ${user.firstName}!`);
     } catch (error) {
       const errorMessage = (error as Error).message;
@@ -413,9 +416,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
       });
 
+      // Set the user in the context immediately after successful signup
+      dispatch({ type: "SET_USER", payload: user });
+
       addNotification(
         "success",
-        `Welcome to OMU Fusion, ${user.firstName}! Please verify your email.`
+        `Welcome to OMU Fusion, ${user.firstName}! Account created successfully.`
       );
     } catch (error) {
       const errorMessage = (error as Error).message;

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import { db } from "../../utils/firebase";
+import {
+  Order,
+  OrderStatus,
+  PaymentStatus,
+  orderService,
+} from "../../utils/orderService";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Button } from "../../components/ui/Button";
 import {
@@ -13,32 +17,18 @@ import {
   XCircle,
   Clock,
   Eye,
+  Edit3,
+  RefreshCw,
 } from "lucide-react";
-
-interface Order {
-  id: string;
-  userId: string;
-  items: Array<{
-    productId: string;
-    productName: string;
-    productImage: string;
-    price: number;
-    quantity: number;
-  }>;
-  total: number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  createdAt: any;
-  shippingAddress?: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    zipCode: string;
-    phone: string;
-  };
-}
+import { motion } from "framer-motion";
 
 const statusOptions = [
+  {
+    value: "",
+    label: "All Statuses",
+    icon: Package,
+    color: "bg-gray-100 text-gray-800",
+  },
   {
     value: "pending",
     label: "Pending",
@@ -46,16 +36,28 @@ const statusOptions = [
     color: "bg-yellow-100 text-yellow-800",
   },
   {
+    value: "confirmed",
+    label: "Confirmed",
+    icon: CheckCircle,
+    color: "bg-blue-100 text-blue-800",
+  },
+  {
     value: "processing",
     label: "Processing",
     icon: Package,
-    color: "bg-blue-100 text-blue-800",
+    color: "bg-purple-100 text-purple-800",
   },
   {
     value: "shipped",
     label: "Shipped",
     icon: Truck,
-    color: "bg-purple-100 text-purple-800",
+    color: "bg-indigo-100 text-indigo-800",
+  },
+  {
+    value: "out_for_delivery",
+    label: "Out for Delivery",
+    icon: Truck,
+    color: "bg-orange-100 text-orange-800",
   },
   {
     value: "delivered",
@@ -69,6 +71,21 @@ const statusOptions = [
     icon: XCircle,
     color: "bg-red-100 text-red-800",
   },
+  {
+    value: "returned",
+    label: "Returned",
+    icon: Package,
+    color: "bg-gray-100 text-gray-800",
+  },
+];
+
+const paymentStatusOptions = [
+  { value: "", label: "All Payment Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "processing", label: "Processing" },
+  { value: "completed", label: "Completed" },
+  { value: "failed", label: "Failed" },
+  { value: "refunded", label: "Refunded" },
 ];
 
 export const OrderManagementPage: React.FC = () => {
@@ -77,6 +94,7 @@ export const OrderManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
@@ -87,25 +105,13 @@ export const OrderManagementPage: React.FC = () => {
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchTerm, selectedStatus]);
+  }, [orders, searchTerm, selectedStatus, paymentFilter]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const ordersSnapshot = await getDocs(collection(db, "orders"));
-      const ordersData = ordersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Order[];
-
-      // Sort by creation date (newest first)
-      ordersData.sort((a, b) => {
-        const dateA = a.createdAt?.toDate?.() || new Date(0);
-        const dateB = b.createdAt?.toDate?.() || new Date(0);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      setOrders(ordersData);
+      const allOrders = await orderService.getAllOrders();
+      setOrders(allOrders);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -119,10 +125,17 @@ export const OrderManagementPage: React.FC = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (order) =>
-          order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          order.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.contactInfo?.email
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          `${order.shippingAddress?.firstName} ${order.shippingAddress?.lastName}`
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           order.items.some((item) =>
-            item.productName.toLowerCase().includes(searchTerm.toLowerCase())
+            (item.productName || item.name || "")
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
           )
       );
     }
@@ -131,22 +144,25 @@ export const OrderManagementPage: React.FC = () => {
       filtered = filtered.filter((order) => order.status === selectedStatus);
     }
 
+    if (paymentFilter) {
+      filtered = filtered.filter(
+        (order) => order.paymentStatus === paymentFilter
+      );
+    }
+
     setFilteredOrders(filtered);
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       setUpdatingStatus(orderId);
-      await updateDoc(doc(db, "orders", orderId), {
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-      });
-
-      setOrders(
-        orders.map((order) =>
-          order.id === orderId ? { ...order, status: newStatus as any } : order
-        )
+      await orderService.updateOrderStatus(
+        orderId,
+        newStatus,
+        "admin",
+        "Status updated from admin panel"
       );
+      await fetchOrders(); // Refresh orders
     } catch (error) {
       console.error("Error updating order status:", error);
     } finally {
@@ -154,7 +170,7 @@ export const OrderManagementPage: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: OrderStatus) => {
     const statusConfig = statusOptions.find((s) => s.value === status);
     if (!statusConfig) return null;
 
@@ -164,6 +180,33 @@ export const OrderManagementPage: React.FC = () => {
         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
         <Icon className="w-3 h-3 mr-1" />
         {statusConfig.label}
+      </span>
+    );
+  };
+
+  const getPaymentStatusBadge = (status: PaymentStatus) => {
+    const colors = {
+      pending: "bg-yellow-100 text-yellow-800",
+      processing: "bg-blue-100 text-blue-800",
+      completed: "bg-green-100 text-green-800",
+      failed: "bg-red-100 text-red-800",
+      refunded: "bg-purple-100 text-purple-800",
+    };
+
+    const labels = {
+      pending: "Pending",
+      processing: "Processing",
+      completed: "Completed",
+      failed: "Failed",
+      refunded: "Refunded",
+    };
+
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          colors[status] || "bg-gray-100 text-gray-800"
+        }`}>
+        {labels[status] || status}
       </span>
     );
   };
@@ -253,7 +296,7 @@ export const OrderManagementPage: React.FC = () => {
                         <div>
                           <p className="text-sm text-gray-400 mb-1">Order ID</p>
                           <p className="text-base font-semibold text-white">
-                            #{order.id.slice(0, 8)}
+                            #{order.orderNumber}
                           </p>
                           <p className="text-sm text-gray-400">
                             {order.createdAt
@@ -325,7 +368,11 @@ export const OrderManagementPage: React.FC = () => {
                           <select
                             value={order.status}
                             onChange={(e) =>
-                              updateOrderStatus(order.id, e.target.value)
+                              order.id &&
+                              updateOrderStatus(
+                                order.id,
+                                e.target.value as OrderStatus
+                              )
                             }
                             disabled={updatingStatus === order.id}
                             className="text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200">
@@ -383,7 +430,7 @@ export const OrderManagementPage: React.FC = () => {
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-2xl font-bold text-white">
-                      Order Details - #{selectedOrder.id.slice(0, 8)}
+                      Order Details - #{selectedOrder.orderNumber}
                     </h3>
                     <button
                       onClick={() => setShowOrderModal(false)}
@@ -472,13 +519,11 @@ export const OrderManagementPage: React.FC = () => {
                             {selectedOrder.shippingAddress.firstName}{" "}
                             {selectedOrder.shippingAddress.lastName}
                           </p>
-                          <p>{selectedOrder.shippingAddress.address}</p>
-                          <p>
-                            {selectedOrder.shippingAddress.city},{" "}
-                            {selectedOrder.shippingAddress.zipCode}
-                          </p>
+                          <p>{selectedOrder.shippingAddress.digitalAddress}</p>
+                          <p>{selectedOrder.shippingAddress.apartment}</p>
+                          <p>{selectedOrder.shippingAddress.country}</p>
                           <p className="font-medium text-blue-300">
-                            {selectedOrder.shippingAddress.phone}
+                            {selectedOrder.contactInfo?.phone}
                           </p>
                         </div>
                       </div>

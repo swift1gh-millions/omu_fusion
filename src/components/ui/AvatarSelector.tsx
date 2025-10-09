@@ -108,21 +108,21 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: "spring", duration: 0.5 }}
-          className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
-          <GlassCard className="p-6">
+          className="w-full max-w-xs sm:max-w-md lg:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+          <GlassCard className="p-3 sm:p-4 lg:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                   Choose Your Avatar
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Select from our collection of {AVATAR_COLLECTION.length}{" "}
                   professional avatars
                 </p>
@@ -130,14 +130,14 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50">
-                <HiX className="w-6 h-6 text-gray-500" />
+                className="p-1 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50">
+                <HiX className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
               </button>
             </div>
 
             {/* Current Avatar Preview */}
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 mx-auto mb-3">
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2 sm:mb-3">
                 <img
                   src={
                     selectedAvatar ||
@@ -154,7 +154,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
             </div>
 
             {/* Category Tabs */}
-            <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
               {AVATAR_CATEGORIES.map((category) => (
                 <Button
                   key={category.id}
@@ -163,10 +163,12 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
                   }
                   size="sm"
                   onClick={() => setSelectedCategory(category.id)}
-                  className="flex items-center gap-2 flex-1 sm:flex-none">
+                  className="flex items-center gap-1 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">
                   {getIconComponent(category.iconName)}
-                  <span className="hidden sm:inline">{category.name}</span>
-                  <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full ml-1">
+                  <span className="hidden xs:inline sm:inline">
+                    {category.name}
+                  </span>
+                  <span className="text-xs bg-white/20 px-1 sm:px-1.5 py-0.5 rounded-full ml-0.5 sm:ml-1">
                     {getAvatarsByCategory(category.id).length}
                   </span>
                 </Button>
@@ -213,8 +215,8 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
             )}
 
             {/* Avatar Grid */}
-            <div className="max-h-96 overflow-y-auto mb-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 p-1">
+            <div className="max-h-64 sm:max-h-80 lg:max-h-96 overflow-y-auto mb-4 sm:mb-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 p-1">
                 {avatarsInCategory.map((avatar: AvatarOption) => (
                   <motion.div
                     key={avatar.id}
@@ -341,19 +343,19 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
               <Button
                 variant="outline"
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 px-6 py-3 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 Cancel
               </Button>
               <Button
                 variant="primary"
                 onClick={handleConfirm}
                 disabled={!selectedAvatar || isLoading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-accent-gold to-accent-gold/80 hover:from-accent-gold/90 hover:to-accent-gold/70 text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2">
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-accent-gold to-accent-gold/80 hover:from-accent-gold/90 hover:to-accent-gold/70 text-white font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2">
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

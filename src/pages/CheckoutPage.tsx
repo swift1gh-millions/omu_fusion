@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { useAuth, useCart } from "../context/EnhancedAppContext";
-import { OrderService } from "../utils/orderService";
+import { orderService } from "../utils/orderService";
 
 interface CheckoutFormData {
   // Contact Information
@@ -37,6 +37,16 @@ interface CheckoutFormData {
   newsletter: boolean;
 }
 
+interface FormErrors {
+  [key: string]: string;
+}
+
+interface StepValidation {
+  step1: boolean;
+  step2: boolean;
+  step3: boolean;
+}
+
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -63,11 +73,20 @@ export const CheckoutPage: React.FC = () => {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderData, setOrderData] = useState<{
     id: string;
     total: number;
   } | null>(null);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [stepValidation, setStepValidation] = useState<StepValidation>({
+    step1: false,
+    step2: false,
+    step3: false,
+  });
+  const [isValidating, setIsValidating] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -75,6 +94,173 @@ export const CheckoutPage: React.FC = () => {
       navigate("/signin", { state: { from: { pathname: "/checkout" } } });
     }
   }, [isAuthenticated, navigate]);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, []);
+
+  // Helper function to navigate to a step and scroll to top
+  const navigateToStep = (step: number) => {
+    // Validate current step before allowing navigation
+    if (step > currentStep && !validateCurrentStep()) {
+      return;
+    }
+
+    // Smooth scroll to top
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    // Set the step after a brief delay to ensure smooth scrolling
+    // This allows the scroll animation to start before the content changes
+    setTimeout(() => {
+      setCurrentStep(step);
+    }, 150);
+  };
+
+  // Validation functions for each step
+  const validateStep1 = (): boolean => {
+    const errors: FormErrors = {};
+    let isValid = true;
+
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    // Phone validation
+    if (!formData.phone.trim()) {
+      errors.phone = "Phone number is required";
+      isValid = false;
+    } else if (formData.phone.trim().length < 10) {
+      errors.phone = "Phone number must be at least 10 digits";
+      isValid = false;
+    }
+
+    // Name validation
+    if (!formData.firstName.trim()) {
+      errors.firstName = "First name is required";
+      isValid = false;
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Last name is required";
+      isValid = false;
+    }
+
+    // Address validation
+    if (!formData.digitalAddress.trim()) {
+      errors.digitalAddress = "Digital address is required";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    setStepValidation((prev) => ({ ...prev, step1: isValid }));
+    return isValid;
+  };
+
+  const validateStep2 = (): boolean => {
+    const errors: FormErrors = {};
+    let isValid = true;
+
+    if (formData.paymentMethod === "mobile_money") {
+      if (!formData.mobileMoneyProvider) {
+        errors.mobileMoneyProvider = "Please select a mobile money provider";
+        isValid = false;
+      }
+      if (!formData.mobileMoneyNumber?.trim()) {
+        errors.mobileMoneyNumber = "Mobile money number is required";
+        isValid = false;
+      } else if (formData.mobileMoneyNumber.trim().length < 10) {
+        errors.mobileMoneyNumber = "Please enter a valid mobile money number";
+        isValid = false;
+      }
+    } else if (formData.paymentMethod === "card") {
+      if (!formData.cardNumber.trim()) {
+        errors.cardNumber = "Card number is required";
+        isValid = false;
+      } else if (formData.cardNumber.replace(/\s/g, "").length < 16) {
+        errors.cardNumber = "Please enter a valid card number";
+        isValid = false;
+      }
+
+      if (!formData.expiryDate.trim()) {
+        errors.expiryDate = "Expiry date is required";
+        isValid = false;
+      }
+
+      if (!formData.cvv.trim()) {
+        errors.cvv = "CVV is required";
+        isValid = false;
+      } else if (formData.cvv.length < 3) {
+        errors.cvv = "CVV must be at least 3 digits";
+        isValid = false;
+      }
+
+      if (!formData.nameOnCard.trim()) {
+        errors.nameOnCard = "Name on card is required";
+        isValid = false;
+      }
+    }
+
+    setFormErrors(errors);
+    setStepValidation((prev) => ({ ...prev, step2: isValid }));
+    return isValid;
+  };
+
+  const validateCurrentStep = (): boolean => {
+    setIsValidating(true);
+    let isValid = false;
+
+    try {
+      switch (currentStep) {
+        case 1:
+          isValid = validateStep1();
+          if (!isValid) {
+            toast.error("Please fill in all required fields before continuing");
+          }
+          break;
+        case 2:
+          isValid = validateStep2();
+          if (!isValid) {
+            toast.error("Please complete the payment information");
+          }
+          break;
+        case 3:
+          isValid = true; // Review step doesn't need validation
+          break;
+        default:
+          isValid = false;
+      }
+    } finally {
+      setIsValidating(false);
+    }
+
+    return isValid;
+  };
+
+  // Auto-validation when form data changes
+  useEffect(() => {
+    if (currentStep === 1) {
+      const timer = setTimeout(() => {
+        validateStep1();
+      }, 500);
+      return () => clearTimeout(timer);
+    } else if (currentStep === 2) {
+      const timer = setTimeout(() => {
+        validateStep2();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData, currentStep]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -85,6 +271,53 @@ export const CheckoutPage: React.FC = () => {
       [name]:
         type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
+  };
+
+  // Payment processing function
+  const processPayment = async (orderTotal: number): Promise<boolean> => {
+    setIsPaymentProcessing(true);
+
+    try {
+      // Simulate payment gateway processing
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      if (formData.paymentMethod === "mobile_money") {
+        // Simulate mobile money payment
+        const provider = formData.mobileMoneyProvider;
+        const number = formData.mobileMoneyNumber;
+
+        // In a real app, you would integrate with actual mobile money APIs
+        // like MTN MoMo, Telecel Cash, etc.
+        toast.loading(`Processing ${provider?.toUpperCase()} payment...`, {
+          duration: 2000,
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Simulate successful payment
+        toast.success(`Payment successful via ${provider?.toUpperCase()}`);
+      } else if (formData.paymentMethod === "card") {
+        // Simulate card payment processing
+        toast.loading("Processing card payment...", {
+          duration: 2000,
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // In a real app, you would integrate with payment processors
+        // like Stripe, Paystack, or Flutterwave
+        toast.success("Card payment successful");
+      }
+
+      setPaymentComplete(true);
+      return true;
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      toast.error("Payment failed. Please try again.");
+      return false;
+    } finally {
+      setIsPaymentProcessing(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,18 +338,33 @@ export const CheckoutPage: React.FC = () => {
       const tax = subtotal * 0.08;
       const orderTotal = subtotal + shipping + tax;
 
+      // Process payment first
+      const paymentSuccess = await processPayment(orderTotal);
+
+      if (!paymentSuccess) {
+        setIsProcessing(false);
+        return;
+      }
+
       // Prepare order data
       const orderData = {
         userId: user.id,
+        customerEmail: user.email,
+        customerName: `${user.firstName} ${user.lastName}`,
         items: cartItems.map((item) => ({
-          productId: item.productId || item.id?.toString() || "",
-          productName: item.name,
-          productImage: item.image,
+          id: item.productId || item.id?.toString() || "",
+          name: item.name,
+          image: item.image,
           price: item.price,
           quantity: item.quantity,
         })),
+        subtotal: subtotal,
+        shipping: shipping,
+        tax: tax,
+        discount: 0,
         total: orderTotal,
         status: "pending" as const,
+        paymentStatus: "pending" as const,
         shippingAddress: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -135,7 +383,7 @@ export const CheckoutPage: React.FC = () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Save order to database
-      const orderId = await OrderService.placeOrder(orderData);
+      const orderId = await orderService.placeOrder(orderData);
 
       // Clear the cart after successful order placement
       await clearCart();
@@ -143,6 +391,12 @@ export const CheckoutPage: React.FC = () => {
       // Set order completion data
       setOrderData({ id: orderId, total: orderTotal });
       setOrderComplete(true);
+
+      // Scroll to top to show success message
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
 
       toast.success("Order placed successfully!");
 
@@ -266,18 +520,41 @@ export const CheckoutPage: React.FC = () => {
                   <div className="flex items-center">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
-                        currentStep >= step.number
+                        currentStep > step.number
+                          ? (step.number === 1 && stepValidation.step1) ||
+                            (step.number === 2 && stepValidation.step2)
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                          : currentStep === step.number
                           ? "bg-accent-gold text-black"
                           : "bg-gray-200 text-gray-600"
                       }`}>
-                      {step.number}
+                      {currentStep > step.number
+                        ? (step.number === 1 && stepValidation.step1) ||
+                          (step.number === 2 && stepValidation.step2)
+                          ? "✓"
+                          : "!"
+                        : step.number}
                     </div>
                     <div className="ml-3 hidden sm:block">
                       <p className="text-sm font-medium text-gray-900">
                         {step.title}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {step.description}
+                      <p
+                        className={`text-xs transition-colors duration-300 ${
+                          currentStep > step.number
+                            ? (step.number === 1 && stepValidation.step1) ||
+                              (step.number === 2 && stepValidation.step2)
+                              ? "text-green-600"
+                              : "text-red-600"
+                            : "text-gray-500"
+                        }`}>
+                        {currentStep > step.number
+                          ? (step.number === 1 && stepValidation.step1) ||
+                            (step.number === 2 && stepValidation.step2)
+                            ? "Complete"
+                            : "Needs attention"
+                          : step.description}
                       </p>
                     </div>
                   </div>
@@ -285,7 +562,10 @@ export const CheckoutPage: React.FC = () => {
                     <div
                       className={`flex-1 h-1 mx-4 rounded transition-colors duration-300 ${
                         currentStep > step.number
-                          ? "bg-accent-gold"
+                          ? (step.number === 1 && stepValidation.step1) ||
+                            (step.number === 2 && stepValidation.step2)
+                            ? "bg-green-500"
+                            : "bg-red-500"
                           : "bg-gray-200"
                       }`}
                     />
@@ -325,9 +605,18 @@ export const CheckoutPage: React.FC = () => {
                           required
                           value={formData.email}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                            formErrors.email
+                              ? "border-red-500 bg-red-50"
+                              : "border-gray-200"
+                          }`}
                           placeholder="your@email.com"
                         />
+                        {formErrors.email && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {formErrors.email}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -340,9 +629,18 @@ export const CheckoutPage: React.FC = () => {
                           required
                           value={formData.phone}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                            formErrors.phone
+                              ? "border-red-500 bg-red-50"
+                              : "border-gray-200"
+                          }`}
                           placeholder="+233 XX XXX XXXX"
                         />
+                        {formErrors.phone && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {formErrors.phone}
+                          </p>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -356,8 +654,17 @@ export const CheckoutPage: React.FC = () => {
                             required
                             value={formData.firstName}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                              formErrors.firstName
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-200"
+                            }`}
                           />
+                          {formErrors.firstName && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {formErrors.firstName}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -369,8 +676,17 @@ export const CheckoutPage: React.FC = () => {
                             required
                             value={formData.lastName}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                              formErrors.lastName
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-200"
+                            }`}
                           />
+                          {formErrors.lastName && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {formErrors.lastName}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -384,9 +700,18 @@ export const CheckoutPage: React.FC = () => {
                           required
                           value={formData.digitalAddress}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                            formErrors.digitalAddress
+                              ? "border-red-500 bg-red-50"
+                              : "border-gray-200"
+                          }`}
                           placeholder="e.g. GA-123-4567 or GE-456-7890"
                         />
+                        {formErrors.digitalAddress && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {formErrors.digitalAddress}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -425,8 +750,16 @@ export const CheckoutPage: React.FC = () => {
                     <Button
                       type="button"
                       variant="primary"
-                      onClick={() => setCurrentStep(2)}>
-                      Continue to Payment
+                      onClick={() => navigateToStep(2)}
+                      disabled={!stepValidation.step1}
+                      className={`transition-all duration-300 ${
+                        !stepValidation.step1
+                          ? "opacity-60 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                          : "hover:scale-105"
+                      }`}>
+                      {stepValidation.step1
+                        ? "Continue to Payment"
+                        : "Complete Required Fields"}
                     </Button>
                   </div>
                 </motion.div>
@@ -511,13 +844,22 @@ export const CheckoutPage: React.FC = () => {
                               name="mobileMoneyProvider"
                               value={formData.mobileMoneyProvider}
                               onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent">
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                formErrors.mobileMoneyProvider
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200"
+                              }`}>
                               <option value="mtn">MTN MoMo</option>
                               <option value="telecel">Telecel Cash</option>
                               <option value="airteltigo">
                                 AirtelTigo Money
                               </option>
                             </select>
+                            {formErrors.mobileMoneyProvider && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {formErrors.mobileMoneyProvider}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -529,9 +871,18 @@ export const CheckoutPage: React.FC = () => {
                               required
                               value={formData.mobileMoneyNumber}
                               onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                formErrors.mobileMoneyNumber
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200"
+                              }`}
                               placeholder="0XX XXX XXXX"
                             />
+                            {formErrors.mobileMoneyNumber && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {formErrors.mobileMoneyNumber}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -549,9 +900,18 @@ export const CheckoutPage: React.FC = () => {
                               required
                               value={formData.cardNumber}
                               onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                formErrors.cardNumber
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200"
+                              }`}
                               placeholder="1234 5678 9012 3456"
                             />
+                            {formErrors.cardNumber && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {formErrors.cardNumber}
+                              </p>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
@@ -565,9 +925,18 @@ export const CheckoutPage: React.FC = () => {
                                 required
                                 value={formData.expiryDate}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                  formErrors.expiryDate
+                                    ? "border-red-500 bg-red-50"
+                                    : "border-gray-200"
+                                }`}
                                 placeholder="MM/YY"
                               />
+                              {formErrors.expiryDate && (
+                                <p className="mt-1 text-sm text-red-600">
+                                  {formErrors.expiryDate}
+                                </p>
+                              )}
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -579,9 +948,18 @@ export const CheckoutPage: React.FC = () => {
                                 required
                                 value={formData.cvv}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                  formErrors.cvv
+                                    ? "border-red-500 bg-red-50"
+                                    : "border-gray-200"
+                                }`}
                                 placeholder="123"
                               />
+                              {formErrors.cvv && (
+                                <p className="mt-1 text-sm text-red-600">
+                                  {formErrors.cvv}
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -608,15 +986,23 @@ export const CheckoutPage: React.FC = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => navigateToStep(1)}
                       className="text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white">
                       Back
                     </Button>
                     <Button
                       type="button"
                       variant="primary"
-                      onClick={() => setCurrentStep(3)}>
-                      Review Order
+                      onClick={() => navigateToStep(3)}
+                      disabled={!stepValidation.step2}
+                      className={`transition-all duration-300 ${
+                        !stepValidation.step2
+                          ? "opacity-60 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                          : "hover:scale-105"
+                      }`}>
+                      {stepValidation.step2
+                        ? "Review Order"
+                        : "Complete Payment Info"}
                     </Button>
                   </div>
                 </motion.div>
@@ -693,16 +1079,31 @@ export const CheckoutPage: React.FC = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => navigateToStep(2)}
                       className="text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white">
                       Back
                     </Button>
                     <Button
                       type="submit"
                       variant="primary"
-                      disabled={isProcessing}
-                      className="min-w-[150px]">
-                      {isProcessing ? "Processing..." : "Complete Order"}
+                      disabled={
+                        isProcessing ||
+                        isPaymentProcessing ||
+                        !stepValidation.step1 ||
+                        !stepValidation.step2
+                      }
+                      className={`min-w-[150px] transition-all duration-300 ${
+                        !stepValidation.step1 || !stepValidation.step2
+                          ? "opacity-60 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                          : "hover:scale-105"
+                      }`}>
+                      {isPaymentProcessing
+                        ? "Processing Payment..."
+                        : isProcessing
+                        ? "Completing Order..."
+                        : !stepValidation.step1 || !stepValidation.step2
+                        ? "Complete All Steps"
+                        : "Proceed to Payment"}
                     </Button>
                   </div>
                 </motion.div>

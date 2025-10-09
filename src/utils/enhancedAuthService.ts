@@ -20,7 +20,12 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { UserProfile, Address, UserPreferences } from "./databaseSchema";
+import {
+  UserProfile,
+  Address,
+  UserPreferences,
+  DatabaseInitializer,
+} from "./databaseSchema";
 import {
   SignUpSchema,
   SignInSchema,
@@ -203,6 +208,10 @@ class EnhancedAuthService {
           doc(db, this.USERS_COLLECTION, firebaseUser.uid),
           userProfile
         );
+
+        // Initialize user cart and wishlist
+        await DatabaseInitializer.initializeUserCart(firebaseUser.uid);
+        await DatabaseInitializer.initializeUserWishlist(firebaseUser.uid);
 
         // Clear cache for this user
         CacheService.invalidate(`user_profile_${firebaseUser.uid}`);

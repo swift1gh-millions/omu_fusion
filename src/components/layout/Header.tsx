@@ -508,6 +508,20 @@ export const Header: React.FC = () => {
                       <HiUser className="h-5 w-5" />
                       <span>Profile</span>
                     </Link>
+                    <Link
+                      to="/wishlist"
+                      className={`w-full flex items-center justify-between py-3 px-4 rounded-lg ${textClasses} hover:text-accent-gold hover:bg-gray-100/50 transition-all duration-300`}
+                      onClick={() => setIsMobileMenuOpen(false)}>
+                      <div className="flex items-center space-x-3">
+                        <HiHeart className="h-5 w-5" />
+                        <span>Wishlist</span>
+                      </div>
+                      {wishlistCount > 0 && (
+                        <span className="bg-accent-gold text-black text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </Link>
                     <button
                       onClick={() => {
                         logout();
