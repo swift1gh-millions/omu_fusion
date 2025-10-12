@@ -52,19 +52,98 @@ export const AdminDashboardPage: React.FC = () => {
       // Initialize categories in the background
       await CategoryService.initializeDefaultCategories();
 
-      // Mock data for now to avoid Firestore errors
+      // Get real user count (customers only, excluding admins)
+      const userCount = await getUserCount();
+      const productCount = await getProductCount();
+      const orderCount = await getOrderCount();
+      const revenue = await getTotalRevenue();
+
       setStats({
-        totalProducts: 0,
-        totalOrders: 0,
-        totalUsers: 1,
-        totalRevenue: 0,
+        totalProducts: productCount,
+        totalOrders: orderCount,
+        totalUsers: userCount, // Only customers, not admins
+        totalRevenue: revenue,
         pendingOrders: 0,
         lowStockProducts: 0,
       });
     } catch (error) {
       console.error("Failed to initialize admin data:", error);
+      // Fallback to safe defaults
+      setStats({
+        totalProducts: 0,
+        totalOrders: 0,
+        totalUsers: 0, // 0 customers (admin doesn't count)
+        totalRevenue: 0,
+        pendingOrders: 0,
+        lowStockProducts: 0,
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to get customer count (from users collection only)
+  const getUserCount = async (): Promise<number> => {
+    try {
+      const { collection, getDocs } = await import("firebase/firestore");
+      const { db } = await import("../../utils/firebase");
+
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      return usersSnapshot.size; // Count documents in users collection (customers only)
+    } catch (error) {
+      console.error("Error getting user count:", error);
+      return 0;
+    }
+  };
+
+  // Helper function to get product count
+  const getProductCount = async (): Promise<number> => {
+    try {
+      const { collection, getDocs } = await import("firebase/firestore");
+      const { db } = await import("../../utils/firebase");
+
+      const productsSnapshot = await getDocs(collection(db, "products"));
+      return productsSnapshot.size;
+    } catch (error) {
+      console.error("Error getting product count:", error);
+      return 0;
+    }
+  };
+
+  // Helper function to get order count
+  const getOrderCount = async (): Promise<number> => {
+    try {
+      const { collection, getDocs } = await import("firebase/firestore");
+      const { db } = await import("../../utils/firebase");
+
+      const ordersSnapshot = await getDocs(collection(db, "orders"));
+      return ordersSnapshot.size;
+    } catch (error) {
+      console.error("Error getting order count:", error);
+      return 0;
+    }
+  };
+
+  // Helper function to get total revenue
+  const getTotalRevenue = async (): Promise<number> => {
+    try {
+      const { collection, getDocs } = await import("firebase/firestore");
+      const { db } = await import("../../utils/firebase");
+
+      const ordersSnapshot = await getDocs(collection(db, "orders"));
+      let totalRevenue = 0;
+
+      ordersSnapshot.docs.forEach((doc) => {
+        const orderData = doc.data();
+        if (orderData.total && typeof orderData.total === "number") {
+          totalRevenue += orderData.total;
+        }
+      });
+
+      return totalRevenue;
+    } catch (error) {
+      console.error("Error getting total revenue:", error);
+      return 0;
     }
   };
 

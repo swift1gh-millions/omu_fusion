@@ -117,16 +117,14 @@ class ErrorService {
     try {
       return await operation();
     } catch (error) {
+      // Log error for developers/monitoring
       const errorId = this.logError(error as Error, context, severity);
 
-      // Re-throw with enhanced error message
-      const enhancedError = new Error(
-        `${context.action} failed (Error ID: ${errorId}): ${
-          (error as Error).message
-        }`
-      );
+      // Re-throw with clean, user-friendly error message (no Error ID in message)
+      const errorMessage = (error as Error).message;
+      const enhancedError = new Error(errorMessage);
       (enhancedError as any).originalError = error;
-      (enhancedError as any).errorId = errorId;
+      (enhancedError as any).errorId = errorId; // Keep errorId for debugging, but not in message
 
       throw enhancedError;
     }

@@ -685,7 +685,7 @@ export const ProfilePage: React.FC = () => {
                                 damping: 20,
                               }}>
                               <div className="text-3xl font-black mb-2">
-                                ${userStats.totalSpent.toFixed(2)}
+                                GH₵{userStats.totalSpent.toFixed(2)}
                               </div>
                               <div className="text-sm font-semibold text-white/90">
                                 Total Spent
@@ -757,7 +757,7 @@ export const ProfilePage: React.FC = () => {
                                     order.status.slice(1)}
                                 </span>
                                 <p className="text-lg font-bold text-gray-900 mt-1">
-                                  ${order.total.toFixed(2)}
+                                  GH₵{order.total.toFixed(2)}
                                 </p>
                               </div>
                             </div>
@@ -781,7 +781,7 @@ export const ProfilePage: React.FC = () => {
                                       {item.color && `• Color: ${item.color}`}
                                     </p>
                                     <p className="text-sm text-gray-600">
-                                      Qty: {item.quantity} • $
+                                      Qty: {item.quantity} • GH₵
                                       {item.price.toFixed(2)} each
                                     </p>
                                   </div>
@@ -793,9 +793,7 @@ export const ProfilePage: React.FC = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                  handleViewOrderDetails(order.orderId)
-                                }
+                                onClick={() => handleViewOrderDetails(order.id)}
                                 className="!text-gray-800 hover:!text-white">
                                 View Details
                               </Button>

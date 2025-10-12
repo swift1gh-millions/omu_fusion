@@ -67,11 +67,13 @@ export interface Order {
     email: string;
     phone: string;
   };
-  paymentMethod?: "card" | "mobile_money";
+  paymentMethod?: "paystack" | "card" | "mobile_money";
   paymentDetails?: {
-    provider?: string; // MTN, Telecel, AirtelTigo for mobile money
+    provider?: string; // MTN, Telecel, AirtelTigo for mobile money, or Paystack
     cardLast4?: string; // Last 4 digits for card
-    transactionId?: string;
+    transactionId?: string; // Paystack reference or other transaction ID
+    paystackReference?: string; // Paystack transaction reference
+    channel?: string; // Payment channel used (card, mobile_money, bank, etc.)
   };
   trackingNumber?: string;
   estimatedDelivery?: Timestamp;
@@ -105,59 +107,118 @@ export class OrderService {
   static async placeOrder(
     order: Omit<Order, "createdAt" | "updatedAt" | "id" | "orderNumber">
   ): Promise<string> {
-    const now = Timestamp.now();
-    const orderWithTimestamp = {
-      ...order,
-      orderNumber: this.generateOrderNumber(),
-      createdAt: now,
-      updatedAt: now,
-      status: "pending" as OrderStatus,
-      paymentStatus: "pending" as PaymentStatus,
-    };
+    try {
+      console.log("📦 OrderService: Starting order placement...", {
+        userId: order.userId,
+        itemCount: order.items?.length || 0,
+        total: order.total,
+      });
 
-    const docRef = await addDoc(
-      collection(db, this.COLLECTION_NAME),
-      orderWithTimestamp
-    );
+      const now = Timestamp.now();
+      const orderWithTimestamp = {
+        ...order,
+        orderNumber: this.generateOrderNumber(),
+        createdAt: now,
+        updatedAt: now,
+        // Preserve the status and paymentStatus from the order data
+        status: order.status || ("pending" as OrderStatus),
+        paymentStatus: order.paymentStatus || ("pending" as PaymentStatus),
+      };
 
-    // Add initial status history
-    await this.addStatusHistory(
-      docRef.id,
-      "pending",
-      order.userId,
-      "Order placed"
-    );
+      console.log("📦 OrderService: Order data prepared:", {
+        orderNumber: orderWithTimestamp.orderNumber,
+        status: orderWithTimestamp.status,
+        paymentStatus: orderWithTimestamp.paymentStatus,
+      });
 
-    return docRef.id;
+      const docRef = await addDoc(
+        collection(db, this.COLLECTION_NAME),
+        orderWithTimestamp
+      );
+
+      console.log("📦 OrderService: Order document created:", docRef.id);
+
+      // Add initial status history
+      await this.addStatusHistory(
+        docRef.id,
+        orderWithTimestamp.status,
+        order.userId,
+        `Order placed${
+          orderWithTimestamp.paymentStatus === "completed"
+            ? " with payment confirmed"
+            : ""
+        }`
+      );
+
+      console.log("📦 OrderService: Order placement successful:", docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error("❌ OrderService: Order placement failed:", error);
+      throw new Error(
+        `Failed to place order: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
   static async getOrderById(orderId: string): Promise<Order | null> {
-    const docRef = doc(db, this.COLLECTION_NAME, orderId);
-    const docSnap = await getDoc(docRef);
+    try {
+      console.log("OrderService.getOrderById - orderId:", orderId);
+      const docRef = doc(db, this.COLLECTION_NAME, orderId);
+      const docSnap = await getDoc(docRef);
+      console.log(
+        "OrderService.getOrderById - docSnap exists:",
+        docSnap.exists()
+      );
 
-    if (docSnap.exists()) {
-      return {
-        id: docSnap.id,
-        ...docSnap.data(),
-      } as Order;
+      if (docSnap.exists()) {
+        const orderData = {
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as Order;
+        console.log("OrderService.getOrderById - returning order:", orderData);
+        return orderData;
+      }
+
+      console.log("OrderService.getOrderById - order not found");
+      return null;
+    } catch (error) {
+      console.error("OrderService.getOrderById - error:", error);
+      throw error;
     }
-    return null;
   }
 
   static async getOrdersByUser(userId: string): Promise<Order[]> {
-    const q = query(
-      collection(db, this.COLLECTION_NAME),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          ...doc.data(),
-        } as Order)
-    );
+    try {
+      const q = query(
+        collection(db, this.COLLECTION_NAME),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as Order)
+      );
+    } catch (error: any) {
+      // Handle index building errors gracefully
+      if (
+        error?.code === "failed-precondition" &&
+        error?.message?.includes("index is currently building")
+      ) {
+        console.warn(
+          "OrderService: User orders index is still building, returning empty array"
+        );
+        return [];
+      }
+
+      console.error("Error fetching orders for user:", userId, error);
+      return [];
+    }
   }
 
   static async getAllOrders(): Promise<Order[]> {
@@ -226,33 +287,69 @@ export class OrderService {
     updatedBy: string,
     notes?: string
   ): Promise<void> {
-    const statusHistory: Omit<OrderStatusHistory, "id"> = {
-      orderId,
-      status,
-      timestamp: Timestamp.now(),
-      updatedBy,
-      notes,
-    };
+    try {
+      console.log("📝 OrderService: Adding status history...", {
+        orderId,
+        status,
+        updatedBy,
+        notes,
+      });
 
-    await addDoc(collection(db, this.STATUS_HISTORY_COLLECTION), statusHistory);
+      const statusHistory: Omit<OrderStatusHistory, "id"> = {
+        orderId,
+        status,
+        timestamp: Timestamp.now(),
+        updatedBy,
+        notes,
+      };
+
+      await addDoc(
+        collection(db, this.STATUS_HISTORY_COLLECTION),
+        statusHistory
+      );
+      console.log("📝 OrderService: Status history added successfully");
+    } catch (error) {
+      console.error("❌ OrderService: Failed to add status history:", error);
+      // Don't throw error here as it's not critical for order placement
+    }
   }
 
   static async getOrderStatusHistory(
     orderId: string
   ): Promise<OrderStatusHistory[]> {
-    const q = query(
-      collection(db, this.STATUS_HISTORY_COLLECTION),
-      where("orderId", "==", orderId),
-      orderBy("timestamp", "desc")
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          ...doc.data(),
-        } as OrderStatusHistory)
-    );
+    try {
+      const q = query(
+        collection(db, this.STATUS_HISTORY_COLLECTION),
+        where("orderId", "==", orderId),
+        orderBy("timestamp", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as OrderStatusHistory)
+      );
+    } catch (error: any) {
+      // Handle index building errors gracefully
+      if (
+        error?.code === "failed-precondition" &&
+        error?.message?.includes("index is currently building")
+      ) {
+        console.warn(
+          "OrderService: Order status history index is still building, returning empty array"
+        );
+        return [];
+      }
+
+      console.error(
+        "Error fetching order status history for order:",
+        orderId,
+        error
+      );
+      return [];
+    }
   }
 
   // Helper method to get order status display info

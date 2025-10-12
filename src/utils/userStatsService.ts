@@ -58,9 +58,17 @@ export class UserStatsService {
       // Calculate total orders
       const totalOrders = orders.length;
 
-      // Calculate total spent (only from delivered orders)
+      // Calculate total spent (from confirmed, processing, shipped, delivered, and out_for_delivery orders)
+      // Exclude only pending, cancelled, and returned orders
       const totalSpent = orders
-        .filter((order) => order.status === "delivered")
+        .filter(
+          (order) =>
+            order.status === "confirmed" ||
+            order.status === "processing" ||
+            order.status === "shipped" ||
+            order.status === "out_for_delivery" ||
+            order.status === "delivered"
+        )
         .reduce((sum, order) => sum + order.total, 0);
 
       // Count wishlist items
@@ -97,7 +105,30 @@ export class UserStatsService {
         ordersByStatus,
         recentOrdersCount,
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle index building errors gracefully
+      if (
+        error?.code === "failed-precondition" &&
+        error?.message?.includes("index is currently building")
+      ) {
+        console.warn(
+          "UserStatsService: Indexes are still building, returning default stats"
+        );
+        return {
+          totalOrders: 0,
+          totalSpent: 0,
+          wishlistItems: 0,
+          ordersByStatus: {
+            pending: 0,
+            processing: 0,
+            shipped: 0,
+            delivered: 0,
+            cancelled: 0,
+          },
+          recentOrdersCount: 0,
+        };
+      }
+
       console.error("Error fetching user statistics:", error);
       // Return demo data for admin user in case of error (checking for actual Firebase UID or email)
       if (userId === "admin" || userId.includes("admin")) {
@@ -207,7 +238,18 @@ export class UserStatsService {
         const dateB = b.createdAt.toDate();
         return dateB.getTime() - dateA.getTime();
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Handle index building errors gracefully
+      if (
+        error?.code === "failed-precondition" &&
+        error?.message?.includes("index is currently building")
+      ) {
+        console.warn(
+          "UserStatsService: Order history indexes are still building, returning empty array"
+        );
+        return [];
+      }
+
       console.error("Error fetching user order history:", error);
       return [];
     }

@@ -460,78 +460,80 @@ export const CategoryManagementPage: React.FC = () => {
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && categoryToDelete && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-md">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-red-500/20 border border-red-500/30 mb-4">
-                  <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
-                  Delete Category
-                </h3>
-
-                {productsInCategory > 0 ? (
-                  <div className="mb-6">
-                    <p className="text-red-300 mb-4 text-sm sm:text-base">
-                      ⚠️ This category contains{" "}
-                      <strong>{productsInCategory} product(s)</strong>
-                    </p>
-                    <p className="text-gray-300 mb-4 text-sm sm:text-base">
-                      Deleting this category will also delete all products in
-                      it. This action cannot be undone.
-                    </p>
-                    <p className="text-white mb-2 text-sm">
-                      Type <strong>"{categoryToDelete.name}"</strong> to
-                      confirm:
-                    </p>
-                    <input
-                      type="text"
-                      value={deleteConfirmation}
-                      onChange={(e) => setDeleteConfirmation(e.target.value)}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all duration-200"
-                      placeholder={categoryToDelete.name}
-                    />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
+            <div className="min-h-full flex items-start justify-center p-4">
+              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-md my-8">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-red-500/20 border border-red-500/30 mb-4">
+                    <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
                   </div>
-                ) : (
-                  <p className="text-gray-300 mb-6 text-sm sm:text-base">
-                    Are you sure you want to delete "{categoryToDelete.name}"?
-                    This action cannot be undone.
-                  </p>
-                )}
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                    Delete Category
+                  </h3>
 
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setCategoryToDelete(null);
-                      setDeleteConfirmation("");
-                    }}
-                    disabled={deleting}
-                    className="w-full sm:w-auto bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200">
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleDeleteCategory}
-                    disabled={
-                      deleting ||
-                      (productsInCategory > 0 &&
-                        deleteConfirmation !== categoryToDelete.name)
-                    }
-                    className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center">
-                    {deleting ? (
-                      <>
-                        <LoadingSpinner size="sm" />
-                        <span className="ml-2">Deleting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Category
-                        {productsInCategory > 0 &&
-                          ` & ${productsInCategory} Products`}
-                      </>
-                    )}
-                  </Button>
+                  {productsInCategory > 0 ? (
+                    <div className="mb-6">
+                      <p className="text-red-300 mb-4 text-sm sm:text-base">
+                        ⚠️ This category contains{" "}
+                        <strong>{productsInCategory} product(s)</strong>
+                      </p>
+                      <p className="text-gray-300 mb-4 text-sm sm:text-base">
+                        Deleting this category will also delete all products in
+                        it. This action cannot be undone.
+                      </p>
+                      <p className="text-white mb-2 text-sm">
+                        Type <strong>"{categoryToDelete.name}"</strong> to
+                        confirm:
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteConfirmation}
+                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all duration-200"
+                        placeholder={categoryToDelete.name}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-gray-300 mb-6 text-sm sm:text-base">
+                      Are you sure you want to delete "{categoryToDelete.name}"?
+                      This action cannot be undone.
+                    </p>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setCategoryToDelete(null);
+                        setDeleteConfirmation("");
+                      }}
+                      disabled={deleting}
+                      className="w-full sm:w-auto bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleDeleteCategory}
+                      disabled={
+                        deleting ||
+                        (productsInCategory > 0 &&
+                          deleteConfirmation !== categoryToDelete.name)
+                      }
+                      className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center">
+                      {deleting ? (
+                        <>
+                          <LoadingSpinner size="sm" />
+                          <span className="ml-2">Deleting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Category
+                          {productsInCategory > 0 &&
+                            ` & ${productsInCategory} Products`}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

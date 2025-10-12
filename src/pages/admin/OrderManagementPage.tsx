@@ -286,11 +286,11 @@ export const OrderManagementPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-white/10">
+              <div className="space-y-4 p-4">
                 {filteredOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="p-4 lg:p-6 hover:bg-white/5 transition-all duration-200">
+                    className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 p-6 hover:bg-white/10 transition-all duration-300 shadow-lg">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 flex-1">
                         <div>
@@ -425,179 +425,185 @@ export const OrderManagementPage: React.FC = () => {
 
           {/* Order Details Modal */}
           {showOrderModal && selectedOrder && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-2xl font-bold text-white">
-                      Order Details - #{selectedOrder.orderNumber}
-                    </h3>
-                    <button
-                      onClick={() => setShowOrderModal(false)}
-                      className="text-gray-400 hover:text-white transition-colors duration-200">
-                      <XCircle className="h-6 w-6" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    {/* Order Info */}
-                    <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
-                      <h4 className="font-semibold text-white text-lg mb-4">
-                        Order Information
-                      </h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Order ID:</span>
-                          <span className="font-semibold text-white">
-                            {selectedOrder.id}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Customer ID:</span>
-                          <span className="font-semibold text-white">
-                            {selectedOrder.userId}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Status:</span>
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                              statusOptions.find(
-                                (s) => s.value === selectedOrder.status
-                              )?.color || "bg-gray-500/20 text-gray-300"
-                            } border ${
-                              selectedOrder.status === "pending"
-                                ? "border-yellow-500/30"
-                                : selectedOrder.status === "processing"
-                                ? "border-blue-500/30"
-                                : selectedOrder.status === "shipped"
-                                ? "border-purple-500/30"
-                                : selectedOrder.status === "delivered"
-                                ? "border-green-500/30"
-                                : selectedOrder.status === "cancelled"
-                                ? "border-red-500/30"
-                                : "border-gray-500/30"
-                            }`}>
-                            {React.createElement(
-                              statusOptions.find(
-                                (s) => s.value === selectedOrder.status
-                              )?.icon || Clock,
-                              {
-                                className: "w-3 h-3 mr-1",
-                              }
-                            )}
-                            {statusOptions.find(
-                              (s) => s.value === selectedOrder.status
-                            )?.label || selectedOrder.status}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Total:</span>
-                          <span className="font-bold text-white text-xl">
-                            GH₵{selectedOrder.total.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Date:</span>
-                          <span className="font-semibold text-white">
-                            {selectedOrder.createdAt
-                              ?.toDate?.()
-                              ?.toLocaleDateString() || "N/A"}
-                          </span>
-                        </div>
-                      </div>
+            <div className="fixed inset-0 bg-black/60 z-50 overflow-y-auto">
+              <div className="min-h-full flex items-start justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl my-8 overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        Order Details - #{selectedOrder.orderNumber}
+                      </h3>
+                      <button
+                        onClick={() => setShowOrderModal(false)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <XCircle className="h-6 w-6" />
+                      </button>
                     </div>
 
-                    {/* Shipping Address */}
-                    {selectedOrder.shippingAddress && (
-                      <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
-                        <h4 className="font-semibold text-white text-lg mb-4">
-                          Shipping Address
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                      {/* Order Info */}
+                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+                        <h4 className="font-semibold text-gray-900 text-lg mb-4">
+                          Order Information
                         </h4>
-                        <div className="text-gray-300 space-y-1">
-                          <p className="font-semibold text-white">
-                            {selectedOrder.shippingAddress.firstName}{" "}
-                            {selectedOrder.shippingAddress.lastName}
-                          </p>
-                          <p>{selectedOrder.shippingAddress.digitalAddress}</p>
-                          <p>{selectedOrder.shippingAddress.apartment}</p>
-                          <p>{selectedOrder.shippingAddress.country}</p>
-                          <p className="font-medium text-blue-300">
-                            {selectedOrder.contactInfo?.phone}
-                          </p>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Order ID:</span>
+                            <span className="font-semibold text-gray-900">
+                              {selectedOrder.id}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Customer ID:</span>
+                            <span className="font-semibold text-gray-900">
+                              {selectedOrder.userId}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Status:</span>
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                statusOptions.find(
+                                  (s) => s.value === selectedOrder.status
+                                )?.color || "bg-gray-500/20 text-gray-300"
+                              } border ${
+                                selectedOrder.status === "pending"
+                                  ? "border-yellow-500/30"
+                                  : selectedOrder.status === "processing"
+                                  ? "border-blue-500/30"
+                                  : selectedOrder.status === "shipped"
+                                  ? "border-purple-500/30"
+                                  : selectedOrder.status === "delivered"
+                                  ? "border-green-500/30"
+                                  : selectedOrder.status === "cancelled"
+                                  ? "border-red-500/30"
+                                  : "border-gray-500/30"
+                              }`}>
+                              {React.createElement(
+                                statusOptions.find(
+                                  (s) => s.value === selectedOrder.status
+                                )?.icon || Clock,
+                                {
+                                  className: "w-3 h-3 mr-1",
+                                }
+                              )}
+                              {statusOptions.find(
+                                (s) => s.value === selectedOrder.status
+                              )?.label || selectedOrder.status}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Total:</span>
+                            <span className="font-bold text-gray-900 text-xl">
+                              GH₵{selectedOrder.total.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Date:</span>
+                            <span className="font-semibold text-gray-900">
+                              {selectedOrder.createdAt
+                                ?.toDate?.()
+                                ?.toLocaleDateString() || "N/A"}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Order Items */}
-                  <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
-                    <h4 className="font-semibold text-white text-lg mb-4">
-                      Order Items
-                    </h4>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className="border-b border-white/10">
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">
-                              Product
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">
-                              Price
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">
-                              Quantity
-                            </th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">
-                              Subtotal
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/10">
-                          {selectedOrder.items.map((item, index) => (
-                            <tr
-                              key={index}
-                              className="hover:bg-white/5 transition-colors duration-200">
-                              <td className="px-4 py-4">
-                                <div className="flex items-center">
-                                  <img
-                                    src={
-                                      item.productImage ||
-                                      "/placeholder-image.jpg"
-                                    }
-                                    alt={item.productName}
-                                    className="h-12 w-12 rounded-lg object-cover border border-white/20"
-                                  />
-                                  <div className="ml-4">
-                                    <div className="text-sm font-semibold text-white">
-                                      {item.productName}
+                      {/* Shipping Address */}
+                      {selectedOrder.shippingAddress && (
+                        <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+                          <h4 className="font-semibold text-gray-900 text-lg mb-4">
+                            Shipping Address
+                          </h4>
+                          <div className="text-gray-600 space-y-1">
+                            <p className="font-semibold text-gray-900">
+                              {selectedOrder.shippingAddress.firstName}{" "}
+                              {selectedOrder.shippingAddress.lastName}
+                            </p>
+                            <p>
+                              {selectedOrder.shippingAddress.digitalAddress}
+                            </p>
+                            <p>{selectedOrder.shippingAddress.apartment}</p>
+                            <p>{selectedOrder.shippingAddress.country}</p>
+                            <p className="font-medium text-blue-600">
+                              {selectedOrder.contactInfo?.phone}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+                      <h4 className="font-semibold text-gray-900 text-lg mb-4">
+                        Order Items
+                      </h4>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                Product
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                Price
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                Quantity
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                Subtotal
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {selectedOrder.items.map((item, index) => (
+                              <tr
+                                key={index}
+                                className="hover:bg-gray-100 transition-colors duration-200">
+                                <td className="px-4 py-4">
+                                  <div className="flex items-center">
+                                    <img
+                                      src={
+                                        item.productImage ||
+                                        "/placeholder-image.jpg"
+                                      }
+                                      alt={item.productName}
+                                      className="h-12 w-12 rounded-lg object-cover border border-gray-200"
+                                    />
+                                    <div className="ml-4">
+                                      <div className="text-sm font-semibold text-gray-900">
+                                        {item.productName}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-sm font-semibold text-white">
-                                GH₵{item.price.toLocaleString()}
-                              </td>
-                              <td className="px-4 py-4 text-sm font-semibold text-white">
-                                {item.quantity}
-                              </td>
-                              <td className="px-4 py-4 text-sm font-bold text-white">
-                                GH₵
-                                {(item.price * item.quantity).toLocaleString()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                                </td>
+                                <td className="px-4 py-4 text-sm font-semibold text-gray-900">
+                                  GH₵{item.price.toLocaleString()}
+                                </td>
+                                <td className="px-4 py-4 text-sm font-semibold text-gray-900">
+                                  {item.quantity}
+                                </td>
+                                <td className="px-4 py-4 text-sm font-bold text-gray-900">
+                                  GH₵
+                                  {(
+                                    item.price * item.quantity
+                                  ).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mt-6 flex justify-end">
-                    <Button
-                      onClick={() => setShowOrderModal(false)}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-200 px-6 py-3">
-                      Close
-                    </Button>
+                    <div className="mt-6 flex justify-end border-t border-gray-200 pt-4">
+                      <Button
+                        onClick={() => setShowOrderModal(false)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 transition-all duration-200 px-6 py-3">
+                        Close
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

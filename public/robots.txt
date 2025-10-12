@@ -1,3 +1,12 @@
+# OMU Fusion E-Commerce Platform
 # https://www.robotstxt.org/robotstxt.html
+
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /profile/
+
+# Sitemap
+Sitemap: https://your-domain.com/sitemap.xml

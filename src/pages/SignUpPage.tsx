@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { useAuth } from "../context/EnhancedAppContext";
 import { useDarkBackground } from "../utils/backgroundUtils";
+import { EmailValidationService } from "../utils/emailValidation";
 
 interface FormData {
   firstName: string;
@@ -45,6 +46,7 @@ export const SignUpPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -109,6 +111,31 @@ export const SignUpPage: React.FC = () => {
     }
   };
 
+  // Check email availability when user leaves the email field
+  const handleEmailBlur = async () => {
+    const email = formData.email.trim();
+
+    if (!email) {
+      return; // Don't check empty email
+    }
+
+    setIsCheckingEmail(true);
+
+    try {
+      const errorMessage = await EmailValidationService.getEmailError(email);
+      if (errorMessage) {
+        setErrors((prev) => ({ ...prev, email: errorMessage }));
+      } else {
+        // Clear email error if valid
+        setErrors((prev) => ({ ...prev, email: undefined }));
+      }
+    } catch (error) {
+      console.error("Error checking email:", error);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -129,11 +156,8 @@ export const SignUpPage: React.FC = () => {
 
       console.log("Registration successful!");
 
-      // Show success toast
-      toast.success("Account created successfully! Welcome to OMU Fusion! 🎉", {
-        duration: 4000,
-        position: "top-center",
-      });
+      // Show success message
+      toast.success("Account created successfully! Welcome to OMU Fusion! 🎉");
 
       // Small delay to ensure context state is updated before navigation
       setTimeout(() => {
@@ -145,39 +169,29 @@ export const SignUpPage: React.FC = () => {
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
 
-      let errorMessage = "Registration failed. Please try again.";
-
-      // Handle specific Firebase error codes
+      // Handle specific Firebase error codes with clean messages
       if (error.code) {
         switch (error.code) {
           case "auth/email-already-in-use":
-            errorMessage = "An account with this email already exists.";
+            // Show error under the email field
+            setErrors({ email: "This email is already registered" });
             break;
           case "auth/invalid-email":
-            errorMessage = "Invalid email address.";
-            break;
-          case "auth/operation-not-allowed":
-            errorMessage = "Email/password accounts are not enabled.";
+            // Show error under the email field
+            setErrors({ email: "Please enter a valid email address" });
             break;
           case "auth/weak-password":
-            errorMessage = "Password is too weak.";
+            // Show error under the password field
+            setErrors({ password: "Please choose a stronger password" });
             break;
           default:
-            errorMessage = error.message || errorMessage;
+            // Only show toast for unexpected errors
+            toast.error("Registration failed. Please try again.");
         }
       } else {
-        errorMessage = error.message || errorMessage;
+        // Show toast for non-Firebase errors
+        toast.error("Registration failed. Please try again.");
       }
-
-      setErrors({
-        general: errorMessage,
-      });
-
-      // Show error toast for better UX
-      toast.error(errorMessage, {
-        duration: 5000,
-        position: "top-center",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -203,17 +217,6 @@ export const SignUpPage: React.FC = () => {
 
           <GlassCard className="mt-8 p-8">
             <form className="space-y-6" onSubmit={handleSubmit}>
-              {errors.general && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                  <p className="text-red-400 text-sm text-center">
-                    {errors.general}
-                  </p>
-                </motion.div>
-              )}
-
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="firstName" className="sr-only">
@@ -284,14 +287,49 @@ export const SignUpPage: React.FC = () => {
                     autoComplete="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onBlur={handleEmailBlur}
+                    disabled={isCheckingEmail}
                     className={`block w-full pl-10 pr-3 py-3 border ${
                       errors.email ? "border-red-500" : "border-gray-300/20"
-                    } rounded-lg bg-black/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-200`}
+                    } rounded-lg bg-black/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-200 disabled:opacity-50`}
                     placeholder="Email address"
                   />
+                  {isCheckingEmail && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <svg
+                        className="animate-spin h-5 w-5 text-accent-gold"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.email}
+                  </p>
                 )}
               </div>
 

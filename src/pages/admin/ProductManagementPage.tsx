@@ -297,43 +297,45 @@ export const ProductManagementPage: React.FC = () => {
 
           {/* Delete Confirmation Modal */}
           {showDeleteModal && productToDelete && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md">
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-red-500/20 border border-red-500/30 mb-4">
-                    <Trash2 className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
-                    Delete Product
-                  </h3>
-                  <p className="text-gray-300 mb-6 text-sm sm:text-base">
-                    Are you sure you want to delete "{productToDelete.name}"?
-                    This action cannot be undone.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setShowDeleteModal(false);
-                        setProductToDelete(null);
-                      }}
-                      disabled={deleting}
-                      className="w-full sm:w-auto bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base">
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleDeleteProduct}
-                      disabled={deleting}
-                      className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center text-sm sm:text-base">
-                      {deleting ? (
-                        <>
-                          <LoadingSpinner size="sm" />
-                          <span className="ml-2">Deleting...</span>
-                        </>
-                      ) : (
-                        "Delete Product"
-                      )}
-                    </Button>
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
+              <div className="min-h-full flex items-start justify-center p-4">
+                <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md my-8">
+                  <div className="text-center">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-red-500/20 border border-red-500/30 mb-4">
+                      <Trash2 className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                      Delete Product
+                    </h3>
+                    <p className="text-gray-300 mb-6 text-sm sm:text-base">
+                      Are you sure you want to delete "{productToDelete.name}"?
+                      This action cannot be undone.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setShowDeleteModal(false);
+                          setProductToDelete(null);
+                        }}
+                        disabled={deleting}
+                        className="w-full sm:w-auto bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-200 text-sm sm:text-base">
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleDeleteProduct}
+                        disabled={deleting}
+                        className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center text-sm sm:text-base">
+                        {deleting ? (
+                          <>
+                            <LoadingSpinner size="sm" />
+                            <span className="ml-2">Deleting...</span>
+                          </>
+                        ) : (
+                          "Delete Product"
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

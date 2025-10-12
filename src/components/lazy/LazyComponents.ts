@@ -79,6 +79,11 @@ export const LazyAnalyticsPage = lazy(() =>
     default: module.AnalyticsPage,
   }))
 );
+export const LazyDiscountManagementPage = lazy(() =>
+  import("../../pages/admin/DiscountManagementPage").then((module) => ({
+    default: module.DiscountManagementPage,
+  }))
+);
 export const LazyAdminLoginPage = lazy(() =>
   import("../../pages/admin/AdminLoginPage").then((module) => ({
     default: module.AdminLoginPage,

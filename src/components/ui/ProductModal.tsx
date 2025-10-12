@@ -88,19 +88,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
           {/* Modal Content */}
+          {/* Close Button - Fixed position above modal */}
+          <button
+            onClick={onClose}
+            className="fixed top-4 right-4 z-[60] p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110">
+            <HiX className="w-6 h-6" />
+          </button>
+
           <motion.div
             className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}>
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white/90 transition-colors duration-200">
-              <HiX className="w-5 h-5" />
-            </button>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
               {/* Product Images */}
               <div className="space-y-4">

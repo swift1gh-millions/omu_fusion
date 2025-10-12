@@ -1,37 +1,64 @@
 import React, { useState } from "react";
-import { useAuth } from "../../context/EnhancedAppContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Shield, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
+import AdminAuthService from "../../utils/adminAuthService";
 import backgroundImage from "../../assets/backgrounds/dark7.avif";
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+}
 
 export const AdminLoginPage: React.FC = () => {
   const [email, setEmail] = useState("admin@omufusion.com");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setErrors({});
 
     try {
-      // Use the enhanced auth service with the provided email
-      await signIn(email, password);
+      // Use the admin-specific auth service (session-based, won't affect customer tabs)
+      const adminUser = await AdminAuthService.signIn(email, password);
 
       toast.success("Welcome, Admin!");
-      navigate("/admin/dashboard");
+
+      // Force a small delay to ensure all auth state is updated
+      // This gives time for AdminContext to pick up the authentication state
+      setTimeout(() => {
+        // Force navigation with replace to prevent back button issues
+        navigate("/admin/dashboard", { replace: true });
+
+        // Force a page reload if navigation doesn't work (backup solution)
+        setTimeout(() => {
+          if (window.location.pathname === "/admin/login") {
+            window.location.href = "/admin/dashboard";
+          }
+        }, 500);
+      }, 300);
     } catch (error: any) {
-      console.error("Login failed:", error);
-      const errorMessage = error.message || "Invalid password";
-      setError(errorMessage);
-      toast.error(errorMessage);
+      console.error("Admin login failed:", error);
+
+      // Handle specific error types and show inline errors
+      if (
+        error.message.includes("credentials") ||
+        error.message.includes("password")
+      ) {
+        setErrors({ password: "Invalid email or password" });
+      } else if (error.message.includes("email")) {
+        setErrors({ email: "Invalid email address" });
+      } else {
+        // Generic error
+        toast.error("Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,10 +104,32 @@ export const AdminLoginPage: React.FC = () => {
                 autoComplete="username"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) {
+                    setErrors((prev) => ({ ...prev, email: undefined }));
+                  }
+                }}
+                className={`w-full px-4 py-3 rounded-lg bg-white/10 border ${
+                  errors.email ? "border-red-500" : "border-white/20"
+                } text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm`}
                 placeholder="Enter admin email"
               />
+              {errors.email && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.email}
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -96,8 +145,15 @@ export const AdminLoginPage: React.FC = () => {
                   autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 pr-12"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) {
+                      setErrors((prev) => ({ ...prev, password: undefined }));
+                    }
+                  }}
+                  className={`w-full px-4 py-3 bg-white/10 backdrop-blur-sm border ${
+                    errors.password ? "border-red-500" : "border-white/20"
+                  } rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 pr-12`}
                   placeholder="Enter admin password"
                 />
                 <button
@@ -111,13 +167,22 @@ export const AdminLoginPage: React.FC = () => {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.password}
+                </p>
+              )}
             </div>
-
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/30 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-red-300 text-sm font-medium">{error}</div>
-              </div>
-            )}
 
             <div>
               <Button

@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { useAuth, useCart } from "../context/EnhancedAppContext";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
+import { DiscountService, DiscountCode } from "../utils/discountService";
 import toast from "react-hot-toast";
 
 export const CartPage: React.FC = () => {
@@ -19,7 +20,10 @@ export const CartPage: React.FC = () => {
   } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(
+    null
+  );
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [savedForLater, setSavedForLater] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
 
@@ -83,19 +87,46 @@ export const CartPage: React.FC = () => {
     setSavedForLater((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const applyPromoCode = () => {
-    // Simple promo code logic
-    if (promoCode.toLowerCase() === "welcome10") {
-      setAppliedPromo("WELCOME10");
-      setPromoCode("");
+  const applyPromoCode = async () => {
+    if (!promoCode.trim() || !user?.id) return;
+
+    setIsValidatingPromo(true);
+
+    try {
+      const validation = await DiscountService.validateDiscountCode(
+        promoCode.trim(),
+        cartTotal,
+        user.id
+      );
+
+      if (validation.valid && validation.discount) {
+        setAppliedDiscount(validation.discount);
+        setPromoCode("");
+        toast.success(
+          `Discount code applied! ${validation.discount.description}`
+        );
+      } else {
+        toast.error(validation.error || "Invalid discount code");
+      }
+    } catch (error) {
+      console.error("Error applying promo code:", error);
+      toast.error("Failed to apply discount code");
+    } finally {
+      setIsValidatingPromo(false);
     }
   };
 
+  const removeDiscount = () => {
+    setAppliedDiscount(null);
+    toast.success("Discount code removed");
+  };
+
   const subtotal = cartTotal;
-  const discount = appliedPromo === "WELCOME10" ? subtotal * 0.1 : 0;
-  const shipping = subtotal > 100 ? 0 : 9.99;
+  const discount = appliedDiscount
+    ? DiscountService.calculateDiscount(appliedDiscount, subtotal)
+    : 0;
   const tax = (subtotal - discount) * 0.08;
-  const total = subtotal - discount + shipping + tax;
+  const total = subtotal - discount + tax;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -280,32 +311,35 @@ export const CartPage: React.FC = () => {
                       type="text"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
-                      placeholder="Enter promo code"
+                      placeholder="Enter discount code"
                       className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                      disabled={isValidatingPromo}
                     />
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={applyPromoCode}
-                      disabled={!promoCode}>
-                      Apply
+                      disabled={!promoCode.trim() || isValidatingPromo}>
+                      {isValidatingPromo ? "..." : "Apply"}
                     </Button>
                   </div>
-                  {appliedPromo && (
+                  {appliedDiscount && (
                     <div className="flex items-center justify-between text-green-600 bg-green-50 px-3 py-2 rounded-lg">
-                      <span className="text-sm font-medium">
-                        {appliedPromo} applied
-                      </span>
+                      <div>
+                        <span className="text-sm font-medium">
+                          {appliedDiscount.code} applied
+                        </span>
+                        <p className="text-xs text-green-700">
+                          {appliedDiscount.description}
+                        </p>
+                      </div>
                       <button
-                        onClick={() => setAppliedPromo(null)}
+                        onClick={removeDiscount}
                         className="text-green-600 hover:text-green-800">
                         <HiX className="h-4 w-4" />
                       </button>
                     </div>
                   )}
-                  <p className="text-xs text-gray-500">
-                    Try: WELCOME10 for 10% off
-                  </p>
                 </div>
               </GlassCard>
 
@@ -326,12 +360,6 @@ export const CartPage: React.FC = () => {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium">
-                      {shipping === 0 ? "Free" : `₵${shipping.toFixed(2)}`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-gray-600">Tax</span>
                     <span className="font-medium">₵{tax.toFixed(2)}</span>
                   </div>
@@ -344,7 +372,13 @@ export const CartPage: React.FC = () => {
                 </div>
 
                 <div className="mt-6 space-y-3">
-                  <Link to="/checkout" className="block">
+                  <Link
+                    to={
+                      appliedDiscount
+                        ? `/checkout?discount=${appliedDiscount.code}`
+                        : "/checkout"
+                    }
+                    className="block">
                     <Button variant="primary" size="lg" className="w-full">
                       Proceed to Checkout
                     </Button>
@@ -355,12 +389,6 @@ export const CartPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-
-                {subtotal < 100 && (
-                  <p className="text-sm text-gray-500 mt-4 text-center">
-                    Add ₵{(100 - subtotal).toFixed(2)} more for free shipping!
-                  </p>
-                )}
               </GlassCard>
             </div>
           </motion.div>

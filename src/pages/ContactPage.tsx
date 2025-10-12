@@ -204,9 +204,29 @@ export const ContactPage: React.FC = memo(() => {
                           required
                           value={formData.name}
                           onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300"
+                          onBlur={() => handleBlur("name")}
+                          className={`w-full px-4 py-3 border ${
+                            errors.name && touched.name
+                              ? "border-red-500"
+                              : "border-gray-200"
+                          } rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300`}
                           placeholder="Enter your full name"
                         />
+                        {errors.name && touched.name && (
+                          <p className="mt-2 text-sm text-red-400 flex items-center">
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="currentColor"
+                              viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {errors.name}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label
@@ -221,9 +241,29 @@ export const ContactPage: React.FC = memo(() => {
                           required
                           value={formData.email}
                           onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300"
+                          onBlur={() => handleBlur("email")}
+                          className={`w-full px-4 py-3 border ${
+                            errors.email && touched.email
+                              ? "border-red-500"
+                              : "border-gray-200"
+                          } rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300`}
                           placeholder="Enter your email address"
                         />
+                        {errors.email && touched.email && (
+                          <p className="mt-2 text-sm text-red-400 flex items-center">
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="currentColor"
+                              viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {errors.email}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -239,7 +279,12 @@ export const ContactPage: React.FC = memo(() => {
                         required
                         value={formData.subject}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300">
+                        onBlur={() => handleBlur("subject")}
+                        className={`w-full px-4 py-3 border ${
+                          errors.subject && touched.subject
+                            ? "border-red-500"
+                            : "border-gray-200"
+                        } rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300`}>
                         <option value="">Select a subject</option>
                         <option value="general">General Inquiry</option>
                         <option value="support">Customer Support</option>
@@ -247,6 +292,21 @@ export const ContactPage: React.FC = memo(() => {
                         <option value="feedback">Feedback</option>
                         <option value="other">Other</option>
                       </select>
+                      {errors.subject && touched.subject && (
+                        <p className="mt-2 text-sm text-red-400 flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {errors.subject}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -262,9 +322,29 @@ export const ContactPage: React.FC = memo(() => {
                         rows={6}
                         value={formData.message}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300 resize-none"
+                        onBlur={() => handleBlur("message")}
+                        className={`w-full px-4 py-3 border ${
+                          errors.message && touched.message
+                            ? "border-red-500"
+                            : "border-gray-200"
+                        } rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-300 resize-none`}
                         placeholder="Tell us how we can help you..."
                       />
+                      {errors.message && touched.message && (
+                        <p className="mt-2 text-sm text-red-400 flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {errors.message}
+                        </p>
+                      )}
                     </div>
 
                     <Button

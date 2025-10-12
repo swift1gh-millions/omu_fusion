@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  doc,
-  deleteDoc,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../utils/firebase";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Button } from "../../components/ui/Button";
 import {
   Search,
-  Filter,
   Users,
   Mail,
   Phone,
   Calendar,
-  Shield,
-  UserX,
   Eye,
-  MoreVertical,
+  DollarSign,
+  ShoppingBag,
+  TrendingUp,
+  Activity,
+  CreditCard,
+  Package,
+  Star,
 } from "lucide-react";
+import { AnalyticsService } from "../../utils/analyticsService";
+import { OrderService } from "../../utils/orderService";
 
 interface User {
   id: string;
@@ -36,44 +35,71 @@ interface User {
   emailVerified?: boolean;
 }
 
+interface CustomerStats {
+  totalRevenue: number;
+  totalOrders: number;
+  totalCustomers: number;
+  averageOrderValue: number;
+  topCustomers: Array<{
+    customerId: string;
+    customerName: string;
+    totalOrders: number;
+    totalSpent: number;
+  }>;
+  recentCustomers: User[];
+  monthlyGrowth: number;
+}
+
 export const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [customers, setCustomers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [customerStats, setCustomerStats] = useState<CustomerStats | null>(
+    null
+  );
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm, selectedRole]);
+  }, [customers, searchTerm]);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
+      setStatsLoading(true);
+
+      // Fetch all users
       const usersSnapshot = await getDocs(collection(db, "users"));
       const usersData = usersSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as User[];
 
+      // Filter out admin users - only show customers
+      const customerData = usersData.filter(
+        (user) => user.role !== "admin" && !user.email?.includes("admin")
+      );
+
       // Sort by creation date (newest first)
-      usersData.sort((a, b) => {
+      customerData.sort((a, b) => {
         const dateA = new Date(a.createdAt);
         const dateB = new Date(b.createdAt);
         return dateB.getTime() - dateA.getTime();
       });
 
       setUsers(usersData);
+      setCustomers(customerData);
+
+      // Fetch customer analytics
+      await fetchCustomerStats(customerData);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -81,8 +107,69 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
+  const fetchCustomerStats = async (customerData: User[]) => {
+    try {
+      const [orders, customerAnalytics] = await Promise.all([
+        OrderService.getAllOrders(),
+        AnalyticsService.getCustomerAnalytics(),
+      ]);
+
+      const totalRevenue = orders.reduce(
+        (sum, order) => sum + (order.total || 0),
+        0
+      );
+      const totalOrders = orders.length;
+      const totalCustomers = customerData.length;
+      const averageOrderValue =
+        totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+      // Get recent customers (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const recentCustomers = customerData.filter((customer) => {
+        const createdDate = new Date(customer.createdAt);
+        return createdDate >= thirtyDaysAgo;
+      });
+
+      // Calculate monthly growth
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+      const previousMonthCustomers = customerData.filter((customer) => {
+        const createdDate = new Date(customer.createdAt);
+        return createdDate >= sixtyDaysAgo && createdDate < thirtyDaysAgo;
+      });
+
+      const monthlyGrowth =
+        previousMonthCustomers.length > 0
+          ? Math.round(
+              ((recentCustomers.length - previousMonthCustomers.length) /
+                previousMonthCustomers.length) *
+                100
+            )
+          : recentCustomers.length > 0
+          ? 100
+          : 0;
+
+      setCustomerStats({
+        totalRevenue,
+        totalOrders,
+        totalCustomers,
+        averageOrderValue,
+        topCustomers: customerAnalytics.topCustomers,
+        recentCustomers,
+        monthlyGrowth,
+      });
+    } catch (error) {
+      console.error("Error fetching customer stats:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   const filterUsers = () => {
-    let filtered = users;
+    let filtered = customers;
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -92,10 +179,6 @@ export const UserManagementPage: React.FC = () => {
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (user.phoneNumber && user.phoneNumber.includes(searchTerm))
       );
-    }
-
-    if (selectedRole) {
-      filtered = filtered.filter((user) => user.role === selectedRole);
     }
 
     setFilteredUsers(filtered);
@@ -133,57 +216,11 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: string) => {
-    try {
-      setUpdatingUser(userId);
-      await updateDoc(doc(db, "users", userId), {
-        role: newRole,
-        updatedAt: new Date().toISOString(),
-      });
-
-      setUsers(
-        users.map((user) =>
-          user.id === userId
-            ? { ...user, role: newRole as "customer" | "admin" }
-            : user
-        )
-      );
-    } catch (error) {
-      console.error("Error updating user role:", error);
-    } finally {
-      setUpdatingUser(null);
-    }
-  };
-
-  const deleteUser = async () => {
-    if (!userToDelete) return;
-
-    try {
-      setDeleting(true);
-      await deleteDoc(doc(db, "users", userToDelete.id));
-      setUsers(users.filter((u) => u.id !== userToDelete.id));
-      setShowDeleteModal(false);
-      setUserToDelete(null);
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
-    const isAdmin = role === "admin";
-    return (
-      <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          isAdmin
-            ? "bg-purple-100 text-purple-800"
-            : "bg-blue-100 text-blue-800"
-        }`}>
-        <Shield className="w-3 h-3 mr-1" />
-        {isAdmin ? "Admin" : "Customer"}
-      </span>
-    );
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
   };
 
   if (loading) {
@@ -202,104 +239,233 @@ export const UserManagementPage: React.FC = () => {
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-800/50 to-indigo-800/50 backdrop-blur-xl rounded-2xl p-4 lg:p-8 border border-slate-700/50 shadow-2xl">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-            User Management
+            Customer Management & Analytics
           </h1>
           <p className="text-slate-300 text-sm sm:text-base">
-            Manage user accounts and permissions
+            Comprehensive customer insights and financial analytics
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-blue-500/25 border border-blue-500/20">
-            <div className="flex items-center">
-              <div className="bg-blue-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
-                <Users className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+        {/* Customer Analytics Cards */}
+        {statsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-600/50 shadow-2xl animate-pulse">
+                <div className="h-4 bg-slate-600 rounded mb-2"></div>
+                <div className="h-8 bg-slate-600 rounded"></div>
               </div>
-              <div className="ml-3 lg:ml-4">
-                <p className="text-blue-100 text-xs lg:text-sm font-medium">
-                  Total Users
-                </p>
-                <p className="text-xl lg:text-2xl font-semibold text-white">
-                  {users.length}
-                </p>
+            ))}
+          </div>
+        ) : customerStats ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {/* Total Revenue */}
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-green-500/25 border border-green-500/20">
+              <div className="flex items-center">
+                <div className="bg-green-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <DollarSign className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-green-100 text-xs lg:text-sm font-medium">
+                    Total Revenue
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {formatCurrency(customerStats.totalRevenue)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Orders */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-blue-500/25 border border-blue-500/20">
+              <div className="flex items-center">
+                <div className="bg-blue-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <ShoppingBag className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-blue-100 text-xs lg:text-sm font-medium">
+                    Total Orders
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {customerStats.totalOrders.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Customers */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-purple-500/25 border border-purple-500/20">
+              <div className="flex items-center">
+                <div className="bg-purple-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <Users className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-purple-100 text-xs lg:text-sm font-medium">
+                    Total Customers
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {customerStats.totalCustomers.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Average Order Value */}
+            <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-orange-500/25 border border-orange-500/20">
+              <div className="flex items-center">
+                <div className="bg-orange-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-orange-100 text-xs lg:text-sm font-medium">
+                    Avg Order Value
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {formatCurrency(customerStats.averageOrderValue)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
+        ) : null}
 
-          <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-purple-500/25 border border-purple-500/20">
-            <div className="flex items-center">
-              <div className="bg-purple-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
-                <Shield className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+        {/* Additional Analytics Row */}
+        {!statsLoading && customerStats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {/* Monthly Growth */}
+            <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-teal-500/25 border border-teal-500/20">
+              <div className="flex items-center">
+                <div className="bg-teal-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <Activity className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-teal-100 text-xs lg:text-sm font-medium">
+                    Monthly Growth
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {customerStats.monthlyGrowth >= 0 ? "+" : ""}
+                    {customerStats.monthlyGrowth}%
+                  </p>
+                </div>
               </div>
-              <div className="ml-3 lg:ml-4">
-                <p className="text-purple-100 text-xs lg:text-sm font-medium">
-                  Admins
-                </p>
-                <p className="text-xl lg:text-2xl font-semibold text-white">
-                  {users.filter((u) => u.role === "admin").length}
-                </p>
+            </div>
+
+            {/* New Customers (Last 30 Days) */}
+            <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-indigo-500/25 border border-indigo-500/20">
+              <div className="flex items-center">
+                <div className="bg-indigo-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <Star className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-indigo-100 text-xs lg:text-sm font-medium">
+                    New Customers (30d)
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {customerStats.recentCustomers.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Revenue per Customer */}
+            <div className="bg-gradient-to-br from-rose-600 to-rose-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-rose-500/25 border border-rose-500/20">
+              <div className="flex items-center">
+                <div className="bg-rose-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
+                  <CreditCard className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="ml-3 lg:ml-4">
+                  <p className="text-rose-100 text-xs lg:text-sm font-medium">
+                    Revenue per Customer
+                  </p>
+                  <p className="text-xl lg:text-2xl font-semibold text-white">
+                    {formatCurrency(
+                      customerStats.totalCustomers > 0
+                        ? customerStats.totalRevenue /
+                            customerStats.totalCustomers
+                        : 0
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-4 lg:p-6 text-white shadow-2xl shadow-emerald-500/25 border border-emerald-500/20 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center">
-              <div className="bg-emerald-500/30 p-2 lg:p-3 rounded-xl backdrop-blur-sm">
-                <Users className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-              </div>
-              <div className="ml-3 lg:ml-4">
-                <p className="text-emerald-100 text-xs lg:text-sm font-medium">
-                  Customers
-                </p>
-                <p className="text-xl lg:text-2xl font-semibold text-white">
-                  {users.filter((u) => u.role === "customer").length}
-                </p>
+        {/* Top Customers and Search */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Customers */}
+          {!statsLoading && customerStats && (
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <Package className="h-5 w-5 mr-2 text-blue-400" />
+                Top Customers by Revenue
+              </h3>
+              <div className="space-y-3">
+                {customerStats.topCustomers
+                  .slice(0, 5)
+                  .map((customer, index) => (
+                    <div
+                      key={customer.customerId}
+                      className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-medium">
+                            {customer.customerName}
+                          </p>
+                          <p className="text-slate-400 text-xs">
+                            {customer.totalOrders} orders
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-semibold">
+                          {formatCurrency(customer.totalSpent)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
+          )}
+
+          {/* Search */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <Search className="h-5 w-5 mr-2 text-blue-400" />
+              Search Customers
+            </h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-3 w-full bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm"
+              />
+            </div>
+            <p className="text-slate-400 text-sm mt-2">
+              {filteredUsers.length} of {customers.length} customers
+            </p>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search users by name, email, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-3 w-full bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm"
-                />
-              </div>
-            </div>
-            <div className="sm:w-48">
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm">
-                <option value="">All Roles</option>
-                <option value="admin">Admins</option>
-                <option value="customer">Customers</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Users Table */}
+        {/* Customers Table */}
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No users found
+                No customers found
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {users.length === 0
-                  ? "No users have registered yet."
-                  : "Try adjusting your search or filter criteria."}
+                {customers.length === 0
+                  ? "No customers have registered yet."
+                  : "Try adjusting your search criteria."}
               </p>
             </div>
           ) : (
@@ -308,13 +474,13 @@ export const UserManagementPage: React.FC = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
+                      Customer
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Contact
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
+                      Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Joined
@@ -362,7 +528,10 @@ export const UserManagementPage: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getRoleBadge(user.role)}
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <Users className="w-3 h-3 mr-1" />
+                          Active Customer
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex items-center">
@@ -372,17 +541,6 @@ export const UserManagementPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <select
-                            value={user.role}
-                            onChange={(e) =>
-                              updateUserRole(user.id, e.target.value)
-                            }
-                            disabled={updatingUser === user.id}
-                            className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="customer">Customer</option>
-                            <option value="admin">Admin</option>
-                          </select>
-
                           <Button
                             variant="secondary"
                             size="sm"
@@ -391,18 +549,8 @@ export const UserManagementPage: React.FC = () => {
                               setShowUserModal(true);
                             }}
                             className="flex items-center">
-                            <Eye className="h-3 w-3" />
-                          </Button>
-
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => {
-                              setUserToDelete(user);
-                              setShowDeleteModal(true);
-                            }}
-                            className="flex items-center">
-                            <UserX className="h-3 w-3" />
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
                           </Button>
                         </div>
                       </td>
@@ -414,141 +562,112 @@ export const UserManagementPage: React.FC = () => {
           )}
         </div>
 
-        {/* User Details Modal */}
+        {/* Customer Details Modal */}
         {showUserModal && selectedUser && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  User Details
-                </h3>
-                <button
-                  onClick={() => setShowUserModal(false)}
-                  className="text-gray-400 hover:text-gray-600">
-                  ×
-                </button>
-              </div>
+          <div className="fixed inset-0 bg-black/60 z-50 overflow-y-auto">
+            <div className="min-h-full flex items-start justify-center p-4">
+              <div className="bg-white shadow-2xl rounded-xl w-full max-w-md my-8 p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Customer Details
+                  </h3>
+                  <button
+                    onClick={() => setShowUserModal(false)}
+                    className="text-gray-400 hover:text-gray-600">
+                    ×
+                  </button>
+                </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-center">
-                  <div className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center">
-                    <span className="text-xl font-medium text-white">
-                      {selectedUser.firstName.charAt(0)}
-                      {selectedUser.lastName.charAt(0)}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center">
+                      <span className="text-xl font-medium text-white">
+                        {selectedUser.firstName.charAt(0)}
+                        {selectedUser.lastName.charAt(0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <h4 className="text-lg font-medium text-gray-900">
+                      {selectedUser.firstName} {selectedUser.lastName}
+                    </h4>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-2">
+                      <Users className="w-3 h-3 mr-1" />
+                      Active Customer
                     </span>
                   </div>
-                </div>
 
-                <div className="text-center">
-                  <h4 className="text-lg font-medium text-gray-900">
-                    {selectedUser.firstName} {selectedUser.lastName}
-                  </h4>
-                  {getRoleBadge(selectedUser.role)}
-                </div>
-
-                <div className="border-t pt-4 space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Email
-                    </label>
-                    <p
-                      className="text-sm text-gray-900 truncate max-w-[300px]"
-                      title={selectedUser.email}>
-                      {selectedUser.email}
-                    </p>
-                  </div>
-
-                  {selectedUser.phoneNumber && (
+                  <div className="border-t pt-4 space-y-3">
                     <div>
                       <label className="text-sm font-medium text-gray-500">
-                        Phone
+                        Email
                       </label>
-                      <p className="text-sm text-gray-900">
-                        {selectedUser.phoneNumber}
+                      <p
+                        className="text-sm text-gray-900 truncate max-w-[300px]"
+                        title={selectedUser.email}>
+                        {selectedUser.email}
                       </p>
                     </div>
-                  )}
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      User ID
-                    </label>
-                    <p className="text-sm text-gray-900 font-mono">
-                      {selectedUser.uid}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Joined
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {formatDate(selectedUser.createdAt)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Last Updated
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {formatDate(selectedUser.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <Button
-                  onClick={() => setShowUserModal(false)}
-                  variant="secondary">
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && userToDelete && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3 text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                  <UserX className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mt-4">
-                  Delete User
-                </h3>
-                <div className="mt-2 px-7 py-3">
-                  <p className="text-sm text-gray-500">
-                    Are you sure you want to delete "{userToDelete.firstName}{" "}
-                    {userToDelete.lastName}"? This action cannot be undone.
-                  </p>
-                </div>
-                <div className="flex gap-3 justify-center mt-4">
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setUserToDelete(null);
-                    }}
-                    disabled={deleting}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={deleteUser}
-                    disabled={deleting}
-                    className="flex items-center">
-                    {deleting ? (
-                      <>
-                        <LoadingSpinner size="sm" />
-                        <span className="ml-2">Deleting...</span>
-                      </>
-                    ) : (
-                      "Delete"
+                    {selectedUser.phoneNumber && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Phone
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {selectedUser.phoneNumber}
+                        </p>
+                      </div>
                     )}
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Customer ID
+                      </label>
+                      <p className="text-sm text-gray-900 font-mono">
+                        {selectedUser.uid}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Member Since
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(selectedUser.createdAt)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Last Updated
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {formatDate(selectedUser.updatedAt)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Email Verified
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {selectedUser.emailVerified ? (
+                          <span className="text-green-600">✓ Verified</span>
+                        ) : (
+                          <span className="text-orange-600">⚠ Unverified</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    onClick={() => setShowUserModal(false)}
+                    variant="secondary">
+                    Close
                   </Button>
                 </div>
               </div>

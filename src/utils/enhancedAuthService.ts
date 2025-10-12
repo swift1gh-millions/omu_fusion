@@ -7,6 +7,8 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   sendEmailVerification,
+  setPersistence,
+  browserLocalPersistence,
 } from "firebase/auth";
 import {
   doc,
@@ -71,7 +73,7 @@ export interface AuthUser {
 }
 
 class EnhancedAuthService {
-  private static readonly ADMIN_COLLECTION = "admin_users";
+  private static readonly ADMIN_COLLECTION = "admins";
   private static readonly USERS_COLLECTION = "users";
   private static readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
@@ -149,12 +151,19 @@ class EnhancedAuthService {
 
         console.log("Starting enhanced signup process...", validatedData.email);
 
+        // Set LOCAL persistence for customer accounts (persists across tabs/windows)
+        await setPersistence(auth, browserLocalPersistence);
+
         // Create Firebase Auth user
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           validatedData.email,
           validatedData.password
         );
+
+        // Clear any admin session markers
+        sessionStorage.removeItem("isAdminSession");
+        sessionStorage.removeItem("adminUserId");
 
         const firebaseUser = userCredential.user;
 
@@ -245,6 +254,9 @@ class EnhancedAuthService {
         // Validate input data
         const validatedData = SignInSchema.parse(signInData);
 
+        // Set LOCAL persistence for customer accounts (persists across tabs/windows)
+        await setPersistence(auth, browserLocalPersistence);
+
         const userCredential = await signInWithEmailAndPassword(
           auth,
           validatedData.email,
@@ -258,6 +270,14 @@ class EnhancedAuthService {
           throw new Error("User profile not found");
         }
 
+        // Prevent admin accounts from logging in as customers
+        if (userProfile.role === "admin" || userProfile.role === "moderator") {
+          await signOut(auth);
+          throw new Error(
+            "Admin accounts cannot be used to access the shopping site. Please use the admin dashboard login."
+          );
+        }
+
         // Check account status
         if (userProfile.accountStatus === "suspended") {
           await signOut(auth);
@@ -268,6 +288,10 @@ class EnhancedAuthService {
 
         // Update login statistics
         await this.updateLastLogin(firebaseUser.uid);
+
+        // Clear any admin session markers
+        sessionStorage.removeItem("isAdminSession");
+        sessionStorage.removeItem("adminUserId");
 
         const authUser: AuthUser = {
           id: firebaseUser.uid,

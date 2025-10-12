@@ -454,13 +454,30 @@ export class AnalyticsService {
         string,
         { orders: number; spent: number; name: string }
       > = {};
+
+      // Create a map of user IDs to names for quick lookup
+      const userNameMap: Record<string, string> = {};
+      customers.forEach((customerDoc) => {
+        const userData = customerDoc.data();
+        if (userData.firstName && userData.lastName) {
+          userNameMap[
+            customerDoc.id
+          ] = `${userData.firstName} ${userData.lastName}`;
+        } else {
+          userNameMap[customerDoc.id] =
+            userData.email || `Customer ${customerDoc.id.slice(-4)}`;
+        }
+      });
+
       orders.forEach((order) => {
         if (order.userId) {
           if (!customerStats[order.userId]) {
             customerStats[order.userId] = {
               orders: 0,
               spent: 0,
-              name: `Customer ${order.userId.slice(-4)}`,
+              name:
+                userNameMap[order.userId] ||
+                `Customer ${order.userId.slice(-4)}`,
             };
           }
           customerStats[order.userId].orders += 1;

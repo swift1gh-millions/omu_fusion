@@ -287,14 +287,50 @@ export const ShopPage: React.FC = () => {
 
   // Get similar products for recommendations
   const getSimilarProducts = (currentProduct: ShopProduct) => {
+    // Function to calculate text similarity based on common words
+    const calculateTextSimilarity = (text1: string, text2: string): number => {
+      const words1 = text1.toLowerCase().split(/\s+/);
+      const words2 = text2.toLowerCase().split(/\s+/);
+      const commonWords = words1.filter(
+        (word) => words2.includes(word) && word.length > 2
+      );
+      return commonWords.length / Math.max(words1.length, words2.length);
+    };
+
     return products
-      .filter(
-        (p) =>
-          p.id !== currentProduct.id &&
-          (p.category === currentProduct.category ||
-            Math.abs(p.price - currentProduct.price) <= 50)
-      )
-      .slice(0, 4);
+      .filter((p) => p.id !== currentProduct.id)
+      .map((p) => {
+        let score = 0;
+
+        // Category match (highest priority)
+        if (p.category === currentProduct.category) {
+          score += 10;
+        }
+
+        // Description similarity
+        const descSimilarity = calculateTextSimilarity(
+          p.description || "",
+          currentProduct.description || ""
+        );
+        score += descSimilarity * 5;
+
+        // Name similarity
+        const nameSimilarity = calculateTextSimilarity(
+          p.name || "",
+          currentProduct.name || ""
+        );
+        score += nameSimilarity * 3;
+
+        // Price range similarity (bonus, not primary)
+        const priceDiff = Math.abs(p.price - currentProduct.price);
+        if (priceDiff <= 20) score += 2;
+        else if (priceDiff <= 50) score += 1;
+
+        return { product: p, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map((item) => item.product);
   };
 
   // Load products from Firestore

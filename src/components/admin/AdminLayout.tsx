@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/EnhancedAppContext";
+import { useAdminAuth } from "../../context/AdminContext";
 import {
   Home,
   Package,
@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   Folder,
+  Percent,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -19,14 +20,14 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  const { logout, user } = useAuth();
+  const { signOut, admin } = useAdminAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate("/admin/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -40,6 +41,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: "Categories", href: "/admin/categories", icon: Folder },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
     { name: "Users", href: "/admin/users", icon: Users },
+    { name: "Discounts", href: "/admin/discounts", icon: Percent },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   ];
 
@@ -78,7 +80,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <div className="flex items-center">
             <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
               <span className="text-xs font-bold text-white">
-                {user?.firstName?.charAt(0) || "A"}
+                {admin?.firstName?.charAt(0) || "A"}
               </span>
             </div>
           </div>
@@ -142,12 +144,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <div className="flex items-center mb-3">
               <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg flex-shrink-0">
                 <span className="text-sm font-bold text-white">
-                  {user?.firstName?.charAt(0) || "A"}
+                  {admin?.firstName?.charAt(0) || "A"}
                 </span>
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="text-sm font-medium text-white truncate">
-                  {user?.firstName} {user?.lastName}
+                  {admin?.firstName} {admin?.lastName}
                 </p>
                 <p className="text-xs text-slate-400">Administrator</p>
               </div>

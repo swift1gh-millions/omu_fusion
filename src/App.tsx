@@ -10,7 +10,9 @@ import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { MinimalFooter } from "./components/layout/MinimalFooter";
 import { AppProvider } from "./context/EnhancedAppContext";
+import { AdminProvider } from "./context/AdminContext";
 import { SearchProvider } from "./context/SearchContext";
+import { NotificationProvider } from "./components/ui/Notification";
 import { ScrollToTop } from "./components/ui/ScrollToTop";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { EnhancedAdminRoute } from "./components/EnhancedAdminRoute";
@@ -45,6 +47,7 @@ import { OrderManagementPage } from "./pages/admin/OrderManagementPage";
 import { UserManagementPage } from "./pages/admin/UserManagementPage";
 import { AnalyticsPage } from "./pages/admin/AnalyticsPage";
 import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
+import { DiscountManagementPage } from "./pages/admin/DiscountManagementPage";
 
 // Error Fallback Component
 function ErrorFallback({
@@ -158,70 +161,103 @@ function AppContent() {
             }
           />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+          {/* Admin Routes - Wrapped with AdminProvider */}
+          <Route
+            path="/admin/login"
+            element={
+              <AdminProvider>
+                <AdminLoginPage />
+              </AdminProvider>
+            }
+          />
           <Route
             path="/admin/dashboard"
             element={
-              <EnhancedAdminRoute>
-                <AdminDashboardPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <AdminDashboardPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/products"
             element={
-              <EnhancedAdminRoute>
-                <ProductManagementPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <ProductManagementPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/products/add"
             element={
-              <EnhancedAdminRoute>
-                <ProductUploadPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <ProductUploadPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/categories"
             element={
-              <EnhancedAdminRoute>
-                <CategoryManagementPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <CategoryManagementPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/orders"
             element={
-              <EnhancedAdminRoute>
-                <OrderManagementPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <OrderManagementPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/users"
             element={
-              <EnhancedAdminRoute>
-                <UserManagementPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <UserManagementPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/analytics"
             element={
-              <EnhancedAdminRoute>
-                <AnalyticsPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <AnalyticsPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
+            }
+          />
+          <Route
+            path="/admin/discounts"
+            element={
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <DiscountManagementPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
           <Route
             path="/admin/settings"
             element={
-              <EnhancedAdminRoute>
-                <AdminSettingsPage />
-              </EnhancedAdminRoute>
+              <AdminProvider>
+                <EnhancedAdminRoute>
+                  <AdminSettingsPage />
+                </EnhancedAdminRoute>
+              </AdminProvider>
             }
           />
 
@@ -236,46 +272,48 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <AppProvider>
-        <Router>
-          <SearchProvider>
-            <AppContent />
-            <Toaster
-              position="top-center"
-              reverseOrder={false}
-              gutter={8}
-              containerClassName=""
-              containerStyle={{}}
-              toastOptions={{
-                // Define default options
-                className: "",
-                duration: 4000,
-                style: {
-                  background: "rgba(0, 0, 0, 0.8)",
-                  color: "#fff",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  borderRadius: "12px",
-                  padding: "16px",
-                },
-                // Default options for specific types
-                success: {
-                  duration: 3000,
+      <NotificationProvider>
+        <AppProvider>
+          <Router>
+            <SearchProvider>
+              <AppContent />
+              <Toaster
+                position="top-center"
+                reverseOrder={false}
+                gutter={8}
+                containerClassName=""
+                containerStyle={{}}
+                toastOptions={{
+                  // Define default options
+                  className: "",
+                  duration: 4000,
                   style: {
-                    background: "rgba(34, 197, 94, 0.9)",
+                    background: "rgba(0, 0, 0, 0.8)",
+                    color: "#fff",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "12px",
+                    padding: "16px",
                   },
-                },
-                error: {
-                  duration: 5000,
-                  style: {
-                    background: "rgba(239, 68, 68, 0.9)",
+                  // Default options for specific types
+                  success: {
+                    duration: 3000,
+                    style: {
+                      background: "rgba(34, 197, 94, 0.9)",
+                    },
                   },
-                },
-              }}
-            />
-          </SearchProvider>
-        </Router>
-      </AppProvider>
+                  error: {
+                    duration: 5000,
+                    style: {
+                      background: "rgba(239, 68, 68, 0.9)",
+                    },
+                  },
+                }}
+              />
+            </SearchProvider>
+          </Router>
+        </AppProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

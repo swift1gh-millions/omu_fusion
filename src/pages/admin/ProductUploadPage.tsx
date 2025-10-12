@@ -25,6 +25,15 @@ interface ProductFormData {
   images: File[];
 }
 
+interface FormErrors {
+  name?: string;
+  description?: string;
+  price?: string;
+  category?: string;
+  stock?: string;
+  images?: string;
+}
+
 export const ProductUploadPage: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -36,7 +45,7 @@ export const ProductUploadPage: React.FC = () => {
   });
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [success, setSuccess] = useState(false);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -88,16 +97,22 @@ export const ProductUploadPage: React.FC = () => {
       [name]:
         name === "price" || name === "stock" ? parseFloat(value) || 0 : value,
     }));
+
+    // Clear error for this field when user starts typing
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 5) {
-      setError("Maximum 5 images allowed");
+      setErrors({ images: "Maximum 5 images allowed" });
       return;
     }
 
     setFormData((prev) => ({ ...prev, images: files }));
+    setErrors((prev) => ({ ...prev, images: undefined })); // Clear image error
 
     // Create preview URLs
     const previewUrls = files.map((file) => URL.createObjectURL(file));
@@ -114,22 +129,39 @@ export const ProductUploadPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setErrors({});
     setUploading(true);
 
     try {
-      // Validate form
-      if (
-        !formData.name.trim() ||
-        !formData.description.trim() ||
-        !formData.category ||
-        formData.price <= 0
-      ) {
-        throw new Error("Please fill in all required fields");
+      // Validate form with inline errors
+      const newErrors: FormErrors = {};
+
+      if (!formData.name.trim()) {
+        newErrors.name = "Product name is required";
+      }
+
+      if (!formData.description.trim()) {
+        newErrors.description = "Description is required";
+      }
+
+      if (!formData.category) {
+        newErrors.category = "Please select a category";
+      }
+
+      if (formData.price <= 0) {
+        newErrors.price = "Price must be greater than 0";
       }
 
       if (formData.images.length === 0) {
-        throw new Error("Please add at least one product image");
+        newErrors.images = "Please add at least one product image";
+      }
+
+      // If there are validation errors, show them and stop
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        setUploading(false);
+        toast.error("Please fix the errors before submitting");
+        return;
       }
 
       // Validate image files
@@ -144,9 +176,12 @@ export const ProductUploadPage: React.FC = () => {
         (img) => !validImageTypes.includes(img.type)
       );
       if (invalidImages.length > 0) {
-        throw new Error(
-          "Please upload only valid image files (JPEG, PNG, GIF, WebP)"
-        );
+        setErrors({
+          images: "Please upload only valid image files (JPEG, PNG, GIF, WebP)",
+        });
+        setUploading(false);
+        toast.error("Invalid image format");
+        return;
       }
 
       // Check file sizes (10MB each)
@@ -154,9 +189,13 @@ export const ProductUploadPage: React.FC = () => {
         (img) => img.size > 10 * 1024 * 1024
       );
       if (oversizedImages.length > 0) {
-        throw new Error(
-          "Some images are too large. Please keep images under 10MB each."
-        );
+        setErrors({
+          images:
+            "Some images are too large. Please keep images under 10MB each.",
+        });
+        setUploading(false);
+        toast.error("Images too large");
+        return;
       }
 
       toast.loading("Uploading product images...", { id: "upload" });
@@ -204,10 +243,26 @@ export const ProductUploadPage: React.FC = () => {
       }, 2000);
     } catch (error: any) {
       console.error("Upload error:", error);
+
+      // Parse error message to show inline errors when possible
       const errorMessage =
         error.message || "An unexpected error occurred. Please try again.";
-      setError(errorMessage);
-      toast.error(errorMessage, { id: "upload" });
+
+      // Check if error is validation-related
+      if (errorMessage.includes("description")) {
+        setErrors({ description: errorMessage });
+      } else if (errorMessage.includes("price")) {
+        setErrors({ price: errorMessage });
+      } else if (errorMessage.includes("name")) {
+        setErrors({ name: errorMessage });
+      } else if (errorMessage.includes("category")) {
+        setErrors({ category: errorMessage });
+      } else if (errorMessage.includes("image")) {
+        setErrors({ images: errorMessage });
+      } else {
+        // Generic error - show as toast only
+        toast.error(errorMessage, { id: "upload" });
+      }
     } finally {
       setUploading(false);
     }
@@ -234,14 +289,6 @@ export const ProductUploadPage: React.FC = () => {
             </div>
           )}
 
-          {error && (
-            <div className="mb-6 bg-red-500/20 border border-red-500/30 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-red-300 font-medium text-sm sm:text-base">
-                {error}
-              </div>
-            </div>
-          )}
-
           <form
             onSubmit={handleSubmit}
             className="space-y-6 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 sm:p-6 lg:p-8 shadow-xl">
@@ -259,9 +306,26 @@ export const ProductUploadPage: React.FC = () => {
                 required
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                className={`w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border ${
+                  errors.name ? "border-red-500" : "border-white/20"
+                } rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base`}
                 placeholder="Enter product name"
               />
+              {errors.name && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.name}
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -278,9 +342,26 @@ export const ProductUploadPage: React.FC = () => {
                 rows={4}
                 value={formData.description}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 resize-none text-sm sm:text-base"
+                className={`w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border ${
+                  errors.description ? "border-red-500" : "border-white/20"
+                } rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 resize-none text-sm sm:text-base`}
                 placeholder="Enter product description"
               />
+              {errors.description && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.description}
+                </p>
+              )}
             </div>
 
             {/* Price and Stock */}
@@ -300,9 +381,26 @@ export const ProductUploadPage: React.FC = () => {
                   step="0.01"
                   value={formData.price}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                  className={`w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border ${
+                    errors.price ? "border-red-500" : "border-white/20"
+                  } rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base`}
                   placeholder="0"
                 />
+                {errors.price && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.price}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -318,9 +416,26 @@ export const ProductUploadPage: React.FC = () => {
                   min="0"
                   value={formData.stock}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
+                  className={`w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border ${
+                    errors.stock ? "border-red-500" : "border-white/20"
+                  } rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base`}
                   placeholder="0"
                 />
+                {errors.stock && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.stock}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -351,7 +466,9 @@ export const ProductUploadPage: React.FC = () => {
                 value={formData.category}
                 onChange={handleInputChange}
                 disabled={loadingCategories}
-                className="w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base disabled:opacity-50">
+                className={`w-full px-4 py-2 sm:py-3 bg-white/10 backdrop-blur-sm border ${
+                  errors.category ? "border-red-500" : "border-white/20"
+                } rounded-lg text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base disabled:opacity-50`}>
                 <option value="" className="bg-slate-800 text-white">
                   {loadingCategories
                     ? "Loading categories..."
@@ -366,6 +483,21 @@ export const ProductUploadPage: React.FC = () => {
                   </option>
                 ))}
               </select>
+              {errors.category && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.category}
+                </p>
+              )}
               {categories.length === 0 && !loadingCategories && (
                 <p className="mt-1 text-sm text-yellow-400">
                   No categories found. Please add categories in the Categories
@@ -379,7 +511,10 @@ export const ProductUploadPage: React.FC = () => {
               <label className="block text-sm font-semibold text-white mb-2">
                 Product Images * (Max 5 images, 10MB each)
               </label>
-              <div className="border-2 border-dashed border-white/30 rounded-lg p-4 sm:p-6 lg:p-8 text-center bg-white/5 backdrop-blur-sm hover:border-white/40 transition-all duration-200">
+              <div
+                className={`border-2 border-dashed ${
+                  errors.images ? "border-red-500" : "border-white/30"
+                } rounded-lg p-4 sm:p-6 lg:p-8 text-center bg-white/5 backdrop-blur-sm hover:border-white/40 transition-all duration-200`}>
                 <div className="space-y-3">
                   <Upload className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
                   <div className="flex text-xs sm:text-sm text-gray-300 justify-center">
@@ -447,6 +582,21 @@ export const ProductUploadPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
+              )}
+              {errors.images && (
+                <p className="mt-2 text-sm text-red-400 flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {errors.images}
+                </p>
               )}
             </div>
 

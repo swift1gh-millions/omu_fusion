@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HiEye, HiEyeOff, HiMail, HiLockClosed } from "react-icons/hi";
+import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { useAuth } from "../context/EnhancedAppContext";
@@ -79,6 +80,8 @@ export const SignInPage: React.FC = () => {
       // Use real Firebase authentication
       await signIn(formData.email, formData.password);
 
+      toast.success("Welcome back!");
+
       // Small delay to ensure context state is updated before navigation
       setTimeout(() => {
         // Redirect to the intended page or home
@@ -86,9 +89,27 @@ export const SignInPage: React.FC = () => {
       }, 100);
     } catch (error: any) {
       console.error("Sign in error:", error);
-      setErrors({
-        general: error.message || "Invalid email or password",
-      });
+
+      // Show clean error messages
+      let errorMessage = "Invalid email or password";
+
+      if (error.message?.includes("admin")) {
+        errorMessage = error.message;
+      } else if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email";
+        setErrors({ email: errorMessage });
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password";
+        setErrors({ password: errorMessage });
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address";
+        setErrors({ email: errorMessage });
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed attempts. Please try again later.";
+        toast.error(errorMessage);
+      } else {
+        setErrors({ password: errorMessage });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -112,17 +133,6 @@ export const SignInPage: React.FC = () => {
 
           <GlassCard className="mt-8 p-8">
             <form className="space-y-6" onSubmit={handleSubmit}>
-              {errors.general && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                  <p className="text-red-400 text-sm text-center">
-                    {errors.general}
-                  </p>
-                </motion.div>
-              )}
-
               <div>
                 <label htmlFor="email" className="sr-only">
                   Email address
@@ -145,7 +155,19 @@ export const SignInPage: React.FC = () => {
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
@@ -181,7 +203,19 @@ export const SignInPage: React.FC = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.password}
+                  </p>
                 )}
               </div>
 
