@@ -90,19 +90,34 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
     useEffect(() => {
       if (!isInView) return;
 
-      // Generate optimized URL
-      const optimizedUrl = EnhancedImageService.buildCDNUrl(src, {
-        width,
-        height,
-        quality,
-        format,
-      });
-      setOptimizedSrc(optimizedUrl);
+      // Check if src is a valid URL (http/https) or a local asset path
+      const isExternalUrl =
+        src.startsWith("http://") || src.startsWith("https://");
 
-      // Generate responsive URLs if needed
-      if (responsive) {
-        const responsiveUrls = EnhancedImageService.generateResponsiveUrls(src);
-        setResponsiveSrcs(responsiveUrls);
+      // Only use CDN URL builder for external URLs
+      if (isExternalUrl) {
+        try {
+          const optimizedUrl = EnhancedImageService.buildCDNUrl(src, {
+            width,
+            height,
+            quality,
+            format,
+          });
+          setOptimizedSrc(optimizedUrl);
+
+          // Generate responsive URLs if needed
+          if (responsive) {
+            const responsiveUrls =
+              EnhancedImageService.generateResponsiveUrls(src);
+            setResponsiveSrcs(responsiveUrls);
+          }
+        } catch (error) {
+          console.warn("Failed to build CDN URL, using original:", error);
+          setOptimizedSrc(src);
+        }
+      } else {
+        // For local imports (Vite bundled assets), use as-is
+        setOptimizedSrc(src);
       }
     }, [src, width, height, quality, format, responsive, isInView]);
 
@@ -112,15 +127,23 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
     }, [onLoad]);
 
     const handleError = useCallback(() => {
-      if (fallbackSrc && currentSrc !== fallbackSrc) {
+      // Try fallback first, then original src
+      if (fallbackSrc && optimizedSrc !== fallbackSrc) {
+        setOptimizedSrc(fallbackSrc);
         setCurrentSrc(fallbackSrc);
+        setHasError(false);
+        setIsLoaded(false);
+      } else if (optimizedSrc !== src) {
+        // If optimized version failed, try original
+        setOptimizedSrc(src);
+        setCurrentSrc(src);
         setHasError(false);
         setIsLoaded(false);
       } else {
         setHasError(true);
       }
       onError?.();
-    }, [onError, fallbackSrc, currentSrc]);
+    }, [onError, fallbackSrc, optimizedSrc, src]);
 
     if (hasError) {
       return (
@@ -147,13 +170,13 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
     }
 
     return (
-      <div ref={containerRef} className="relative">
+      <div ref={containerRef} className="relative w-full h-full">
         {/* Placeholder */}
         {!isLoaded && (
           <img
             src={placeholder}
             alt=""
-            className={`absolute inset-0 ${className}`}
+            className={`absolute inset-0 w-full h-full ${className}`}
             style={{ width, height }}
             loading="eager"
             decoding="async"
@@ -164,7 +187,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
         {isInView && (
           <motion.img
             ref={imgRef}
-            src={currentSrc}
+            src={optimizedSrc || currentSrc}
             alt={alt}
             className={`${className}`}
             loading={priority ? "eager" : loading}

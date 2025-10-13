@@ -73,6 +73,55 @@
   }
 
   /* ==============================================
+     HERO SLOGAN STYLES
+     ============================================== */
+
+  .slogan-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .slogan-text {
+    font-family: "Montserrat", "Helvetica Neue", -apple-system,
+      BlinkMacSystemFont, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3),
+      0 0 40px rgba(255, 255, 255, 0.1), 0 0 60px rgba(212, 175, 55, 0.2);
+    position: relative;
+    z-index: 1;
+  }
+
+  .slogan-text::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(212, 175, 55, 0.05) 0%,
+      transparent 70%
+    );
+    z-index: -1;
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+  }
+
+  /* ==============================================
      STANDARD ANIMATION & TRANSITION SYSTEM
      Use these classes for consistency across components
      ============================================== */

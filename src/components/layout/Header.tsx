@@ -16,6 +16,7 @@ import { useCart, useAuth } from "../../context/EnhancedAppContext";
 import { useSearch } from "../../context/SearchContext";
 import { useWishlist } from "../../hooks/useWishlist";
 import { SearchModal } from "../ui/SearchModal";
+import { OptimizedImage } from "../ui/OptimizedImage";
 import logoBlack from "../../assets/logo_black.png";
 import logoWhite from "../../assets/logo_white.png";
 
@@ -145,15 +146,16 @@ export const Header: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}>
               <Link to="/" className="flex items-center group">
-                <motion.img
-                  src={logoSrc}
-                  alt="OMU FUSION"
-                  className="h-10 lg:h-12 w-auto transition-all duration-300 group-hover:scale-110"
-                  loading="eager"
-                  decoding="sync"
-                  fetchPriority="high"
-                  whileHover={{ rotate: 5 }}
-                />
+                <motion.div whileHover={{ rotate: 5, scale: 1.1 }}>
+                  <OptimizedImage
+                    src={logoSrc}
+                    alt="OMU FUSION"
+                    className="h-10 lg:h-12 w-auto transition-all duration-300"
+                    loading="eager"
+                    priority={true}
+                    quality={95}
+                  />
+                </motion.div>
               </Link>
             </motion.div>
 
@@ -441,13 +443,13 @@ export const Header: React.FC = () => {
           {/* Menu Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/10">
             <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-              <img
+              <OptimizedImage
                 src={logoSrc}
                 alt="OMU FUSION"
                 className="h-8 w-auto"
                 loading="eager"
-                decoding="sync"
-                fetchPriority="high"
+                priority={true}
+                quality={95}
               />
             </Link>
             <button
