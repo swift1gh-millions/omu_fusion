@@ -149,6 +149,9 @@ export const Header: React.FC = () => {
                   src={logoSrc}
                   alt="OMU FUSION"
                   className="h-10 lg:h-12 w-auto transition-all duration-300 group-hover:scale-110"
+                  loading="eager"
+                  decoding="sync"
+                  fetchPriority="high"
                   whileHover={{ rotate: 5 }}
                 />
               </Link>
@@ -336,6 +339,9 @@ export const Header: React.FC = () => {
                   src={logoSrc}
                   alt="OMU FUSION"
                   className="h-12 w-auto transition-all duration-300 group-hover:scale-110"
+                  loading="eager"
+                  decoding="sync"
+                  fetchPriority="high"
                   whileHover={{ rotate: 5 }}
                 />
               </Link>
@@ -435,7 +441,14 @@ export const Header: React.FC = () => {
           {/* Menu Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/10">
             <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-              <img src={logoSrc} alt="OMU FUSION" className="h-8 w-auto" />
+              <img
+                src={logoSrc}
+                alt="OMU FUSION"
+                className="h-8 w-auto"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
+              />
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(false)}

@@ -1,15 +1,18 @@
 import { useEffect } from "react";
 import { usePreloadLinks } from "../hooks/useImagePreloading";
 
+// Import hero images directly to get the resolved URLs
+import bg1 from "../assets/bg1.jpg";
+import logoWhite from "../assets/logo_white.png";
+import logoBlack from "../assets/logo_black.png";
+
 // Critical resources that should be preloaded
 const CRITICAL_RESOURCES = {
   // Hero section backgrounds (first image is critical)
-  heroImages: [
-    // These will be dynamically imported from the hero component
-  ],
+  heroImages: [bg1], // Only preload the first hero image for immediate display
 
   // Logo images
-  logos: ["/src/assets/logo_white.png", "/src/assets/logo_black.png"],
+  logos: [logoWhite, logoBlack],
 
   // Critical CSS for above-the-fold content
   criticalStyles: [
@@ -21,24 +24,36 @@ export const PerformanceOptimizer: React.FC = () => {
   const { addPreloadLinks } = usePreloadLinks();
 
   useEffect(() => {
-    // Preload critical resources
+    // Preload critical resources immediately with highest priority
     const preloadLinks = [
-      // Preload hero background images
+      // Preload hero background images with highest priority
       ...CRITICAL_RESOURCES.heroImages.map((href) => ({
         href,
         as: "image" as const,
         type: "image/jpeg",
+        crossOrigin: "anonymous" as const,
       })),
 
-      // Preload logo images
+      // Preload logo images with highest priority
       ...CRITICAL_RESOURCES.logos.map((href) => ({
         href,
         as: "image" as const,
         type: "image/png",
+        crossOrigin: "anonymous" as const,
       })),
     ];
 
+    // Add preload links immediately
     addPreloadLinks(preloadLinks);
+
+    // Also preload images programmatically for immediate availability
+    [...CRITICAL_RESOURCES.heroImages, ...CRITICAL_RESOURCES.logos].forEach(
+      (src) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = src;
+      }
+    );
 
     // Add performance observer for monitoring
     if ("PerformanceObserver" in window) {

@@ -60,7 +60,6 @@ export default defineConfig(({ mode }) => {
             utils: ["zod", "uuid"],
           },
         },
-        chunkSizeWarningLimit: 1000,
       },
     },
     resolve: {

@@ -81,43 +81,42 @@ export const HeroSection: React.FC = () => {
     return () => clearInterval(interval);
   }, [backgroundImages.length]);
 
-  // Preload images for smooth transitions using the new preloader
+  // Immediate hero image display and background preloading
   useEffect(() => {
-    const preloadHeroImages = async () => {
+    // Start slideshow immediately - don't wait for preloading
+    setSlideshowStarted(true);
+    setImagesLoaded([true, true, true]);
+    setPreloadComplete(true);
+
+    // Preload remaining images in background (non-blocking)
+    const preloadRemainingImages = async () => {
       try {
-        // Preload the first image with high priority
-        const firstImage = backgroundImages[0].src;
-        await preloadImages([firstImage]);
-
-        // Mark first image as loaded and start slideshow
-        setImagesLoaded((prev) => {
-          const newState = [...prev];
-          newState[0] = true;
-          return newState;
-        });
-        setSlideshowStarted(true);
-
-        // Preload remaining images in background
         const remainingImages = backgroundImages.slice(1).map((img) => img.src);
         await preloadImages(remainingImages);
-
-        setImagesLoaded([true, true, true]);
-        setPreloadComplete(true);
+        console.log("Hero images preloaded successfully");
       } catch (error) {
-        console.warn("Failed to preload some hero images:", error);
-        // Force enable slideshow even if preloading fails
-        setImagesLoaded([true, true, true]);
-        setSlideshowStarted(true);
-        setPreloadComplete(true);
+        console.warn("Background preloading failed (non-critical):", error);
       }
     };
 
-    preloadHeroImages();
-  }, [backgroundImages, preloadImages]);
+    // Use setTimeout to ensure this doesn't block initial render
+    const timer = setTimeout(() => {
+      preloadRemainingImages();
+    }, 100);
 
+    return () => clearTimeout(timer);
+  }, [backgroundImages, preloadImages]);
   return (
-    <section className="relative min-h-screen bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-      {/* Slideshow Background */}
+    <section className="hero-container relative min-h-screen bg-gradient-to-br from-gray-900 to-black overflow-hidden">
+      {/* Immediate Background - shows instantly */}
+      <div
+        className="hero-background-immediate absolute inset-0"
+        style={{
+          filter: "grayscale(20%) contrast(1.2) brightness(0.9)",
+        }}
+      />
+
+      {/* Slideshow Background - animated layers */}
       <div className="absolute inset-0">
         {backgroundImages.map((image, index) => (
           <motion.div

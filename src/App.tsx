@@ -25,6 +25,11 @@ import {
   registerServiceWorker,
   addPreconnects,
 } from "./utils/performanceOptimizer";
+import {
+  CriticalResourcePreloader,
+  CriticalCSS,
+} from "./components/ui/CriticalResourcePreloader";
+import { CookieConsentBanner } from "./components/ui/CookieConsent";
 
 // Pages
 import { HomePage } from "./pages/HomePage";
@@ -115,6 +120,8 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col prevent-overscroll">
+      <CriticalCSS />
+      <CriticalResourcePreloader />
       <PerformanceOptimizer />
       <ScrollToTop />
       {!isAdminRoute && <Header />}
@@ -325,6 +332,9 @@ function App() {
                   },
                 }}
               />
+
+              {/* Cookie Consent Banner */}
+              <CookieConsentBanner />
             </SearchProvider>
           </Router>
         </AppProvider>

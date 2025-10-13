@@ -3,9 +3,36 @@
   publish = "dist"
   command = "npm run build"
 
+# Environment variables for build optimization
+[build.environment]
+  NODE_VERSION = "18"
+  NETLIFY_USE_SHARP = "true"
+  NETLIFY_USE_WEBP = "true"
+
 # Image optimization settings
 [[plugins]]
   package = "@netlify/plugin-sitemap"
+
+# Enable Netlify Image CDN for automatic optimization
+[[plugins]]
+  package = "netlify-plugin-image-optim"
+
+# Critical asset preloading
+[[headers]]
+  for = "/assets/bg1-*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"
+    # Preload hint for browsers
+    Link = "</assets/bg1-*.jpg>; rel=preload; as=image; fetchpriority=high"
+
+[[headers]]
+  for = "/assets/logo_*-*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"
+    # Preload hint for browsers
+    Link = "</assets/logo_white-*.png>; rel=preload; as=image; fetchpriority=high, </assets/logo_black-*.png>; rel=preload; as=image; fetchpriority=high"
 
 # Headers for better performance
 [[headers]]
@@ -22,26 +49,30 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Cache images with shorter expiry for updates
+# Cache images with optimized expiry
 [[headers]]
   for = "*.jpg"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+    Vary = "Accept"
 
 [[headers]]
   for = "*.png" 
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+    Vary = "Accept"
 
 [[headers]]
   for = "*.webp"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=7776000, immutable"
+    Vary = "Accept"
 
 [[headers]]
   for = "*.avif"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=7776000, immutable"
+    Vary = "Accept"
 
 # Compress all text files
 [[headers]]
@@ -74,3 +105,37 @@
 # Enable Netlify Image CDN for automatic optimization
 # Images will be automatically converted to WebP when supported
 # and resized based on device requirements
+
+# Image transformation rules
+[[redirects]]
+  from = "/.netlify/images/*"
+  to = "/.netlify/images/:splat"
+  status = 200
+  force = false
+
+# Enable automatic image optimization for specific paths
+[[headers]]
+  for = "/src/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# CORS headers for images
+[[headers]]
+  for = "/assets/*.jpg"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, HEAD"
+    Access-Control-Max-Age = "86400"
+
+[[headers]]
+  for = "/assets/*.png"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, HEAD"
+    Access-Control-Max-Age = "86400"
+
+# Enable brotli compression for images
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Content-Encoding = "br"
