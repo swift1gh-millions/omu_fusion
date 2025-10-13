@@ -8,31 +8,25 @@
   NODE_VERSION = "18"
   NETLIFY_USE_SHARP = "true"
   NETLIFY_USE_WEBP = "true"
+  NETLIFY_USE_AVIF = "true"
 
-# Image optimization settings
+# Plugins for optimization
 [[plugins]]
   package = "@netlify/plugin-sitemap"
 
-# Enable Netlify Image CDN for automatic optimization
-[[plugins]]
-  package = "netlify-plugin-image-optim"
-
-# Critical asset preloading
+# Critical asset preloading - Hero Image
 [[headers]]
   for = "/assets/bg1-*.jpg"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     X-Content-Type-Options = "nosniff"
-    # Preload hint for browsers
-    Link = "</assets/bg1-*.jpg>; rel=preload; as=image; fetchpriority=high"
 
+# Logo Images
 [[headers]]
   for = "/assets/logo_*-*.png"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
     X-Content-Type-Options = "nosniff"
-    # Preload hint for browsers
-    Link = "</assets/logo_white-*.png>; rel=preload; as=image; fetchpriority=high, </assets/logo_black-*.png>; rel=preload; as=image; fetchpriority=high"
 
 # Headers for better performance
 [[headers]]
@@ -91,34 +85,6 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# SPA routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Image transformations (Netlify automatically optimizes images)
-# This enables automatic WebP conversion and resizing
-[build.environment]
-  NODE_VERSION = "18"
-
-# Enable Netlify Image CDN for automatic optimization
-# Images will be automatically converted to WebP when supported
-# and resized based on device requirements
-
-# Image transformation rules
-[[redirects]]
-  from = "/.netlify/images/*"
-  to = "/.netlify/images/:splat"
-  status = 200
-  force = false
-
-# Enable automatic image optimization for specific paths
-[[headers]]
-  for = "/src/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
 # CORS headers for images
 [[headers]]
   for = "/assets/*.jpg"
@@ -134,8 +100,8 @@
     Access-Control-Allow-Methods = "GET, HEAD"
     Access-Control-Max-Age = "86400"
 
-# Enable brotli compression for images
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Content-Encoding = "br"
+# SPA routing - must be last
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
