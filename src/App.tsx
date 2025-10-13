@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -20,6 +20,11 @@ import { useScrollAnimation } from "./components/ui/ScrollAnimation";
 import { ErrorBoundary } from "react-error-boundary";
 import monitoringService from "./utils/monitoringService";
 import { useAnalytics } from "./hooks/useAnalytics";
+import {
+  PerformanceOptimizer,
+  registerServiceWorker,
+  addPreconnects,
+} from "./utils/performanceOptimizer";
 
 // Pages
 import { HomePage } from "./pages/HomePage";
@@ -95,12 +100,22 @@ function AppContent() {
   // Initialize analytics
   const { trackError } = useAnalytics({ trackPageViews: true });
 
+  // Initialize performance optimizations
+  useEffect(() => {
+    // Add preconnects to external domains
+    addPreconnects();
+
+    // Register service worker for caching
+    registerServiceWorker();
+  }, []);
+
   // Determine which footer to show based on current route
   const showFullFooter = location.pathname === "/";
   const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <div className="min-h-screen bg-white flex flex-col prevent-overscroll">
+      <PerformanceOptimizer />
       <ScrollToTop />
       {!isAdminRoute && <Header />}
       <main className="relative flex-1 prevent-overscroll">

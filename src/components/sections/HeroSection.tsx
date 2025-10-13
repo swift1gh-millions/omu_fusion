@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { SplitText } from "../ui/SplitText";
+import { useImagePreloader } from "../ui/ProgressiveImage";
 
 // Import background images
 import bg1 from "../../assets/bg1.jpg";
@@ -10,6 +11,7 @@ import bg3 from "../../assets/bg3.jpg";
 
 export const HeroSection: React.FC = () => {
   const navigate = useNavigate();
+  const { preloadImages } = useImagePreloader();
   const [scrollY, setScrollY] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
@@ -20,6 +22,7 @@ export const HeroSection: React.FC = () => {
   ]);
   const [slideshowStarted, setSlideshowStarted] = useState(false);
   const [titleAnimationComplete, setTitleAnimationComplete] = useState(false);
+  const [preloadComplete, setPreloadComplete] = useState(false);
 
   // Memoized background images array
   const backgroundImages = useMemo(
@@ -78,35 +81,39 @@ export const HeroSection: React.FC = () => {
     return () => clearInterval(interval);
   }, [backgroundImages.length]);
 
-  // Preload images for smooth transitions
+  // Preload images for smooth transitions using the new preloader
   useEffect(() => {
-    // Start slideshow immediately, don't wait for preloading
-    const startTimer = setTimeout(() => {
-      setImagesLoaded([true, true, true]); // Force enable slideshow
-    }, 1000);
+    const preloadHeroImages = async () => {
+      try {
+        // Preload the first image with high priority
+        const firstImage = backgroundImages[0].src;
+        await preloadImages([firstImage]);
 
-    backgroundImages.forEach((image, index) => {
-      const img = new Image();
-      img.onload = () => {
+        // Mark first image as loaded and start slideshow
         setImagesLoaded((prev) => {
           const newState = [...prev];
-          newState[index] = true;
+          newState[0] = true;
           return newState;
         });
-      };
-      img.onerror = (error) => {
-        // Even if image fails to load, mark as loaded to continue slideshow
-        setImagesLoaded((prev) => {
-          const newState = [...prev];
-          newState[index] = true;
-          return newState;
-        });
-      };
-      img.src = image.src;
-    });
+        setSlideshowStarted(true);
 
-    return () => clearTimeout(startTimer);
-  }, [backgroundImages]);
+        // Preload remaining images in background
+        const remainingImages = backgroundImages.slice(1).map((img) => img.src);
+        await preloadImages(remainingImages);
+
+        setImagesLoaded([true, true, true]);
+        setPreloadComplete(true);
+      } catch (error) {
+        console.warn("Failed to preload some hero images:", error);
+        // Force enable slideshow even if preloading fails
+        setImagesLoaded([true, true, true]);
+        setSlideshowStarted(true);
+        setPreloadComplete(true);
+      }
+    };
+
+    preloadHeroImages();
+  }, [backgroundImages, preloadImages]);
 
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-gray-900 to-black overflow-hidden">

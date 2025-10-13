@@ -1,6 +1,14 @@
-import React, { useState, useCallback, memo, useMemo, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  memo,
+  useMemo,
+  useEffect,
+  useRef,
+} from "react";
 import { motion } from "framer-motion";
 import { useAccessibleAnimations } from "../../hooks/useAccessibleAnimations";
+import { useIntersectionPreloader } from "../../hooks/useImagePreloading";
 import EnhancedImageService from "../../utils/enhancedImageService";
 
 interface OptimizedImageProps {
@@ -46,11 +54,42 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
     const [responsiveSrcs, setResponsiveSrcs] = useState<
       Record<string, string>
     >({});
+    const [isInView, setIsInView] = useState(priority);
 
+    const imgRef = useRef<HTMLImageElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const { fadeIn } = useAccessibleAnimations();
+    const { preloadOnIntersection } = useIntersectionPreloader();
+
+    // Intersection Observer for lazy loading
+    useEffect(() => {
+      if (priority) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            observer.disconnect();
+          }
+        },
+        {
+          rootMargin: "50px 0px", // Start loading 50px before entering viewport
+          threshold: 0.1,
+        }
+      );
+
+      if (containerRef.current) {
+        observer.observe(containerRef.current);
+      }
+
+      return () => observer.disconnect();
+    }, [priority]);
 
     // Generate optimized and responsive URLs
     useEffect(() => {
+      if (!isInView) return;
+
       // Generate optimized URL
       const optimizedUrl = EnhancedImageService.buildCDNUrl(src, {
         width,
@@ -65,7 +104,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
         const responsiveUrls = EnhancedImageService.generateResponsiveUrls(src);
         setResponsiveSrcs(responsiveUrls);
       }
-    }, [src, width, height, quality, format, responsive]);
+    }, [src, width, height, quality, format, responsive, isInView]);
 
     const handleLoad = useCallback(() => {
       setIsLoaded(true);
@@ -108,29 +147,44 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = memo(
     }
 
     return (
-      <div className="relative">
+      <div ref={containerRef} className="relative">
+        {/* Placeholder */}
         {!isLoaded && (
           <img
             src={placeholder}
             alt=""
             className={`absolute inset-0 ${className}`}
             style={{ width, height }}
+            loading="eager"
+            decoding="async"
           />
         )}
-        <motion.img
-          src={currentSrc}
-          alt={alt}
-          className={`${className}`}
-          loading={priority ? "eager" : loading}
-          decoding="async"
-          width={width}
-          height={height}
-          onLoad={handleLoad}
-          onError={handleError}
-          variants={fadeIn}
-          initial="hidden"
-          animate={isLoaded ? "visible" : "hidden"}
-        />
+
+        {/* Main Image - Only render when in view */}
+        {isInView && (
+          <motion.img
+            ref={imgRef}
+            src={currentSrc}
+            alt={alt}
+            className={`${className}`}
+            loading={priority ? "eager" : loading}
+            decoding="async"
+            width={width}
+            height={height}
+            onLoad={handleLoad}
+            onError={handleError}
+            variants={fadeIn}
+            initial="hidden"
+            animate={isLoaded ? "visible" : "hidden"}
+          />
+        )}
+
+        {/* Loading indicator for priority images */}
+        {priority && !isLoaded && !hasError && (
+          <div className="absolute top-2 right-2">
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          </div>
+        )}
       </div>
     );
   }

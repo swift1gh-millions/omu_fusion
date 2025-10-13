@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => {
       outDir: "dist",
       assetsDir: "assets",
       minify: isProduction ? "esbuild" : false,
+      // Asset optimization
+      assetsInlineLimit: 4096, // Inline small assets as base64
+      reportCompressedSize: false, // Faster builds
       rollupOptions: {
         output: {
           manualChunks: {
