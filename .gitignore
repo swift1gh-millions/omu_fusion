@@ -70,3 +70,6 @@ logs
 # Temporary folders
 tmp/
 temp/
+
+# Server directory (removed - no longer using MTN MoMo direct API)
+server/

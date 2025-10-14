@@ -425,23 +425,9 @@ class MonitoringService {
         userAgent: navigator.userAgent,
       };
 
-      // Use sendBeacon for better reliability
-      if ("sendBeacon" in navigator) {
-        navigator.sendBeacon("/api/analytics", JSON.stringify(payload));
-      } else {
-        // Fallback to fetch
-        fetch("/api/analytics", {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: {
-            "Content-Type": "application/json",
-          },
-          keepalive: true,
-        }).catch(() => {
-          // Store in localStorage as backup
-          this.storeOfflineData(payload);
-        });
-      }
+      // Analytics endpoint disabled - store locally for now
+      // TODO: Set up proper analytics backend if needed
+      this.storeOfflineData(payload);
     } catch (error) {
       console.warn("Failed to send analytics:", error);
       this.storeOfflineData({ type, data });
