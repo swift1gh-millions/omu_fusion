@@ -36,13 +36,29 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Cache-Control = "no-cache, no-store, must-revalidate"
 
-# Cache HTML with short expiry for updates
+# Force no cache for HTML files - aggressive cache busting
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, proxy-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
 [[headers]]
   for = "/index.html"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Cache-Control = "no-cache, no-store, must-revalidate, proxy-revalidate"
+    Pragma = "no-cache" 
+    Expires = "0"
+
+# Force refresh for main HTML
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, proxy-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
 
 # Cache static assets
 [[headers]]
@@ -106,6 +122,14 @@
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, HEAD"
     Access-Control-Max-Age = "86400"
+
+# Force cache invalidation for custom domain
+[[redirects]]
+  from = "https://omufusion.com/*"
+  to = "https://omufusion.com/:splat"
+  status = 200
+  force = true
+  headers = {Cache-Control = "no-cache, no-store, must-revalidate"}
 
 # SPA routing - must be last
 [[redirects]]
