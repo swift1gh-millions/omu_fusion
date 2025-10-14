@@ -94,6 +94,11 @@ export const LazyCategoryManagementPage = lazy(() =>
     default: module.CategoryManagementPage,
   }))
 );
+export const LazyAdminSettingsPage = lazy(() =>
+  import("../../pages/admin/AdminSettingsPage").then((module) => ({
+    default: module.AdminSettingsPage,
+  }))
+);
 
 // Legal pages
 export const LazyPrivacyPage = lazy(() =>

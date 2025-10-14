@@ -54,6 +54,7 @@ export default defineConfig(({ mode }) => {
               "/src/pages/admin/OrderManagementPage",
               "/src/pages/admin/UserManagementPage",
               "/src/pages/admin/AnalyticsPage",
+              "/src/pages/admin/AdminSettingsPage",
             ],
 
             // Validation and error handling

@@ -1,20 +1,20 @@
 import React, { useState } from "react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
-import { useAuth } from "../../context/EnhancedAppContext";
-import { updatePassword, updateEmail } from "firebase/auth";
+import { useAdminAuth } from "../../context/AdminContext";
+import { updatePassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { auth } from "../../utils/firebase";
 import toast from "react-hot-toast";
-import { Save, Mail, Lock, Shield, Eye, EyeOff } from "lucide-react";
+import { Save, Mail, Lock, Shield, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 
 export const AdminSettingsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { admin } = useAdminAuth();
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [emailForm, setEmailForm] = useState({
-    newEmail: user?.email || "",
+    newEmail: admin?.email || "",
     currentPassword: "",
   });
 
@@ -24,6 +24,25 @@ export const AdminSettingsPage: React.FC = () => {
     confirmPassword: "",
   });
 
+  // Password strength checker
+  const getPasswordStrength = (password: string) => {
+    let score = 0;
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      numbers: /\d/.test(password),
+      symbols: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    };
+
+    Object.values(checks).forEach(check => check && score++);
+    
+    if (score < 3) return { strength: "Weak", color: "text-red-400", percentage: 25 };
+    if (score < 4) return { strength: "Fair", color: "text-yellow-400", percentage: 50 };
+    if (score < 5) return { strength: "Good", color: "text-blue-400", percentage: 75 };
+    return { strength: "Strong", color: "text-green-400", percentage: 100 };
+  };
+
   const handleEmailChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth.currentUser) return;
@@ -31,7 +50,7 @@ export const AdminSettingsPage: React.FC = () => {
     try {
       setLoading(true);
 
-      if (emailForm.newEmail === user?.email) {
+      if (emailForm.newEmail === admin?.email) {
         toast.error("New email must be different from current email");
         return;
       }
@@ -58,23 +77,46 @@ export const AdminSettingsPage: React.FC = () => {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) return;
+    if (!auth.currentUser || !admin?.email) return;
 
     try {
       setLoading(true);
 
+      // Validation
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
         toast.error("New passwords do not match");
         return;
       }
 
-      if (passwordForm.newPassword.length < 6) {
-        toast.error("Password must be at least 6 characters long");
+      if (passwordForm.newPassword.length < 8) {
+        toast.error("Password must be at least 8 characters long");
         return;
       }
 
-      // In a real application, you would need to re-authenticate the user
-      // before changing password. For this demo, we'll just update it directly.
+      if (passwordForm.newPassword === passwordForm.currentPassword) {
+        toast.error("New password must be different from current password");
+        return;
+      }
+
+      // Check password strength
+      const hasUpperCase = /[A-Z]/.test(passwordForm.newPassword);
+      const hasLowerCase = /[a-z]/.test(passwordForm.newPassword);
+      const hasNumbers = /\d/.test(passwordForm.newPassword);
+      
+      if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+        toast.error("Password must contain uppercase, lowercase, and numbers");
+        return;
+      }
+
+      // Re-authenticate the user with current password
+      const credential = EmailAuthProvider.credential(
+        admin.email,
+        passwordForm.currentPassword
+      );
+      
+      await reauthenticateWithCredential(auth.currentUser, credential);
+
+      // Update password
       await updatePassword(auth.currentUser, passwordForm.newPassword);
 
       toast.success("Password updated successfully!");
@@ -85,10 +127,12 @@ export const AdminSettingsPage: React.FC = () => {
       });
     } catch (error: any) {
       console.error("Error updating password:", error);
-      if (error.code === "auth/requires-recent-login") {
-        toast.error(
-          "Please log out and log back in before changing your password"
-        );
+      if (error.code === "auth/wrong-password") {
+        toast.error("Current password is incorrect");
+      } else if (error.code === "auth/requires-recent-login") {
+        toast.error("Please log out and log back in before changing your password");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("Password is too weak. Please choose a stronger password");
       } else {
         toast.error("Failed to update password. Please try again.");
       }
@@ -126,7 +170,7 @@ export const AdminSettingsPage: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-300">Current Email:</span>
                       <span className="font-semibold text-white">
-                        {user?.email}
+                        {admin?.email}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -270,8 +314,8 @@ export const AdminSettingsPage: React.FC = () => {
                           }))
                         }
                         className="w-full px-4 py-3 pr-12 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
-                        placeholder="Enter new password"
-                        minLength={6}
+                        placeholder="Enter new password (min 8 characters)"
+                        minLength={8}
                         required
                       />
                       <button
@@ -285,6 +329,30 @@ export const AdminSettingsPage: React.FC = () => {
                         )}
                       </button>
                     </div>
+                    {/* Password Strength Indicator */}
+                    {passwordForm.newPassword && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-gray-300">Password Strength:</span>
+                          <span className={getPasswordStrength(passwordForm.newPassword).color}>
+                            {getPasswordStrength(passwordForm.newPassword).strength}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              getPasswordStrength(passwordForm.newPassword).strength === 'Weak' ? 'bg-red-400' :
+                              getPasswordStrength(passwordForm.newPassword).strength === 'Fair' ? 'bg-yellow-400' :
+                              getPasswordStrength(passwordForm.newPassword).strength === 'Good' ? 'bg-blue-400' : 'bg-green-400'
+                            }`}
+                            style={{ width: `${getPasswordStrength(passwordForm.newPassword).percentage}%` }}
+                          />
+                        </div>
+                        <div className="mt-1 text-xs text-gray-400">
+                          Requirements: 8+ characters, uppercase, lowercase, numbers
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
@@ -302,7 +370,7 @@ export const AdminSettingsPage: React.FC = () => {
                         }
                         className="w-full px-4 py-3 pr-12 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                         placeholder="Confirm new password"
-                        minLength={6}
+                        minLength={8}
                         required
                       />
                       <button
@@ -318,6 +386,22 @@ export const AdminSettingsPage: React.FC = () => {
                         )}
                       </button>
                     </div>
+                    {/* Password Match Indicator */}
+                    {passwordForm.confirmPassword && (
+                      <div className="mt-2 flex items-center text-sm">
+                        {passwordForm.newPassword === passwordForm.confirmPassword ? (
+                          <div className="flex items-center text-green-400">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            <span>Passwords match</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-red-400">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            <span>Passwords do not match</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <button
                     type="submit"

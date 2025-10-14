@@ -13,6 +13,7 @@ import {
   X,
   Folder,
   Percent,
+  Settings,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -43,6 +44,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Discounts", href: "/admin/discounts", icon: Percent },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
