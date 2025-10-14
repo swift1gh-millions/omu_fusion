@@ -405,33 +405,12 @@ class MonitoringService {
   }
 
   /**
-   * Send analytics data
+   * Send analytics data - DISABLED to prevent console spam
    */
   private async sendAnalytics(type: string, data: any): Promise<void> {
-    try {
-      // In development, just log to console and store locally
-      if (this.isDevelopment) {
-        console.log(`[Analytics] ${type}:`, data);
-        this.storeOfflineData({ type, data });
-        return;
-      }
-
-      const payload = {
-        type,
-        data,
-        sessionId: this.sessionId,
-        timestamp: Date.now(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-      };
-
-      // Analytics endpoint disabled - store locally for now
-      // TODO: Set up proper analytics backend if needed
-      this.storeOfflineData(payload);
-    } catch (error) {
-      console.warn("Failed to send analytics:", error);
-      this.storeOfflineData({ type, data });
-    }
+    // DISABLED: No analytics calls, no localStorage spam
+    // Just silently drop all analytics to clean up console
+    return Promise.resolve();
   }
 
   /**

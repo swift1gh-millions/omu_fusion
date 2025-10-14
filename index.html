@@ -11,68 +11,87 @@
     <!-- Early SW unregister + cache clear to avoid stale pages on custom domain -->
     <script>
       (function () {
-        // Kill-switch: block any stray /api/analytics calls from old bundles
+        // AGGRESSIVE kill-switch: block any stray /api/analytics calls from old bundles
         try {
-          const shouldBlock = (url) =>
-            typeof url === "string" && url.indexOf("/api/analytics") !== -1;
+          const isAnalyticsUrl = function(url) {
+            return url && typeof url === 'string' && (
+              url.includes('/api/analytics') || 
+              url.indexOf('/api/analytics') !== -1 ||
+              url.match(/\/api\/analytics/)
+            );
+          };
 
-          // Patch navigator.sendBeacon
-          if (navigator.sendBeacon) {
+          // Patch navigator.sendBeacon IMMEDIATELY before any scripts load
+          if (window.navigator && navigator.sendBeacon) {
             const origBeacon = navigator.sendBeacon.bind(navigator);
             navigator.sendBeacon = function (url, data) {
-              if (shouldBlock(url)) {
-                try {
-                  console.debug("[block] sendBeacon /api/analytics");
-                } catch {}
+              if (isAnalyticsUrl(url)) {
+                console.info('[BLOCKED] sendBeacon to /api/analytics');
                 return true; // pretend success
               }
-              return origBeacon(url, data);
+              return origBeacon.call(this, url, data);
             };
           }
 
-          // Patch fetch
+          // Patch fetch IMMEDIATELY
           if (window.fetch) {
             const origFetch = window.fetch.bind(window);
             window.fetch = function (input, init) {
-              const url = typeof input === "string" ? input : input?.url;
-              if (shouldBlock(url)) {
-                try {
-                  console.debug("[block] fetch /api/analytics");
-                } catch {}
-                return Promise.resolve(new Response(null, { status: 204 }));
+              let url = input;
+              if (typeof input === 'object' && input.url) {
+                url = input.url;
+              } else if (typeof input === 'object' && input.href) {
+                url = input.href;
               }
-              return origFetch(input, init);
+              
+              if (isAnalyticsUrl(url)) {
+                console.info('[BLOCKED] fetch to /api/analytics');
+                return Promise.resolve(new Response('{}', { 
+                  status: 200, 
+                  statusText: 'OK',
+                  headers: { 'Content-Type': 'application/json' }
+                }));
+              }
+              return origFetch.call(this, input, init);
             };
           }
 
-          // Patch XMLHttpRequest
+          // Patch XMLHttpRequest IMMEDIATELY
           if (window.XMLHttpRequest) {
             const OrigXHR = window.XMLHttpRequest;
-            const open = OrigXHR.prototype.open;
-            OrigXHR.prototype.open = function (method, url) {
-              try {
-                if (shouldBlock(url)) {
-                  this.__blockedAnalytics = true;
-                }
-              } catch {}
-              return open.apply(this, arguments);
+            const origOpen = OrigXHR.prototype.open;
+            const origSend = OrigXHR.prototype.send;
+            
+            OrigXHR.prototype.open = function (method, url, async, user, password) {
+              if (isAnalyticsUrl(url)) {
+                console.info('[BLOCKED] XHR to /api/analytics');
+                this._blockedAnalytics = true;
+              }
+              return origOpen.call(this, method, url, async, user, password);
             };
-            const send = OrigXHR.prototype.send;
+            
             OrigXHR.prototype.send = function (body) {
-              if (this.__blockedAnalytics) {
-                try {
-                  console.debug("[block] xhr /api/analytics");
-                } catch {}
-                this.abort?.();
+              if (this._blockedAnalytics) {
+                // Simulate successful response
+                Object.defineProperty(this, 'status', { value: 200, writable: false });
+                Object.defineProperty(this, 'statusText', { value: 'OK', writable: false });
+                Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                Object.defineProperty(this, 'responseText', { value: '{}', writable: false });
+                if (this.onreadystatechange) {
+                  setTimeout(() => this.onreadystatechange(), 0);
+                }
+                if (this.onload) {
+                  setTimeout(() => this.onload(), 0);
+                }
                 return;
               }
-              return send.apply(this, arguments);
+              return origSend.call(this, body);
             };
           }
+
+          console.info('[INIT] Analytics blocking active');
         } catch (e) {
-          try {
-            console.warn("analytics kill-switch failed", e);
-          } catch {}
+          console.warn('Analytics kill-switch setup failed:', e);
         }
 
         if ("serviceWorker" in navigator) {
