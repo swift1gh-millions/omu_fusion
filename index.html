@@ -13,14 +13,17 @@
       (function () {
         // Simple analytics URL blocking without verbose logging
         const isAnalyticsUrl = function (url) {
-          return url && typeof url === "string" && url.includes("/api/analytics");
+          return (
+            url && typeof url === "string" && url.includes("/api/analytics")
+          );
         };
 
         // Patch fetch for analytics URLs
         if (window.fetch) {
           const origFetch = window.fetch.bind(window);
           window.fetch = function (input, init) {
-            let url = typeof input === "string" ? input : input.url || input.href;
+            let url =
+              typeof input === "string" ? input : input.url || input.href;
             if (isAnalyticsUrl(url)) {
               return Promise.resolve(new Response("{}", { status: 200 }));
             }
@@ -28,7 +31,7 @@
           };
         }
 
-        // Patch sendBeacon for analytics URLs  
+        // Patch sendBeacon for analytics URLs
         if (window.navigator && navigator.sendBeacon) {
           const origBeacon = navigator.sendBeacon.bind(navigator);
           navigator.sendBeacon = function (url, data) {
