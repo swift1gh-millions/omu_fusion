@@ -8,27 +8,23 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/logo_white.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/logo_white.png" />
 
-    <!-- Immediate critical image preloading script -->
+    <!-- Early SW unregister + cache clear to avoid stale pages on custom domain -->
     <script>
-      // Immediately start loading critical images before React loads
       (function () {
-        const criticalImages = [
-          "/src/assets/bg1.jpg",
-          "/src/assets/logo_white.png",
-          "/src/assets/logo_black.png",
-        ];
-        criticalImages.forEach(function (src) {
-          const link = document.createElement("link");
-          link.rel = "preload";
-          link.as = "image";
-          link.href = src;
-          link.fetchPriority = "high";
-          document.head.appendChild(link);
-
-          // Also start loading in JavaScript
-          const img = new Image();
-          img.src = src;
-        });
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) {
+              reg.unregister().catch(function () {});
+            });
+          });
+        }
+        if (window.caches) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) {
+              caches.delete(k);
+            });
+          });
+        }
       })();
     </script>
     <meta

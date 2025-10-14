@@ -23,6 +23,7 @@ import { useAnalytics } from "./hooks/useAnalytics";
 import {
   PerformanceOptimizer,
   registerServiceWorker,
+  unregisterServiceWorkers,
   addPreconnects,
 } from "./utils/performanceOptimizer";
 import {
@@ -110,8 +111,12 @@ function AppContent() {
     // Add preconnects to external domains
     addPreconnects();
 
-    // Register service worker for caching
-    registerServiceWorker();
+    // First, aggressively unregister any previous SW and clear caches
+    // to avoid stale HTML/assets on custom domain and mobile white screen
+    unregisterServiceWorkers().finally(() => {
+      // Optionally register SW if explicitly enabled
+      registerServiceWorker();
+    });
   }, []);
 
   // Determine which footer to show based on current route

@@ -82,8 +82,35 @@ export const PerformanceOptimizer: React.FC = () => {
   return null;
 };
 
-// Service Worker registration for caching
+// Unregister any existing service workers and clear caches
+export const unregisterServiceWorkers = async () => {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(
+        regs.map(async (reg) => {
+          try {
+            await reg.unregister();
+          } catch {}
+        })
+      );
+    }
+
+    if ("caches" in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map((n) => caches.delete(n)));
+    }
+  } catch (e) {
+    console.warn("Failed to unregister SW/clear caches", e);
+  }
+};
+
+// Service Worker registration (gated behind env flag)
+// Set VITE_ENABLE_SW=true to enable. Default is disabled to avoid stale caches.
 export const registerServiceWorker = () => {
+  const enableSw = import.meta?.env?.VITE_ENABLE_SW === "true";
+  if (!enableSw) return;
+
   if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
     window.addEventListener("load", () => {
       navigator.serviceWorker
