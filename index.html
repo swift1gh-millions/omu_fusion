@@ -11,6 +11,62 @@
     <!-- Early SW unregister + cache clear to avoid stale pages on custom domain -->
     <script>
       (function () {
+        // Kill-switch: block any stray /api/analytics calls from old bundles
+        try {
+          const shouldBlock = (url) =>
+            typeof url === "string" && url.indexOf("/api/analytics") !== -1;
+
+          // Patch navigator.sendBeacon
+          if (navigator.sendBeacon) {
+            const origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function (url, data) {
+              if (shouldBlock(url)) {
+                try { console.debug("[block] sendBeacon /api/analytics"); } catch {}
+                return true; // pretend success
+              }
+              return origBeacon(url, data);
+            };
+          }
+
+          // Patch fetch
+          if (window.fetch) {
+            const origFetch = window.fetch.bind(window);
+            window.fetch = function (input, init) {
+              const url = typeof input === "string" ? input : input?.url;
+              if (shouldBlock(url)) {
+                try { console.debug("[block] fetch /api/analytics"); } catch {}
+                return Promise.resolve(new Response(null, { status: 204 }));
+              }
+              return origFetch(input, init);
+            };
+          }
+
+          // Patch XMLHttpRequest
+          if (window.XMLHttpRequest) {
+            const OrigXHR = window.XMLHttpRequest;
+            const open = OrigXHR.prototype.open;
+            OrigXHR.prototype.open = function (method, url) {
+              try {
+                if (shouldBlock(url)) {
+                  this.__blockedAnalytics = true;
+                }
+              } catch {}
+              return open.apply(this, arguments);
+            };
+            const send = OrigXHR.prototype.send;
+            OrigXHR.prototype.send = function (body) {
+              if (this.__blockedAnalytics) {
+                try { console.debug("[block] xhr /api/analytics"); } catch {}
+                this.abort?.();
+                return;
+              }
+              return send.apply(this, arguments);
+            };
+          }
+        } catch (e) {
+          try { console.warn("analytics kill-switch failed", e); } catch {}
+        }
+
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.getRegistrations().then(function (regs) {
             regs.forEach(function (reg) {
