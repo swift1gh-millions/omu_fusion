@@ -21,7 +21,9 @@
             const origBeacon = navigator.sendBeacon.bind(navigator);
             navigator.sendBeacon = function (url, data) {
               if (shouldBlock(url)) {
-                try { console.debug("[block] sendBeacon /api/analytics"); } catch {}
+                try {
+                  console.debug("[block] sendBeacon /api/analytics");
+                } catch {}
                 return true; // pretend success
               }
               return origBeacon(url, data);
@@ -34,7 +36,9 @@
             window.fetch = function (input, init) {
               const url = typeof input === "string" ? input : input?.url;
               if (shouldBlock(url)) {
-                try { console.debug("[block] fetch /api/analytics"); } catch {}
+                try {
+                  console.debug("[block] fetch /api/analytics");
+                } catch {}
                 return Promise.resolve(new Response(null, { status: 204 }));
               }
               return origFetch(input, init);
@@ -56,7 +60,9 @@
             const send = OrigXHR.prototype.send;
             OrigXHR.prototype.send = function (body) {
               if (this.__blockedAnalytics) {
-                try { console.debug("[block] xhr /api/analytics"); } catch {}
+                try {
+                  console.debug("[block] xhr /api/analytics");
+                } catch {}
                 this.abort?.();
                 return;
               }
@@ -64,7 +70,9 @@
             };
           }
         } catch (e) {
-          try { console.warn("analytics kill-switch failed", e); } catch {}
+          try {
+            console.warn("analytics kill-switch failed", e);
+          } catch {}
         }
 
         if ("serviceWorker" in navigator) {
