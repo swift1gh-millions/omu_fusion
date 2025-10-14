@@ -8,127 +8,35 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/logo_white.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/logo_white.png" />
 
-    <!-- Early SW unregister + cache clear to avoid stale pages on custom domain -->
+    <!-- Simple analytics blocking to prevent 404 errors -->
     <script>
       (function () {
-        // AGGRESSIVE kill-switch: block any stray /api/analytics calls from old bundles
-        try {
-          const isAnalyticsUrl = function (url) {
-            return (
-              url &&
-              typeof url === "string" &&
-              (url.includes("/api/analytics") ||
-                url.indexOf("/api/analytics") !== -1 ||
-                url.match(/\/api\/analytics/))
-            );
+        // Simple analytics URL blocking without verbose logging
+        const isAnalyticsUrl = function (url) {
+          return url && typeof url === "string" && url.includes("/api/analytics");
+        };
+
+        // Patch fetch for analytics URLs
+        if (window.fetch) {
+          const origFetch = window.fetch.bind(window);
+          window.fetch = function (input, init) {
+            let url = typeof input === "string" ? input : input.url || input.href;
+            if (isAnalyticsUrl(url)) {
+              return Promise.resolve(new Response("{}", { status: 200 }));
+            }
+            return origFetch.call(this, input, init);
           };
-
-          // Patch navigator.sendBeacon IMMEDIATELY before any scripts load
-          if (window.navigator && navigator.sendBeacon) {
-            const origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function (url, data) {
-              if (isAnalyticsUrl(url)) {
-                console.info("[BLOCKED] sendBeacon to /api/analytics");
-                return true; // pretend success
-              }
-              return origBeacon.call(this, url, data);
-            };
-          }
-
-          // Patch fetch IMMEDIATELY
-          if (window.fetch) {
-            const origFetch = window.fetch.bind(window);
-            window.fetch = function (input, init) {
-              let url = input;
-              if (typeof input === "object" && input.url) {
-                url = input.url;
-              } else if (typeof input === "object" && input.href) {
-                url = input.href;
-              }
-
-              if (isAnalyticsUrl(url)) {
-                console.info("[BLOCKED] fetch to /api/analytics");
-                return Promise.resolve(
-                  new Response("{}", {
-                    status: 200,
-                    statusText: "OK",
-                    headers: { "Content-Type": "application/json" },
-                  })
-                );
-              }
-              return origFetch.call(this, input, init);
-            };
-          }
-
-          // Patch XMLHttpRequest IMMEDIATELY
-          if (window.XMLHttpRequest) {
-            const OrigXHR = window.XMLHttpRequest;
-            const origOpen = OrigXHR.prototype.open;
-            const origSend = OrigXHR.prototype.send;
-
-            OrigXHR.prototype.open = function (
-              method,
-              url,
-              async,
-              user,
-              password
-            ) {
-              if (isAnalyticsUrl(url)) {
-                console.info("[BLOCKED] XHR to /api/analytics");
-                this._blockedAnalytics = true;
-              }
-              return origOpen.call(this, method, url, async, user, password);
-            };
-
-            OrigXHR.prototype.send = function (body) {
-              if (this._blockedAnalytics) {
-                // Simulate successful response
-                Object.defineProperty(this, "status", {
-                  value: 200,
-                  writable: false,
-                });
-                Object.defineProperty(this, "statusText", {
-                  value: "OK",
-                  writable: false,
-                });
-                Object.defineProperty(this, "readyState", {
-                  value: 4,
-                  writable: false,
-                });
-                Object.defineProperty(this, "responseText", {
-                  value: "{}",
-                  writable: false,
-                });
-                if (this.onreadystatechange) {
-                  setTimeout(() => this.onreadystatechange(), 0);
-                }
-                if (this.onload) {
-                  setTimeout(() => this.onload(), 0);
-                }
-                return;
-              }
-              return origSend.call(this, body);
-            };
-          }
-
-          console.info("[INIT] Analytics blocking active");
-        } catch (e) {
-          console.warn("Analytics kill-switch setup failed:", e);
         }
 
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            regs.forEach(function (reg) {
-              reg.unregister().catch(function () {});
-            });
-          });
-        }
-        if (window.caches) {
-          caches.keys().then(function (keys) {
-            keys.forEach(function (k) {
-              caches.delete(k);
-            });
-          });
+        // Patch sendBeacon for analytics URLs  
+        if (window.navigator && navigator.sendBeacon) {
+          const origBeacon = navigator.sendBeacon.bind(navigator);
+          navigator.sendBeacon = function (url, data) {
+            if (isAnalyticsUrl(url)) {
+              return true;
+            }
+            return origBeacon.call(this, url, data);
+          };
         }
       })();
     </script>

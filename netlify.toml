@@ -37,28 +37,11 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Force no cache for HTML files - aggressive cache busting
-[[headers]]
-  for = "/"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate, proxy-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-[[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate, proxy-revalidate"
-    Pragma = "no-cache" 
-    Expires = "0"
-
-# Force refresh for main HTML
+# Simplified cache control for HTML files
 [[headers]]
   for = "*.html"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate, proxy-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 # Cache static assets
 [[headers]]
@@ -123,13 +106,7 @@
     Access-Control-Allow-Methods = "GET, HEAD"
     Access-Control-Max-Age = "86400"
 
-# Force cache invalidation for custom domain
-[[redirects]]
-  from = "https://omufusion.com/*"
-  to = "https://omufusion.com/:splat"
-  status = 200
-  force = true
-  headers = {Cache-Control = "no-cache, no-store, must-revalidate"}
+# Removed domain-specific redirect that was causing inconsistencies
 
 # SPA routing - must be last
 [[redirects]]
