@@ -526,7 +526,7 @@ export const ShopPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen relative"
+      className="scrollbar-animated min-h-screen relative"
       style={{
         backgroundImage: `url(${white3})`,
         backgroundSize: "cover",

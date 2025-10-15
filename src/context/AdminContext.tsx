@@ -14,6 +14,7 @@ interface AdminContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
+  refreshAdminProfile: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -88,11 +89,33 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshAdminProfile = async () => {
+    try {
+      // Re-initialize auth to fetch fresh profile data
+      const initializeAuth = async () => {
+        let unsubscribe: (() => void) | null = null;
+
+        // Listen for admin auth state changes
+        unsubscribe = AdminAuthService.onAuthStateChanged((user) => {
+          console.log("Admin profile refreshed:", user ? "updated" : "cleared");
+          setAdmin(user);
+          // Unsubscribe immediately after getting the fresh data
+          if (unsubscribe) unsubscribe();
+        });
+      };
+
+      await initializeAuth();
+    } catch (error) {
+      console.error("Error refreshing admin profile:", error);
+    }
+  };
+
   const value: AdminContextType = {
     admin,
     isAuthenticated: !!admin,
     isLoading,
     signOut,
+    refreshAdminProfile,
   };
 
   return (

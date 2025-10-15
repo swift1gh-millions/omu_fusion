@@ -8,12 +8,12 @@ import AdminAuthService from "../../utils/adminAuthService";
 import backgroundImage from "../../assets/backgrounds/dark7.avif";
 
 interface FormErrors {
-  email?: string;
+  emailOrUsername?: string;
   password?: string;
 }
 
 export const AdminLoginPage: React.FC = () => {
-  const [email, setEmail] = useState("admin@omufusion.com");
+  const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -27,7 +27,10 @@ export const AdminLoginPage: React.FC = () => {
 
     try {
       // Use the admin-specific auth service (session-based, won't affect customer tabs)
-      const adminUser = await AdminAuthService.signIn(email, password);
+      const adminUser = await AdminAuthService.signIn(
+        emailOrUsername,
+        password
+      );
 
       toast.success("Welcome, Admin!");
 
@@ -50,11 +53,15 @@ export const AdminLoginPage: React.FC = () => {
       // Handle specific error types and show inline errors
       if (
         error.message.includes("credentials") ||
-        error.message.includes("password")
+        error.message.includes("password") ||
+        error.message.includes("Invalid credentials")
       ) {
-        setErrors({ password: "Invalid email or password" });
-      } else if (error.message.includes("email")) {
-        setErrors({ email: "Invalid email address" });
+        setErrors({ password: "Invalid credentials" });
+      } else if (
+        error.message.includes("Username not found") ||
+        error.message.includes("Admin account not found")
+      ) {
+        setErrors({ emailOrUsername: "Username or email not found" });
       } else {
         // Generic error
         toast.error("Login failed. Please try again.");
@@ -93,29 +100,32 @@ export const AdminLoginPage: React.FC = () => {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
-                htmlFor="email"
+                htmlFor="emailOrUsername"
                 className="block text-sm font-semibold text-white mb-2">
-                Admin Email
+                Username or Email
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="emailOrUsername"
+                name="emailOrUsername"
+                type="text"
                 autoComplete="username"
                 required
-                value={email}
+                value={emailOrUsername}
                 onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (errors.email) {
-                    setErrors((prev) => ({ ...prev, email: undefined }));
+                  setEmailOrUsername(e.target.value);
+                  if (errors.emailOrUsername) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      emailOrUsername: undefined,
+                    }));
                   }
                 }}
                 className={`w-full px-4 py-3 rounded-lg bg-white/10 border ${
-                  errors.email ? "border-red-500" : "border-white/20"
+                  errors.emailOrUsername ? "border-red-500" : "border-white/20"
                 } text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm`}
-                placeholder="Enter admin email"
+                placeholder="Enter username or email"
               />
-              {errors.email && (
+              {errors.emailOrUsername && (
                 <p className="mt-2 text-sm text-red-400 flex items-center">
                   <svg
                     className="w-4 h-4 mr-1"
@@ -127,7 +137,7 @@ export const AdminLoginPage: React.FC = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  {errors.email}
+                  {errors.emailOrUsername}
                 </p>
               )}
             </div>

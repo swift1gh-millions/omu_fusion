@@ -9,6 +9,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../../utils/firebase";
+import { CategoryService } from "../../utils/categoryService";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import {
@@ -39,28 +40,33 @@ export const ProductManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState<string[]>(["All Categories"]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const categories = [
-    "All Categories",
-    "Sneakers",
-    "Boots",
-    "Sandals",
-    "Formal Shoes",
-    "Casual Shoes",
-    "Athletic Shoes",
-    "Accessories",
-  ];
-
   useEffect(() => {
     fetchProducts();
+    loadCategories();
   }, []);
 
   useEffect(() => {
     filterProducts();
   }, [products, searchTerm, selectedCategory]);
+
+  const loadCategories = async () => {
+    try {
+      const dbCategories = await CategoryService.getActiveCategories();
+      const categoryNames = [
+        "All Categories",
+        ...dbCategories.map((cat) => cat.name),
+      ];
+      setCategories(categoryNames);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      // Keep default categories if database fetch fails
+    }
+  };
 
   const fetchProducts = async () => {
     try {

@@ -6,7 +6,16 @@ import {
   browserSessionPersistence,
   User as FirebaseUser,
 } from "firebase/auth";
-import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  Timestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { AuthUser, UserRole } from "./enhancedAuthService";
 import toast from "react-hot-toast";
@@ -97,6 +106,8 @@ class AdminAuthService {
           firstName,
           lastName,
           email: adminData.email,
+          username: adminData.username,
+          recoveryEmail: adminData.recoveryEmail,
           role: "admin",
           permissions,
           accountStatus: "active",
@@ -140,13 +151,53 @@ class AdminAuthService {
   }
 
   /**
-   * Sign in admin user with session persistence
+   * Find admin email by username
+   */
+  private static async getAdminEmailByUsername(
+    username: string
+  ): Promise<string | null> {
+    try {
+      const adminsRef = collection(db, this.ADMINS_COLLECTION);
+      const q = query(adminsRef, where("username", "==", username));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const adminDoc = querySnapshot.docs[0];
+        const adminData = adminDoc.data();
+        return adminData.email;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error finding admin by username:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Sign in admin user with email or username
    * Only affects current tab/window
    */
-  static async signIn(email: string, password: string): Promise<AuthUser> {
+  static async signIn(
+    emailOrUsername: string,
+    password: string
+  ): Promise<AuthUser> {
     try {
       // Initialize session persistence before signing in
       await this.initializeSessionPersistence();
+
+      // Determine if input is email or username
+      let email = emailOrUsername;
+
+      // Simple email validation - if it doesn't contain @ it's likely a username
+      if (!emailOrUsername.includes("@")) {
+        // Try to find email by username
+        const foundEmail = await this.getAdminEmailByUsername(emailOrUsername);
+        if (!foundEmail) {
+          throw new Error("Username not found");
+        }
+        email = foundEmail;
+      }
 
       // Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
@@ -196,6 +247,8 @@ class AdminAuthService {
         email: firebaseUser.email!,
         firstName: userProfile.firstName,
         lastName: userProfile.lastName,
+        username: userProfile.username,
+        recoveryEmail: userProfile.recoveryEmail,
         avatar: userProfile.avatar,
         phone: userProfile.phoneNumber,
         role: userProfile.role,
@@ -217,13 +270,22 @@ class AdminAuthService {
       if (error.code === "auth/user-not-found") {
         throw new Error("Admin account not found");
       } else if (error.code === "auth/wrong-password") {
-        throw new Error("Invalid password");
+        throw new Error("Invalid credentials");
+      } else if (error.code === "auth/invalid-credential") {
+        throw new Error(
+          "Invalid email or password. Please check your credentials."
+        );
       } else if (error.code === "auth/too-many-requests") {
         throw new Error("Too many failed attempts. Please try again later.");
       } else if (error.message?.includes("Access denied")) {
         throw error;
+      } else if (error.message?.includes("Username not found")) {
+        throw new Error("Username not found");
       } else {
-        throw new Error("Login failed. Please try again.");
+        console.error("Full error details:", error);
+        throw new Error(
+          `Login failed: ${error.message || "Please try again."}`
+        );
       }
     }
   }
@@ -292,6 +354,8 @@ class AdminAuthService {
               email: firebaseUser.email!,
               firstName: userProfile.firstName,
               lastName: userProfile.lastName,
+              username: userProfile.username,
+              recoveryEmail: userProfile.recoveryEmail,
               avatar: userProfile.avatar,
               phone: userProfile.phoneNumber,
               role: userProfile.role,
@@ -338,6 +402,54 @@ class AdminAuthService {
     }
 
     return await this.isAdmin(currentUser.uid);
+  }
+
+  /**
+   * Update admin username in Firestore
+   */
+  static async updateAdminUsername(newUsername: string): Promise<void> {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      const adminRef = doc(db, this.ADMINS_COLLECTION, currentUser.uid);
+      await updateDoc(adminRef, {
+        username: newUsername,
+        lastUpdated: Timestamp.now(),
+      });
+
+      console.log("Admin username updated successfully");
+    } catch (error) {
+      console.error("Error updating admin username:", error);
+      throw new Error("Failed to update username");
+    }
+  }
+
+  /**
+   * Update admin recovery email in Firestore
+   */
+  static async updateAdminRecoveryEmail(
+    newRecoveryEmail: string
+  ): Promise<void> {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      const adminRef = doc(db, this.ADMINS_COLLECTION, currentUser.uid);
+      await updateDoc(adminRef, {
+        recoveryEmail: newRecoveryEmail,
+        lastUpdated: Timestamp.now(),
+      });
+
+      console.log("Admin recovery email updated successfully");
+    } catch (error) {
+      console.error("Error updating admin recovery email:", error);
+      throw new Error("Failed to update recovery email");
+    }
   }
 }
 

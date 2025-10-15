@@ -124,7 +124,7 @@ export const SearchModal: React.FC = () => {
             </div>
 
             {/* Search Content */}
-            <div className="max-h-96 overflow-y-auto">
+            <div className="scrollbar-thin max-h-96 overflow-y-auto">
               {!searchTerm ? (
                 /* Recent Searches / Suggestions */
                 <div className="p-6">

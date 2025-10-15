@@ -88,29 +88,74 @@ export const CartPage: React.FC = () => {
   };
 
   const applyPromoCode = async () => {
-    if (!promoCode.trim() || !user?.id) return;
+    if (!promoCode.trim()) {
+      toast.error("Please enter a discount code");
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("Please log in to use discount codes");
+      return;
+    }
+
+    if (cartTotal <= 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
+    // Check if the same discount code is already applied
+    if (
+      appliedDiscount &&
+      appliedDiscount.code.toUpperCase() === promoCode.trim().toUpperCase()
+    ) {
+      toast.error("This discount code is already applied");
+      return;
+    }
 
     setIsValidatingPromo(true);
 
     try {
+      console.log("🛒 Applying promo code:", {
+        code: promoCode.trim(),
+        cartTotal,
+        userId: user.id,
+      });
+
       const validation = await DiscountService.validateDiscountCode(
         promoCode.trim(),
         cartTotal,
         user.id
       );
 
+      console.log("✅ Validation result:", validation);
+
       if (validation.valid && validation.discount) {
         setAppliedDiscount(validation.discount);
         setPromoCode("");
+        const discountAmount = DiscountService.calculateDiscount(
+          validation.discount,
+          cartTotal
+        );
         toast.success(
-          `Discount code applied! ${validation.discount.description}`
+          `Discount applied! Save ₵${discountAmount.toFixed(2)} with ${
+            validation.discount.code
+          }`
         );
       } else {
         toast.error(validation.error || "Invalid discount code");
       }
-    } catch (error) {
-      console.error("Error applying promo code:", error);
-      toast.error("Failed to apply discount code");
+    } catch (error: any) {
+      console.error("💥 Error applying promo code:", error);
+
+      if (error?.code === "permission-denied") {
+        toast.error(
+          "Permission denied. Please refresh the page and try again."
+        );
+      } else if (error?.code === "unauthenticated") {
+        toast.error("Please log in again to use discount codes.");
+      } else {
+        toast.error("Failed to apply discount code. Please try again.");
+      }
     } finally {
       setIsValidatingPromo(false);
     }
@@ -181,7 +226,7 @@ export const CartPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-32 pb-16">
+    <div className="scrollbar-animated min-h-screen bg-gradient-to-br from-gray-50 to-white pt-32 pb-16">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -311,6 +356,12 @@ export const CartPage: React.FC = () => {
                       type="text"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          applyPromoCode();
+                        }
+                      }}
                       placeholder="Enter discount code"
                       className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
                       disabled={isValidatingPromo}

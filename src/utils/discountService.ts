@@ -153,34 +153,69 @@ export class DiscountService {
     userId: string
   ): Promise<{ valid: boolean; discount?: DiscountCode; error?: string }> {
     try {
+      console.log("🔍 Validating discount code:", {
+        code: code.toUpperCase(),
+        orderAmount,
+        userId,
+      });
+
+      if (!code || !code.trim()) {
+        return { valid: false, error: "Please enter a discount code" };
+      }
+
+      if (!userId) {
+        return { valid: false, error: "User authentication required" };
+      }
+
+      if (orderAmount <= 0) {
+        return { valid: false, error: "Invalid order amount" };
+      }
+
+      const normalizedCode = code.trim().toUpperCase();
+      console.log("🔎 Searching for code:", normalizedCode);
+
       const q = query(
         collection(db, this.CODES_COLLECTION),
-        where("code", "==", code.toUpperCase()),
+        where("code", "==", normalizedCode),
         where("isActive", "==", true)
       );
 
       const querySnapshot = await getDocs(q);
+      console.log("📊 Query results:", {
+        empty: querySnapshot.empty,
+        size: querySnapshot.size,
+      });
 
       if (querySnapshot.empty) {
         return { valid: false, error: "Invalid discount code" };
       }
 
       const discountDoc = querySnapshot.docs[0];
+      const docData = discountDoc.data();
+      console.log("📄 Discount document data:", docData);
+
       const discount = {
         id: discountDoc.id,
-        ...discountDoc.data(),
-        createdAt: discountDoc.data().createdAt?.toDate(),
-        updatedAt: discountDoc.data().updatedAt?.toDate(),
-        expiryDate: discountDoc.data().expiryDate?.toDate(),
+        ...docData,
+        createdAt: docData.createdAt?.toDate() || new Date(),
+        updatedAt: docData.updatedAt?.toDate() || new Date(),
+        expiryDate: docData.expiryDate?.toDate(),
       } as DiscountCode;
+
+      console.log("✅ Parsed discount:", discount);
 
       // Check expiry date
       if (discount.expiryDate && new Date() > discount.expiryDate) {
+        console.log("❌ Code expired:", discount.expiryDate);
         return { valid: false, error: "Discount code has expired" };
       }
 
       // Check minimum order amount
       if (discount.minOrderAmount && orderAmount < discount.minOrderAmount) {
+        console.log("❌ Order amount too low:", {
+          required: discount.minOrderAmount,
+          current: orderAmount,
+        });
         return {
           valid: false,
           error: `Minimum order amount of ₵${discount.minOrderAmount} required`,
@@ -189,13 +224,37 @@ export class DiscountService {
 
       // Check maximum uses
       if (discount.maxUses && discount.currentUses >= discount.maxUses) {
+        console.log("❌ Usage limit reached:", {
+          current: discount.currentUses,
+          max: discount.maxUses,
+        });
         return { valid: false, error: "Discount code usage limit reached" };
       }
 
+      console.log("✅ Discount code is valid");
       return { valid: true, discount };
-    } catch (error) {
-      console.error("Error validating discount code:", error);
-      return { valid: false, error: "Failed to validate discount code" };
+    } catch (error: any) {
+      console.error("💥 Error validating discount code:", error);
+
+      // Handle specific Firebase errors
+      if (error?.code === "permission-denied") {
+        return {
+          valid: false,
+          error: "Permission denied. Please try logging in again.",
+        };
+      } else if (error?.code === "unavailable") {
+        return {
+          valid: false,
+          error: "Service temporarily unavailable. Please try again.",
+        };
+      } else if (error?.code === "unauthenticated") {
+        return { valid: false, error: "Please log in to use discount codes." };
+      }
+
+      return {
+        valid: false,
+        error: "Failed to validate discount code. Please try again.",
+      };
     }
   }
 

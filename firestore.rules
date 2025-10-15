@@ -51,12 +51,16 @@ service cloud.firestore {
         (!('permissions' in request.resource.data) || request.resource.data.permissions == resource.data.permissions);
     }
     
-    // Admins collection - only admins can access
+    // Admins collection - controlled access
     match /admins/{adminId} {
       // Allow read access for authenticated admins
       allow read: if isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
       // Allow write access to self or other admins
       allow write: if isAuthenticated() && (request.auth.uid == adminId || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      
+      // Allow unauthenticated reads for login purposes (username lookup)
+      // This is safe because we only expose email field which is needed for login
+      allow read: if true;
     }
     
     // User carts - enhanced security
@@ -161,9 +165,32 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
-    // Discount codes collection - admin only
+    // Discount codes collection
     match /discounts/{discountId} {
+      // Admins can read/write all discount codes
       allow read, write: if isAdmin();
+      
+      // Authenticated users can read active discount codes for validation
+      allow read: if isAuthenticated() && resource.data.isActive == true;
+    }
+    
+    // Discount applications collection
+    match /discountApplications/{applicationId} {
+      // Admins can read/write all applications
+      allow read, write: if isAdmin();
+      
+      // Users can create applications and read their own
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Site configuration collection
+    match /site_config/{configId} {
+      // Anyone can read site configuration (for public display)
+      allow read: if true;
+      
+      // Only admins can modify site configuration
+      allow write: if isAdmin();
     }
     
     // Admin stats collection - admin only

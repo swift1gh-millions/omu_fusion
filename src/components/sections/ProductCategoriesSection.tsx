@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { GlassCard } from "../ui/GlassCard";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useDarkBackground } from "../../utils/backgroundUtils";
+import { CategoryService } from "../../utils/categoryService";
+import { EnhancedProductService } from "../../utils/enhancedProductService";
 
 interface Category {
   id: string;
@@ -15,7 +17,80 @@ interface Category {
 export const ProductCategoriesSection: React.FC = () => {
   const navigate = useNavigate();
   const darkBg = useDarkBackground("ProductCategoriesSection", 0.75);
-  const categories: Category[] = [
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const dbCategories = await CategoryService.getActiveCategories();
+
+      // Get product count for each category
+      const categoriesWithCounts = await Promise.all(
+        dbCategories.map(async (cat) => {
+          try {
+            const productsResponse =
+              await EnhancedProductService.getProductsByCategory(cat.name);
+            return {
+              id: cat.name.toLowerCase().replace(/\s+/g, "-"),
+              name: cat.name,
+              description: cat.description,
+              image: getDefaultCategoryImage(cat.name),
+              itemCount: productsResponse.products.length,
+            };
+          } catch (error) {
+            console.error(
+              `Error loading products for category ${cat.name}:`,
+              error
+            );
+            return {
+              id: cat.name.toLowerCase().replace(/\s+/g, "-"),
+              name: cat.name,
+              description: cat.description,
+              image: getDefaultCategoryImage(cat.name),
+              itemCount: 0,
+            };
+          }
+        })
+      );
+
+      setCategories(categoriesWithCounts);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      // Fallback to default categories if database fails
+      setCategories(getFallbackCategories());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDefaultCategoryImage = (categoryName: string): string => {
+    const imageMap: { [key: string]: string } = {
+      beanies:
+        "https://images.unsplash.com/photo-1521369909029-2afed882baee?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      caps: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      "t-shirts":
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      hoodies:
+        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      jeans:
+        "https://images.unsplash.com/photo-1565084888279-aca607ecce0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      accessories:
+        "https://images.unsplash.com/photo-1583743814966-8936f37f4082?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    };
+
+    const normalizedName = categoryName.toLowerCase();
+    return (
+      imageMap[normalizedName] ||
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    );
+  };
+
+  const getFallbackCategories = (): Category[] => [
     {
       id: "beanies",
       name: "Beanies",

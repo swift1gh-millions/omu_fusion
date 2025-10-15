@@ -167,7 +167,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           className="w-full max-w-5xl max-h-[95vh] overflow-hidden">
           <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-            <div className="max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+            <div className="scrollbar-thin max-h-[95vh] overflow-y-auto p-4 sm:p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                 <div>
@@ -281,7 +281,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   </div>
 
                   {/* Tab Content */}
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="scrollbar-thin max-h-96 overflow-y-auto">
                     {activeTab === "details" ? (
                       <div className="space-y-6">
                         {/* Order Items */}

@@ -430,7 +430,7 @@ export const Header: React.FC = () => {
 
         {/* Menu Content */}
         <motion.div
-          className={`absolute top-0 right-0 h-full w-80 max-w-[85vw] ${
+          className={`scrollbar-thin absolute top-0 right-0 h-full w-80 max-w-[85vw] ${
             isLightBackground
               ? "bg-white/95 backdrop-blur-md border-l border-gray-200"
               : "bg-gray-900/95 backdrop-blur-md border-l border-white/10"

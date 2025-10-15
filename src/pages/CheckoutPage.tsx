@@ -5,6 +5,10 @@ import { HiLockClosed, HiCreditCard, HiTruck, HiX } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
+import {
+  FormFieldError,
+  formatUserFriendlyError,
+} from "../components/ui/FormFieldError";
 import { useAuth, useCart } from "../context/EnhancedAppContext";
 import { orderService } from "../utils/orderService";
 import { paystackService, PaystackResponse } from "../utils/paystackService";

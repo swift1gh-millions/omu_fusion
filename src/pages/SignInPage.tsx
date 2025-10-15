@@ -5,6 +5,10 @@ import { HiEye, HiEyeOff, HiMail, HiLockClosed } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
+import {
+  FormFieldError,
+  formatUserFriendlyError,
+} from "../components/ui/FormFieldError";
 import { useAuth } from "../context/EnhancedAppContext";
 import { useDarkBackground } from "../utils/backgroundUtils";
 
@@ -90,25 +94,29 @@ export const SignInPage: React.FC = () => {
     } catch (error: any) {
       console.error("Sign in error:", error);
 
-      // Show clean error messages
-      let errorMessage = "Invalid email or password";
+      // Use our user-friendly error formatter
+      const userFriendlyError = formatUserFriendlyError(
+        error.code || error.message
+      );
 
-      if (error.message?.includes("admin")) {
-        errorMessage = error.message;
-      } else if (error.code === "auth/user-not-found") {
-        errorMessage = "No account found with this email";
-        setErrors({ email: errorMessage });
+      // Set field-specific errors where appropriate
+      if (error.code === "auth/user-not-found") {
+        setErrors({ email: "No account found with this email address" });
       } else if (error.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password";
-        setErrors({ password: errorMessage });
+        setErrors({ password: "Incorrect password" });
       } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Please enter a valid email address";
-        setErrors({ email: errorMessage });
+        setErrors({ email: "Please enter a valid email address" });
+      } else if (error.code === "auth/invalid-credential") {
+        setErrors({ password: "Invalid email or password" });
       } else if (error.code === "auth/too-many-requests") {
-        errorMessage = "Too many failed attempts. Please try again later.";
-        toast.error(errorMessage);
+        toast.error("Too many failed attempts. Please try again later");
+      } else if (error.message?.includes("admin")) {
+        toast.error(error.message);
       } else {
-        setErrors({ password: errorMessage });
+        // For other errors, show as general error or password field error
+        const cleanError =
+          userFriendlyError || "Sign in failed. Please try again";
+        setErrors({ password: cleanError });
       }
     } finally {
       setIsLoading(false);
@@ -154,21 +162,7 @@ export const SignInPage: React.FC = () => {
                     placeholder="Email address"
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.email}
-                  </p>
-                )}
+                <FormFieldError error={errors.email} />
               </div>
 
               <div>
@@ -202,21 +196,7 @@ export const SignInPage: React.FC = () => {
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.password}
-                  </p>
-                )}
+                <FormFieldError error={errors.password} />
               </div>
 
               <div className="flex items-center justify-between">

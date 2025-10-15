@@ -7,6 +7,10 @@ import { useAuth } from "../../context/EnhancedAppContext";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import {
+  FormFieldError,
+  formatUserFriendlyError,
+} from "../../components/ui/FormFieldError";
+import {
   Upload,
   X,
   Image as ImageIcon,

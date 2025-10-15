@@ -44,7 +44,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Discounts", href: "/admin/discounts", icon: Percent },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -79,7 +78,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </span>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            <Link
+              to="/admin/settings"
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                location.pathname === "/admin/settings"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                  : "text-white hover:bg-slate-700/50"
+              }`}
+              title="Admin Settings">
+              <Settings className="h-5 w-5" />
+            </Link>
             <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
               <span className="text-xs font-bold text-white">
                 {admin?.firstName?.charAt(0) || "A"}
@@ -91,7 +100,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Sidebar - Fixed on desktop, mobile overlay */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-800/95 to-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`admin-scrollbar fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-slate-800/95 to-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}>
         <div className="flex h-full flex-col">
@@ -115,7 +124,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+          <nav className="admin-scrollbar flex-1 space-y-1 px-2 py-4 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -155,6 +164,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </p>
                 <p className="text-xs text-slate-400">Administrator</p>
               </div>
+              <Link
+                to="/admin/settings"
+                className={`p-2 rounded-lg transition-all duration-200 flex-shrink-0 ${
+                  location.pathname === "/admin/settings"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                }`}
+                title="Admin Settings">
+                <Settings className="h-4 w-4" />
+              </Link>
             </div>
             <button
               onClick={handleLogout}

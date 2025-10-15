@@ -64,6 +64,8 @@ export interface AuthUser {
   lastName: string;
   avatar?: string;
   phone?: string;
+  username?: string;
+  recoveryEmail?: string;
   role: UserRole;
   permissions: Permission[];
   emailVerified: boolean;

@@ -5,6 +5,10 @@ import { HiEye, HiEyeOff, HiMail, HiLockClosed, HiUser } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
+import {
+  FormFieldError,
+  formatUserFriendlyError,
+} from "../components/ui/FormFieldError";
 import { useAuth } from "../context/EnhancedAppContext";
 import { useDarkBackground } from "../utils/backgroundUtils";
 import { EmailValidationService } from "../utils/emailValidation";
@@ -166,31 +170,36 @@ export const SignUpPage: React.FC = () => {
       }, 100);
     } catch (error: any) {
       console.error("Registration error:", error);
-      console.error("Error code:", error.code);
-      console.error("Error message:", error.message);
 
-      // Handle specific Firebase error codes with clean messages
-      if (error.code) {
-        switch (error.code) {
-          case "auth/email-already-in-use":
-            // Show error under the email field
-            setErrors({ email: "This email is already registered" });
-            break;
-          case "auth/invalid-email":
-            // Show error under the email field
-            setErrors({ email: "Please enter a valid email address" });
-            break;
-          case "auth/weak-password":
-            // Show error under the password field
-            setErrors({ password: "Please choose a stronger password" });
-            break;
-          default:
-            // Only show toast for unexpected errors
-            toast.error("Registration failed. Please try again.");
-        }
+      // Use our user-friendly error formatter
+      const userFriendlyError = formatUserFriendlyError(
+        error.code || error.message
+      );
+
+      // Handle specific Firebase error codes with field-specific errors
+      if (error.code === "auth/email-already-in-use") {
+        setErrors({
+          email: "This email is already registered. Try signing in instead.",
+        });
+      } else if (error.code === "auth/invalid-email") {
+        setErrors({ email: "Please enter a valid email address" });
+      } else if (error.code === "auth/weak-password") {
+        setErrors({
+          password: "Password should be at least 6 characters long",
+        });
+      } else if (error.code === "auth/operation-not-allowed") {
+        toast.error(
+          "Email/password accounts are not enabled. Please contact support."
+        );
+      } else if (error.code === "auth/network-request-failed") {
+        toast.error(
+          "Network error. Please check your connection and try again."
+        );
       } else {
-        // Show toast for non-Firebase errors
-        toast.error("Registration failed. Please try again.");
+        // For other errors, show user-friendly message
+        const cleanError =
+          userFriendlyError || "Registration failed. Please try again.";
+        toast.error(cleanError);
       }
     } finally {
       setIsLoading(false);
@@ -241,11 +250,7 @@ export const SignUpPage: React.FC = () => {
                       placeholder="First name"
                     />
                   </div>
-                  {errors.firstName && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {errors.firstName}
-                    </p>
-                  )}
+                  <FormFieldError error={errors.firstName} />
                 </div>
 
                 <div>
@@ -264,11 +269,7 @@ export const SignUpPage: React.FC = () => {
                     } rounded-lg bg-black/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-all duration-200`}
                     placeholder="Last name"
                   />
-                  {errors.lastName && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {errors.lastName}
-                    </p>
-                  )}
+                  <FormFieldError error={errors.lastName} />
                 </div>
               </div>
 
@@ -316,21 +317,7 @@ export const SignUpPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.email}
-                  </p>
-                )}
+                <FormFieldError error={errors.email} />
               </div>
 
               <div>
@@ -364,9 +351,7 @@ export const SignUpPage: React.FC = () => {
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
-                )}
+                <FormFieldError error={errors.password} />
               </div>
 
               <div>
@@ -402,11 +387,7 @@ export const SignUpPage: React.FC = () => {
                     )}
                   </button>
                 </div>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-400">
-                    {errors.confirmPassword}
-                  </p>
-                )}
+                <FormFieldError error={errors.confirmPassword} />
               </div>
 
               <div className="flex items-start">
@@ -435,9 +416,7 @@ export const SignUpPage: React.FC = () => {
                   </Link>
                 </label>
               </div>
-              {errors.agreeToTerms && (
-                <p className="text-sm text-red-400">{errors.agreeToTerms}</p>
-              )}
+              <FormFieldError error={errors.agreeToTerms} showIcon={false} />
 
               <Button
                 type="submit"
