@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: "esnext",
-      sourcemap: true,
+      sourcemap: !isProduction, // Disable source maps in production for security
       outDir: "dist",
       assetsDir: "assets",
       minify: isProduction ? "esbuild" : false,
@@ -86,9 +86,13 @@ export default defineConfig(({ mode }) => {
         "uuid",
       ],
     },
-    // Performance optimizations
+    // Performance optimizations and code protection
     esbuild: {
       drop: isProduction ? ["console", "debugger"] : [],
+      legalComments: "none", // Remove all comments including licenses in production
+      minifyIdentifiers: isProduction, // Shorten variable names in production
+      minifySyntax: isProduction, // Optimize code syntax in production
+      minifyWhitespace: isProduction, // Remove unnecessary whitespace in production
     },
   };
 });

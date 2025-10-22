@@ -223,6 +223,18 @@ export const Footer: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 
+        Developer Attribution (Code Level Only)
+        Designed and Developed by Prince Yekunya
+        Portfolio: https://swift1dev.netlify.app
+        Full Stack Developer & UI/UX Designer
+        
+        This attribution is preserved in:
+        - HTML meta tags (index.html)
+        - HTTP response headers (netlify.toml)
+        - Source code comments
+      */}
     </footer>
   );
 };
