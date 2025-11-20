@@ -136,11 +136,13 @@ export const AboutPage: React.FC = () => {
                   </motion.h2>
                   <div className="space-y-6">
                     <p className="text-gray-300 leading-relaxed text-lg">
-                      Founded in 2018, OMU FUSION began as a simple idea: to
-                      create products that don't just meet needs, but exceed
-                      expectations. What started as a small team of passionate
-                      designers and engineers has grown into a global brand
-                      trusted by millions.
+                      Omu Fusion was born at the intersection of street culture
+                      and refined craftsmanship. What started as a passion for
+                      bold self-expression turned into a movement. Our style
+                      lives in contrast. raw yet polished, familiar yet
+                      forward-thinking. Every drop is designed with intention,
+                      crafted to empower individuality and elevate everyday
+                      wear.
                     </p>
                     <p className="text-gray-300 leading-relaxed text-lg">
                       Our journey has been driven by a relentless pursuit of
