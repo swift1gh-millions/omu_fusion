@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { usePreloadLinks } from "../hooks/useImagePreloading";
 
 // Import hero images directly to get the resolved URLs
-import bg1 from "../assets/bg1.jpg";
+import bg1 from "../assets/bg1.webp";
 import logoWhite from "../assets/logo_white.png";
 import logoBlack from "../assets/logo_black.png";
 

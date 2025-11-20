@@ -6,9 +6,10 @@ import { OptimizedImage } from "../ui/OptimizedImage";
 import { useImagePreloader } from "../ui/ProgressiveImage";
 
 // Import background images
-import bg1 from "../../assets/bg1.jpg";
-import bg2 from "../../assets/bg2.jpg";
-import bg3 from "../../assets/bg3.jpg";
+import bg1 from "../../assets/bg1.webp";
+import bg2 from "../../assets/bg2.webp";
+import bg3 from "../../assets/bg3.webp";
+import bg4 from "../../assets/bg4.webp";
 
 export const HeroSection: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export const HeroSection: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([
+    false,
     false,
     false,
     false,
@@ -31,6 +33,7 @@ export const HeroSection: React.FC = () => {
       { src: bg1, alt: "Collection 1" },
       { src: bg2, alt: "Collection 2" },
       { src: bg3, alt: "Collection 3" },
+      { src: bg4, alt: "Collection 4" },
     ],
     []
   );
@@ -86,7 +89,7 @@ export const HeroSection: React.FC = () => {
   useEffect(() => {
     // Start slideshow immediately - don't wait for preloading
     setSlideshowStarted(true);
-    setImagesLoaded([true, true, true]);
+    setImagesLoaded([true, true, true, true]);
     setPreloadComplete(true);
 
     // Preload remaining images in background (non-blocking)

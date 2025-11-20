@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import bg1 from "../../assets/bg1.jpg";
+import bg1 from "../../assets/bg1.webp";
 import logoWhite from "../../assets/logo_white.png";
 import logoBlack from "../../assets/logo_black.png";
 
@@ -9,7 +9,7 @@ export const CriticalResourcePreloader: React.FC = () => {
     // This runs immediately when the component mounts
     // Create immediate preload links in the document head
     const criticalImages = [
-      { href: bg1, as: "image", type: "image/jpeg" },
+      { href: bg1, as: "image", type: "image/webp" },
       { href: logoWhite, as: "image", type: "image/png" },
       { href: logoBlack, as: "image", type: "image/png" },
     ];

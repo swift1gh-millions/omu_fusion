@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import img2 from "../../assets/img2.webp";
 
 interface ProductSpotlightProps {
   productName?: string;
@@ -16,7 +17,7 @@ export const ProductSpotlightSection: React.FC<ProductSpotlightProps> =
       productName = "ELEVATING YOUR DRIP",
       productDescription = "Street style meets premium quality in this fire collection. From bold patterns to fresh cuts, every piece is designed to make you stand out. Level up your wardrobe with pieces that speak your language.",
 
-      productImage = "https://images.unsplash.com/photo-1634888068224-c4f05484c58b?q=80&w=685&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      productImage = img2,
       productAlt = "Elevating Your Drip - Premium streetwear fashion",
     }) => {
       const navigate = useNavigate();
