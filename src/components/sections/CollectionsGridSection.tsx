@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import coreVisionImage from "../../assets/core_vision.webp";
 
 export const CollectionsGridSection: React.FC = () => {
   const navigate = useNavigate();
@@ -15,14 +16,13 @@ export const CollectionsGridSection: React.FC = () => {
   const collections = [
     {
       id: 1,
-      title: "CORE VISION COLLECTION",
-      image:
-        "https://images.unsplash.com/photo-1679937744139-b83f7770148f?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      title: "OMU FUSION Beanie Flex",
+      image: coreVisionImage,
       buttonText: "EXPLORE",
     },
     {
       id: 2,
-      title: "[698] JOHN SMITH",
+      title: "OMU FUSION Cap",
       subtitle: "Limited Edition",
       image:
         "https://plus.unsplash.com/premium_photo-1758742058529-6fb2fda160cf?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -30,7 +30,7 @@ export const CollectionsGridSection: React.FC = () => {
     },
     {
       id: 3,
-      title: "BOLD BASE COLLECTION",
+      title: "Limited Two-Piece Jacket",
       image:
         "https://images.unsplash.com/photo-1542596768-5d1d21f1cf98?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
       buttonText: "DISCOVER",

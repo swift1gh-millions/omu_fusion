@@ -14,11 +14,11 @@ export const ScrollToTop: React.FC = () => {
         left: 0,
         behavior: "instant",
       });
-      
+
       // Method 2: Fallback for older browsers
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-      
+
       // Method 3: For mobile/touch devices
       if (window.scrollTo) {
         window.scrollTo(0, 0);
