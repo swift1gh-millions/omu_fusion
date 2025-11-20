@@ -85,28 +85,31 @@ export const HeroSection: React.FC = () => {
     return () => clearInterval(interval);
   }, [backgroundImages.length]);
 
-  // Immediate hero image display and background preloading
+  // Optimized hero image loading strategy
   useEffect(() => {
     // Start slideshow immediately - don't wait for preloading
     setSlideshowStarted(true);
     setImagesLoaded([true, true, true, true]);
     setPreloadComplete(true);
 
-    // Preload remaining images in background (non-blocking)
+    // Preload remaining images in background (less aggressive)
     const preloadRemainingImages = async () => {
       try {
-        const remainingImages = backgroundImages.slice(1).map((img) => img.src);
-        await preloadImages(remainingImages);
-        console.log("Hero images preloaded successfully");
+        // Only preload the next image, not all at once
+        const nextImage = backgroundImages[1]?.src;
+        if (nextImage) {
+          await preloadImages([nextImage]);
+          console.log("Next hero image preloaded");
+        }
       } catch (error) {
         console.warn("Background preloading failed (non-critical):", error);
       }
     };
 
-    // Use setTimeout to ensure this doesn't block initial render
+    // Delay preloading to prioritize initial render
     const timer = setTimeout(() => {
       preloadRemainingImages();
-    }, 100);
+    }, 500);
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,7 +147,9 @@ export const HeroSection: React.FC = () => {
                   className="w-full h-full min-h-screen object-cover object-center"
                   loading={index === 0 ? "eager" : "lazy"}
                   priority={index === 0}
-                  quality={85}
+                  quality={70}
+                  placeholder="blur"
+                  fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSIjMUExQTFBIi8+Cjx0ZXh0IHg9Ijk2MCIgeT0iNTQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNEE0QTRBIiBmb250LXNpemU9IjQ4IiBmb250LWZhbWlseT0iQXJpYWwiPkxvYWRpbmcuLi48L3RleHQ+Cjwvc3ZnPgo="
                 />
               </div>
             </motion.div>
