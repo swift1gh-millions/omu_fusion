@@ -48,7 +48,7 @@ export const ProductSpotlightSection: React.FC<ProductSpotlightProps> =
 
                 <button
                   onClick={handleShopNowClick}
-                  className="liquid-glass-dark text-white px-8 sm:px-12 py-3 sm:py-4 text-sm font-medium tracking-widest hover:bg-gray-800 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-300 modern-button rounded-full touch-manipulation btn-mobile"
+                  className="bg-yellow-500 text-white px-8 sm:px-12 py-3 sm:py-4 text-sm font-medium tracking-widest hover:bg-gray-700 focus:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-all duration-300 modern-button rounded-full touch-manipulation btn-mobile shadow-lg hover:shadow-xl"
                   aria-label={`Shop ${productName}`}>
                   SHOP NOW →
                 </button>
