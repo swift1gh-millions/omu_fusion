@@ -30,29 +30,14 @@ export const ModernCategoriesSection: React.FC = () => {
       setLoading(true);
       const dbCategories = await CategoryService.getActiveCategories();
 
-      // Prioritize certain categories for the homepage display
-      const priorityCategories = [
-        "Hoodies",
-        "T-Shirts",
-        "Sneakers",
-        "Accessories",
-      ];
-      const sortedCategories = dbCategories.sort((a, b) => {
-        const aIndex = priorityCategories.indexOf(a.name);
-        const bIndex = priorityCategories.indexOf(b.name);
-
-        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-        if (aIndex !== -1) return -1;
-        if (bIndex !== -1) return 1;
-        return a.name.localeCompare(b.name);
-      });
-
-      // Take first 4 categories for the homepage display
-      const displayCategories = sortedCategories.slice(0, 4);
+      // Show ALL categories, not just first 4
+      const sortedCategories = dbCategories.sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
 
       // Map database categories to CategoryItem format with product counts
       const categoriesWithCounts = await Promise.all(
-        displayCategories.map(async (cat, index) => {
+        sortedCategories.map(async (cat, index) => {
           try {
             const productsResponse =
               await EnhancedProductService.getProductsByCategory(cat.name);
@@ -95,34 +80,25 @@ export const ModernCategoriesSection: React.FC = () => {
   };
 
   const getCategoryTitle = (categoryName: string): string => {
-    // Split category names appropriately for display
+    // Generate appropriate title based on category name
     const nameMap: { [key: string]: string } = {
       Hoodies: "CASUAL",
       "T-Shirts": "PREMIUM",
       Sneakers: "ATHLETIC",
-      Accessories: "ALL",
+      Accessories: "STYLE",
       Caps: "HEAD",
       Boots: "WINTER",
       Pants: "COMFORT",
       Jackets: "OUTDOOR",
+      Shirts: "FORMAL",
     };
 
     return nameMap[categoryName] || categoryName.split(" ")[0].toUpperCase();
   };
 
   const getCategorySubtitle = (categoryName: string): string => {
-    const nameMap: { [key: string]: string } = {
-      Hoodies: "HOODIES",
-      "T-Shirts": "T-SHIRTS",
-      Sneakers: "SNEAKERS",
-      Accessories: "ACCESSORIES",
-      Caps: "WEAR",
-      Boots: "BOOTS",
-      Pants: "PANTS",
-      Jackets: "JACKETS",
-    };
-
-    return nameMap[categoryName] || categoryName.toUpperCase();
+    // Return the exact category name for proper navigation
+    return categoryName;
   };
 
   const getCategoryDescription = (categoryName: string): string => {
@@ -142,6 +118,8 @@ export const ModernCategoriesSection: React.FC = () => {
         "Comfortable and versatile pants for every occasion and lifestyle.",
       Jackets:
         "Premium outerwear collection for style, comfort, and protection.",
+      Shirts:
+        "Professional and casual shirts crafted for modern style and comfort.",
     };
 
     return (
@@ -167,6 +145,8 @@ export const ModernCategoriesSection: React.FC = () => {
         "https://images.unsplash.com/photo-1565084888279-aca607ecce0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
       Jackets:
         "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      Shirts:
+        "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
     };
 
     return (
@@ -284,18 +264,30 @@ export const ModernCategoriesSection: React.FC = () => {
                 ))}
               </div>
               {/* Scroll indicator */}
-              <div className="flex justify-center mt-4 space-x-2">
-                {categories.map((_, index) => (
-                  <div
-                    key={index}
-                    className="w-2 h-2 rounded-full bg-white/30"
-                  />
-                ))}
-              </div>
+              {categories.length > 1 && (
+                <div className="flex justify-center mt-4 space-x-2">
+                  {categories.map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-2 h-2 rounded-full bg-white/30"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Desktop Grid */}
-            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              className="hidden md:grid gap-6"
+              style={{
+                gridTemplateColumns: `repeat(${Math.min(
+                  categories.length,
+                  4
+                )}, minmax(0, 1fr))`,
+                ...(categories.length > 4 && {
+                  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                }),
+              }}>
               {categories.map((category, index) => (
                 <CategoryCard
                   key={category.id}
@@ -343,23 +335,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
   const navigate = useNavigate();
 
   const handleCategoryClick = () => {
-    // Get the actual category name from the title and subtitle combination
-    const categoryName = `${category.subtitle}`.replace(/s$/, ""); // Remove plural 's' if present
-
-    // Map display names back to database category names
-    const categoryMap: { [key: string]: string } = {
-      HOODIE: "Hoodies",
-      "T-SHIRT": "T-Shirts",
-      SNEAKER: "Sneakers",
-      ACCESSORIE: "Accessories",
-      CAP: "Caps",
-      BOOT: "Boots",
-      PANT: "Pants",
-      JACKET: "Jackets",
-    };
-
-    const dbCategoryName = categoryMap[categoryName] || category.subtitle;
-    navigate(`/shop?category=${encodeURIComponent(dbCategoryName)}`);
+    // Use the actual category name directly from the subtitle
+    const categoryName = category.subtitle;
+    navigate(`/shop?category=${encodeURIComponent(categoryName)}`);
   };
 
   return (
@@ -383,11 +361,11 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-between p-4 sm:p-6">
-        {/* Top Badge - for special categories */}
-        {index === 0 && (
+        {/* Top Badge - for categories with most items */}
+        {category.itemCount && category.itemCount > 0 && (
           <div className="self-end">
             <div className="bg-accent-gold text-black text-xs font-bold px-3 py-1 rounded-full">
-              TRENDING
+              {category.itemCount > 5 ? "TRENDING" : "NEW"}
             </div>
           </div>
         )}

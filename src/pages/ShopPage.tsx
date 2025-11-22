@@ -264,7 +264,7 @@ export const ShopPage: React.FC = () => {
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 999999 });
   const [isLoading, setIsLoading] = useState(true);
   const [focusedProduct, setFocusedProduct] = useState<string | null>(
     searchParams.get("product")
@@ -367,8 +367,6 @@ export const ShopPage: React.FC = () => {
           // Status badges now controlled by admin through product.status field
         }));
 
-        console.log("Products loaded:", shopProducts.length);
-
         setProducts(shopProducts);
 
         // Generate dynamic categories from actual products
@@ -385,8 +383,20 @@ export const ShopPage: React.FC = () => {
           ...Array.from(uniqueCategories).sort(),
         ];
         setCategories(dynamicCategories);
+
+        // Set dynamic price range based on actual product prices
+        if (shopProducts.length > 0) {
+          const prices = shopProducts.map((p) => p.price);
+          const maxPrice = Math.max(...prices);
+          // No artificial limits - use actual max price + buffer for user filtering
+          const bufferMax = Math.ceil(maxPrice * 1.2); // Add 20% buffer
+          setPriceRange((prev) => ({
+            min: 0,
+            max: Math.max(bufferMax, prev.max),
+          }));
+        }
       } catch (error) {
-        console.error("❌ Failed to load products:", error);
+        console.error("Failed to load products:", error);
         setProducts([]); // Set empty array on error
       } finally {
         setIsLoading(false);
@@ -513,10 +523,18 @@ export const ShopPage: React.FC = () => {
   const handleClearFilters = useCallback(() => {
     setSelectedCategory("All");
     setSearchTerm("");
-    setPriceRange({ min: 0, max: 1000 });
+    // Reset to dynamic range based on current products
+    if (products.length > 0) {
+      const prices = products.map((p) => p.price);
+      const maxPrice = Math.max(...prices);
+      const bufferMax = Math.ceil(maxPrice * 1.2);
+      setPriceRange({ min: 0, max: bufferMax });
+    } else {
+      setPriceRange({ min: 0, max: 999999 });
+    }
     // Clear URL search parameters
     setSearchParams({});
-  }, [setSearchParams]);
+  }, [setSearchParams, products]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
