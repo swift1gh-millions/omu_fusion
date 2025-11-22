@@ -6,17 +6,17 @@ import { Button } from "../components/ui/Button";
 export const AboutPage: React.FC = () => {
   const teamMembers = [
     {
-      name: "Sarah Johnson",
+      name: "Richard Addo",
       role: "Founder & CEO",
       bio: "Passionate about creating products that inspire and empower people to live their best lives.",
     },
     {
-      name: "Michael Chen",
+      name: "King Anandex",
       role: "Design Director",
       bio: "Award-winning designer with 15+ years of experience in creating beautiful, functional products.",
     },
     {
-      name: "Emily Rodriguez",
+      name: "Germain Helios",
       role: "Head of Innovation",
       bio: "Leading our research and development team to push the boundaries of what's possible.",
     },

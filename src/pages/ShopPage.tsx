@@ -551,8 +551,8 @@ export const ShopPage: React.FC = () => {
       }}>
       {/* Light overlay */}
       <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]"></div>
-      <div className="relative z-10 pt-24 pb-12 sm:pb-16">
-        <div className="max-w-7xl mx-auto px-4 pt-4 pb-40 sm:px-6 lg:px-8">
+      <div className="relative z-10 min-h-screen pt-24 pb-12 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-12 sm:px-6 lg:px-8">
           {/* Header */}
           {/* <motion.div
             className="text-center mb-8 sm:mb-12"

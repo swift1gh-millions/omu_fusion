@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HiX, HiStar, HiHeart, HiShare } from "react-icons/hi";
 import { Button } from "./Button";
@@ -28,6 +28,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const { addToCart, cart } = useCart();
 
+  // Ref for modal content to enable scrolling
+  const modalContentRef = useRef<HTMLDivElement>(null);
+
   // Check if product is already in cart
   useEffect(() => {
     if (product) {
@@ -39,7 +42,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     }
   }, [cart, product]);
 
-  // Reset state when modal opens/closes
+  // Reset state when modal opens/closes or when product changes
   useEffect(() => {
     if (isOpen) {
       setSelectedImage(0);
@@ -47,8 +50,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setSelectedColor("");
       setQuantity(1);
       setIsAddingToCart(false);
+
+      // Scroll modal content to top when product changes
+      if (modalContentRef.current) {
+        modalContentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, product?.id]); // Add product?.id as dependency
 
   const handleAddToCart = async () => {
     if (isAddedToCart || product.stock === 0) return;
@@ -100,6 +108,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </button>
 
           <motion.div
+            ref={modalContentRef}
             className="scrollbar-thin relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useDarkBackground } from "../../utils/backgroundUtils";
+import { CategoryService } from "../../utils/categoryService";
+import { EnhancedProductService } from "../../utils/enhancedProductService";
 
 interface CategoryItem {
   id: string;
@@ -10,48 +12,221 @@ interface CategoryItem {
   description: string;
   image: string;
   gradient: string;
+  itemCount?: number;
 }
 
 export const ModernCategoriesSection: React.FC = () => {
   const navigate = useNavigate();
   const darkBg = useDarkBackground("ModernCategoriesSection", 0.8);
-  const categories: CategoryItem[] = [
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const dbCategories = await CategoryService.getActiveCategories();
+
+      // Prioritize certain categories for the homepage display
+      const priorityCategories = [
+        "Hoodies",
+        "T-Shirts",
+        "Sneakers",
+        "Accessories",
+      ];
+      const sortedCategories = dbCategories.sort((a, b) => {
+        const aIndex = priorityCategories.indexOf(a.name);
+        const bIndex = priorityCategories.indexOf(b.name);
+
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      // Take first 4 categories for the homepage display
+      const displayCategories = sortedCategories.slice(0, 4);
+
+      // Map database categories to CategoryItem format with product counts
+      const categoriesWithCounts = await Promise.all(
+        displayCategories.map(async (cat, index) => {
+          try {
+            const productsResponse =
+              await EnhancedProductService.getProductsByCategory(cat.name);
+
+            return {
+              id: cat.name.toLowerCase().replace(/\s+/g, "-"),
+              title: getCategoryTitle(cat.name),
+              subtitle: getCategorySubtitle(cat.name),
+              description: cat.description || getCategoryDescription(cat.name),
+              image: getCategoryImage(cat.name),
+              gradient: getCategoryGradient(index),
+              itemCount: productsResponse.products.length,
+            };
+          } catch (error) {
+            console.error(
+              `Error loading products for category ${cat.name}:`,
+              error
+            );
+            return {
+              id: cat.name.toLowerCase().replace(/\s+/g, "-"),
+              title: getCategoryTitle(cat.name),
+              subtitle: getCategorySubtitle(cat.name),
+              description: cat.description || getCategoryDescription(cat.name),
+              image: getCategoryImage(cat.name),
+              gradient: getCategoryGradient(index),
+              itemCount: 0,
+            };
+          }
+        })
+      );
+
+      setCategories(categoriesWithCounts);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      // Fallback to default categories if database fails
+      setCategories(getFallbackCategories());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategoryTitle = (categoryName: string): string => {
+    // Split category names appropriately for display
+    const nameMap: { [key: string]: string } = {
+      Hoodies: "CASUAL",
+      "T-Shirts": "PREMIUM",
+      Sneakers: "ATHLETIC",
+      Accessories: "ALL",
+      Caps: "HEAD",
+      Boots: "WINTER",
+      Pants: "COMFORT",
+      Jackets: "OUTDOOR",
+    };
+
+    return nameMap[categoryName] || categoryName.split(" ")[0].toUpperCase();
+  };
+
+  const getCategorySubtitle = (categoryName: string): string => {
+    const nameMap: { [key: string]: string } = {
+      Hoodies: "HOODIES",
+      "T-Shirts": "T-SHIRTS",
+      Sneakers: "SNEAKERS",
+      Accessories: "ACCESSORIES",
+      Caps: "WEAR",
+      Boots: "BOOTS",
+      Pants: "PANTS",
+      Jackets: "JACKETS",
+    };
+
+    return nameMap[categoryName] || categoryName.toUpperCase();
+  };
+
+  const getCategoryDescription = (categoryName: string): string => {
+    const descriptionMap: { [key: string]: string } = {
+      Hoodies:
+        "Daily comfort starts here. Our Casual Hoodie collection is designed for laid-back days and effortless style.",
+      "T-Shirts":
+        "Essential casual wear crafted from premium materials for everyday comfort and timeless style.",
+      Sneakers:
+        "Step into comfort and style with our premium sneaker collection designed for every occasion.",
+      Accessories:
+        "Elevate your active lifestyle with our collection of gadgets, stylish bags, and durable accessories!",
+      Caps: "Premium headwear collection for style and comfort in every season.",
+      Boots:
+        "Durable and stylish footwear designed to keep you comfortable in any weather.",
+      Pants:
+        "Comfortable and versatile pants for every occasion and lifestyle.",
+      Jackets:
+        "Premium outerwear collection for style, comfort, and protection.",
+    };
+
+    return (
+      descriptionMap[categoryName] ||
+      `Discover our premium ${categoryName.toLowerCase()} collection designed for style and comfort.`
+    );
+  };
+
+  const getCategoryImage = (categoryName: string): string => {
+    const imageMap: { [key: string]: string } = {
+      Hoodies:
+        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "T-Shirts":
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      Sneakers:
+        "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      Accessories:
+        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      Caps: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      Boots:
+        "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      Pants:
+        "https://images.unsplash.com/photo-1565084888279-aca607ecce0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      Jackets:
+        "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+    };
+
+    return (
+      imageMap[categoryName] ||
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    );
+  };
+
+  const getCategoryGradient = (index: number): string => {
+    const gradients = [
+      "from-blue-600 to-blue-800",
+      "from-green-600 to-green-800",
+      "from-purple-600 to-purple-800",
+      "from-orange-600 to-red-600",
+      "from-pink-600 to-pink-800",
+      "from-indigo-600 to-indigo-800",
+      "from-yellow-600 to-yellow-800",
+      "from-gray-600 to-gray-800",
+    ];
+
+    return gradients[index % gradients.length];
+  };
+
+  const getFallbackCategories = (): CategoryItem[] => [
     {
-      id: "new-arrivals",
-      title: "NEW",
-      subtitle: "ARRIVAL",
-      description:
-        "Fresh off the press! Our New Arrivals are packed with the latest trends, colors, and designs to keep you ahead of the curve.",
-      image:
-        "https://images.unsplash.com/photo-1583743814966-8936f37f4082?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      gradient: "from-blue-600 to-blue-800",
-    },
-    {
-      id: "best-sellers",
-      title: "BEST",
-      subtitle: "SELLERS",
-      description:
-        "The hoodies everyone's talking about! These fan favorites are loved for their perfect fit, unmatched comfort, and timeless style.",
-      image:
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      gradient: "from-green-600 to-green-800",
-    },
-    {
-      id: "casual-hoodies",
+      id: "hoodies",
       title: "CASUAL",
       subtitle: "HOODIES",
       description:
         "Daily comfort starts here. Our Casual Hoodie collection is designed for laid-back days and effortless style.",
       image:
         "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      gradient: "from-gray-600 to-gray-800",
+      gradient: "from-blue-600 to-blue-800",
     },
     {
-      id: "all-accessories",
+      id: "t-shirts",
+      title: "PREMIUM",
+      subtitle: "T-SHIRTS",
+      description:
+        "Essential casual wear crafted from premium materials for everyday comfort and timeless style.",
+      image:
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+      gradient: "from-green-600 to-green-800",
+    },
+    {
+      id: "sneakers",
+      title: "ATHLETIC",
+      subtitle: "SNEAKERS",
+      description:
+        "Step into comfort and style with our premium sneaker collection designed for every occasion.",
+      image:
+        "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      gradient: "from-purple-600 to-purple-800",
+    },
+    {
+      id: "accessories",
       title: "ALL",
       subtitle: "ACCESSORIES",
       description:
-        "Elevate your active lifestyle with our collection of gadgets, stylish bags, and durable watches to complete your performance-ready look!",
+        "Elevate your active lifestyle with our collection of gadgets, stylish bags, and durable accessories!",
       image:
         "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       gradient: "from-orange-600 to-red-600",
@@ -71,37 +246,66 @@ export const ModernCategoriesSection: React.FC = () => {
         </div>
 
         {/* Categories Grid/Carousel */}
-        <div className="mb-12">
-          {/* Mobile Carousel */}
-          <div className="md:hidden">
-            <div className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 px-2 scroll-smooth">
-              {categories.map((category, index) => (
-                <div
-                  key={category.id}
-                  className="flex-shrink-0 w-72 snap-center">
-                  <CategoryCard category={category} index={index} />
-                </div>
-              ))}
+        {loading ? (
+          <div className="mb-12">
+            {/* Loading skeleton for mobile */}
+            <div className="md:hidden">
+              <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-2">
+                {[...Array(4)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 w-72 h-96 rounded-3xl bg-white/10 animate-pulse"
+                  />
+                ))}
+              </div>
             </div>
-            {/* Scroll indicator */}
-            <div className="flex justify-center mt-4 space-x-2">
-              {categories.map((_, index) => (
-                <div key={index} className="w-2 h-2 rounded-full bg-white/30" />
-              ))}
-            </div>
-          </div>
 
-          {/* Desktop Grid */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category, index) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                index={index}
-              />
-            ))}
+            {/* Loading skeleton for desktop */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="h-96 rounded-3xl bg-white/10 animate-pulse"
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mb-12">
+            {/* Mobile Carousel */}
+            <div className="md:hidden">
+              <div className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 px-2 scroll-smooth">
+                {categories.map((category, index) => (
+                  <div
+                    key={category.id}
+                    className="flex-shrink-0 w-72 snap-center">
+                    <CategoryCard category={category} index={index} />
+                  </div>
+                ))}
+              </div>
+              {/* Scroll indicator */}
+              <div className="flex justify-center mt-4 space-x-2">
+                {categories.map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-2 h-2 rounded-full bg-white/30"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {categories.map((category, index) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  index={index}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* View All Button */}
         <div className="text-center">
@@ -139,23 +343,23 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
   const navigate = useNavigate();
 
   const handleCategoryClick = () => {
-    // Navigate to shop with category filter
-    switch (category.id) {
-      case "new-arrivals":
-        navigate("/shop?filter=new");
-        break;
-      case "best-sellers":
-        navigate("/shop?sort=popular");
-        break;
-      case "casual-hoodies":
-        navigate("/shop?category=Hoodies");
-        break;
-      case "all-accessories":
-        navigate("/shop?category=Accessories");
-        break;
-      default:
-        navigate("/shop");
-    }
+    // Get the actual category name from the title and subtitle combination
+    const categoryName = `${category.subtitle}`.replace(/s$/, ""); // Remove plural 's' if present
+
+    // Map display names back to database category names
+    const categoryMap: { [key: string]: string } = {
+      HOODIE: "Hoodies",
+      "T-SHIRT": "T-Shirts",
+      SNEAKER: "Sneakers",
+      ACCESSORIE: "Accessories",
+      CAP: "Caps",
+      BOOT: "Boots",
+      PANT: "Pants",
+      JACKET: "Jackets",
+    };
+
+    const dbCategoryName = categoryMap[categoryName] || category.subtitle;
+    navigate(`/shop?category=${encodeURIComponent(dbCategoryName)}`);
   };
 
   return (
@@ -197,6 +401,12 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, index }) => {
             <h4 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight">
               {category.subtitle}
             </h4>
+            {/* Item count display */}
+            {category.itemCount !== undefined && (
+              <p className="text-accent-gold text-sm font-medium mt-1">
+                {category.itemCount} items available
+              </p>
+            )}
           </div>
 
           <p className="text-gray-200 text-sm leading-relaxed opacity-0 md:group-hover:opacity-100 md:transition-opacity md:duration-300 md:transform md:translate-y-2 md:group-hover:translate-y-0 block md:hidden md:group-hover:block">
