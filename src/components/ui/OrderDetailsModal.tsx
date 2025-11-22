@@ -357,10 +357,6 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                               <span>Shipping:</span>
                               <span>{formatCurrency(order.shipping)}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
-                              <span>Tax:</span>
-                              <span>{formatCurrency(order.tax)}</span>
-                            </div>
                             {order.discount > 0 && (
                               <div className="flex justify-between text-sm text-green-600">
                                 <span>Discount:</span>

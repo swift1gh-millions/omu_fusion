@@ -15,6 +15,7 @@ import {
   Percent,
   Settings,
 } from "lucide-react";
+import { Logo } from "../ui/Logo";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -68,14 +69,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <Menu className="h-6 w-6" />
             </button>
             <div className="flex items-center ml-3">
-              <img
-                src="/logo_white.png"
-                alt="OMU Fusion"
-                className="h-8 w-auto"
+              <Logo
+                variant="light"
+                size="sm"
+                showText={true}
+                animated={false}
+                fallbackType="text"
               />
-              <span className="ml-2 text-lg font-semibold text-white">
-                Admin
-              </span>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -106,16 +106,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-700/50 px-6">
-            <div className="flex items-center">
-              <img
-                src="/logo_white.png"
-                alt="OMU Fusion"
-                className="h-8 w-auto"
-              />
-              <span className="ml-2 text-xl font-semibold text-white">
-                Admin
-              </span>
-            </div>
+            <Logo
+              variant="light"
+              size="sm"
+              showText={true}
+              animated={false}
+              fallbackType="text"
+            />
             <button
               onClick={closeSidebar}
               className="lg:hidden p-2 text-white hover:bg-slate-700/50 rounded-lg transition-all duration-200">

@@ -170,8 +170,7 @@ export const CartPage: React.FC = () => {
   const discount = appliedDiscount
     ? DiscountService.calculateDiscount(appliedDiscount, subtotal)
     : 0;
-  const tax = (subtotal - discount) * 0.08;
-  const total = subtotal - discount + tax;
+  const total = subtotal - discount;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -410,10 +409,6 @@ export const CartPage: React.FC = () => {
                       <span>-₵{discount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax</span>
-                    <span className="font-medium">₵{tax.toFixed(2)}</span>
-                  </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>

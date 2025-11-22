@@ -6,6 +6,7 @@ import { GlassCard } from "../components/ui/GlassCard";
 import { FormFieldError } from "../components/ui/FormFieldError";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { useAnimationVariants, useDebounce } from "../hooks/usePerformance";
+import { EmailService } from "../utils/emailService";
 
 export const ContactPage: React.FC = memo(() => {
   const [formData, setFormData] = useState({
@@ -84,15 +85,25 @@ export const ContactPage: React.FC = memo(() => {
     setIsSubmitting(true);
 
     try {
-      // Simulate form submission
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Send contact form email
+      await EmailService.sendContactFormEmail({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      });
 
       setIsSubmitted(true);
       setFormData({ name: "", email: "", subject: "", message: "" });
       setTouched({});
+      setErrors({});
     } catch (error) {
       console.error("Form submission error:", error);
-      // Handle error (could set an error state here)
+      // Set error state to show user
+      setErrors({
+        submit:
+          "Failed to send message. Please try again or contact us directly at omufusion@gmail.com",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -102,24 +113,23 @@ export const ContactPage: React.FC = memo(() => {
     {
       icon: HiMail,
       title: "Email Us",
-      details: "hello@omufusion.com",
+      details: "omufusion@gmail.com",
       description: "Send us an email anytime",
     },
     {
       icon: HiPhone,
       title: "Call Us",
-      details: "+1 (555) 123-4567",
+      details: "+233 248 397 962",
       description: "Mon-Fri from 8am to 5pm",
     },
     {
       icon: HiLocationMarker,
-      title: "Visit Us",
-      details: "123 Innovation Street, Tech City, TC 12345",
-      description: "Come say hello at our office",
+      title: "Locate Us",
+      details: "Dansoman, Accra - Ghana",
     },
     {
       icon: HiClock,
-      title: "Office Hours",
+      title: "Work Hours",
       details: "Monday - Friday: 8:00 AM - 5:00 PM",
       description: "Weekend: By appointment only",
     },
@@ -304,6 +314,12 @@ export const ContactPage: React.FC = memo(() => {
                       />
                     </div>
 
+                    {errors.submit && (
+                      <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        {errors.submit}
+                      </div>
+                    )}
+
                     <Button
                       type="submit"
                       variant="primary"
@@ -312,6 +328,32 @@ export const ContactPage: React.FC = memo(() => {
                       className="w-full">
                       {isSubmitting ? "Sending..." : "Send Message"}
                     </Button>
+
+                    {/* 24-hour response notice */}
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <HiClock className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Response Time</p>
+                          <p className="mb-2">
+                            We typically respond within 24 hours during business
+                            days.
+                          </p>
+                          <p>
+                            <strong>
+                              Didn't get a response after 24 hours?
+                            </strong>
+                            <br />
+                            Please contact us directly at{" "}
+                            <a
+                              href="mailto:omufusion@gmail.com"
+                              className="text-blue-700 hover:text-blue-900 font-medium underline">
+                              omufusion@gmail.com
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </form>
                 )}
               </GlassCard>
@@ -350,38 +392,28 @@ export const ContactPage: React.FC = memo(() => {
                 </motion.div>
               ))}
 
-              {/* FAQ Link */}
-              <motion.div variants={fadeInUp}>
-                <GlassCard className="p-6 text-center">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Quick Answers
-                  </h3>
-                  <p className="text-gray-400 mb-4 text-sm">
-                    Check out our FAQ section for instant answers to common
-                    questions.
-                  </p>
-                  <Button variant="secondary" size="sm" className="w-full">
-                    View FAQ
-                  </Button>
-                </GlassCard>
-              </motion.div>
-
               {/* Social Media */}
               <motion.div variants={fadeInUp}>
                 <GlassCard className="p-6 text-center">
                   <h3 className="text-lg font-semibold text-gray-200 mb-4">
                     Follow Us
                   </h3>
-                  <div className="flex justify-center space-x-4">
-                    {["Facebook", "Twitter", "Instagram", "LinkedIn"].map(
-                      (social) => (
-                        <button
-                          key={social}
-                          className="w-10 h-10 bg-gray-100 hover:bg-accent-gold hover:text-black rounded-full flex items-center justify-center transition-all duration-300">
-                          {social[0]}
-                        </button>
-                      )
-                    )}
+                  <div className="flex flex-col items-center space-y-3">
+                    <a
+                      href="https://instagram.com/omu_fusion"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+                      <div className="w-6 h-6 flex items-center justify-center">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-5 h-5">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                        </svg>
+                      </div>
+                      <span className="font-medium">@omu_fusion</span>
+                    </a>
                   </div>
                 </GlassCard>
               </motion.div>
@@ -396,13 +428,43 @@ export const ContactPage: React.FC = memo(() => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}>
             <GlassCard className="overflow-hidden">
-              <div className="aspect-video bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                <div className="text-center">
-                  <HiLocationMarker className="h-12 w-12 text-gray-500 mx-auto mb-2" />
-                  <p className="text-gray-400">Interactive Map Coming Soon</p>
-                  <p className="text-sm text-gray-500">
-                    123 Innovation Street, Tech City, TC 12345
-                  </p>
+              <div className="h-64 sm:h-72 lg:h-80 relative">
+                {/* Google Maps Embed for Dansoman, Accra, Ghana */}
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3970.8686920947147!2d-0.2527!3d5.5444!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf9084b2b7a773%3A0x5c3b1c0b0a4b1c0b!2sDansoman%2C%20Accra%2C%20Ghana!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Omu Fusion Location - Dansoman, Accra, Ghana"
+                  className="absolute inset-0"
+                />
+
+                {/* Overlay with business information */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+                  <div className="flex items-center space-x-3 text-white">
+                    <HiLocationMarker className="h-6 w-6 text-accent-gold" />
+                    <div>
+                      <h3 className="font-semibold">Omu Fusion</h3>
+                      <p className="text-sm opacity-90">
+                        Dansoman, Accra - Ghana
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive controls overlay */}
+                <div className="absolute top-4 right-4">
+                  <a
+                    href="https://www.google.com/maps/search/Dansoman,+Accra,+Ghana"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white/90 hover:bg-white text-gray-800 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition-all duration-300 hover:shadow-xl flex items-center space-x-2">
+                    <HiLocationMarker className="h-4 w-4" />
+                    <span>View Larger Map</span>
+                  </a>
                 </div>
               </div>
             </GlassCard>

@@ -21,7 +21,6 @@ export interface OrderEmailData {
     image?: string;
   }>;
   subtotal: number;
-  tax: number;
   discount: number;
   total: number;
   shippingAddress?: {
@@ -43,6 +42,13 @@ export interface StatusUpdateEmailData {
   statusDescription: string;
   trackingNumber?: string;
   estimatedDelivery?: string;
+}
+
+export interface ContactFormData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
 }
 
 export class EmailService {
@@ -234,9 +240,9 @@ export class EmailService {
             `
                 : ""
             }
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span>Tax:</span>
-                <span>₵${orderData.tax.toFixed(2)}</span>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #e5e7eb; padding-top: 10px; margin-top: 10px;">
+                <span>Total:</span>
+                <span>₵${orderData.total.toFixed(2)}</span>
             </div>
             <hr style="margin: 15px 0; border: 1px solid #475569;">
             <div style="display: flex; justify-content: space-between; font-size: 1.2em; font-weight: bold;">
@@ -306,8 +312,7 @@ Order Summary:
 Subtotal: ₵${orderData.subtotal.toFixed(2)}
 ${
   orderData.discount > 0 ? `Discount: -₵${orderData.discount.toFixed(2)}\n` : ""
-}Tax: ₵${orderData.tax.toFixed(2)}
-Total: ₵${orderData.total.toFixed(2)}
+}Total: ₵${orderData.total.toFixed(2)}
 
 ${
   orderData.shippingAddress
@@ -417,6 +422,113 @@ ${
     }
 Thank you for choosing Omu Fusion!
 You can view full order details in your account dashboard.
+`;
+
+    return { subject, htmlContent, textContent };
+  }
+
+  /**
+   * Send contact form email
+   */
+  static async sendContactFormEmail(
+    contactData: ContactFormData
+  ): Promise<boolean> {
+    try {
+      console.log("📧 EmailService: Sending contact form email...", {
+        from: contactData.email,
+        subject: contactData.subject,
+        name: contactData.name,
+      });
+
+      const template = this.generateContactFormTemplate(contactData);
+
+      if (this.isDevelopment) {
+        // In development, just log the email content
+        console.log("📧 [DEV MODE] Contact Form Email:");
+        console.log("From:", contactData.email);
+        console.log("Subject:", template.subject);
+        console.log(
+          "Content Preview:",
+          template.textContent.substring(0, 200) + "..."
+        );
+        return true;
+      }
+
+      // In production, you would integrate with an email service
+      // For now, return true to simulate successful email sending
+      return true;
+    } catch (error) {
+      console.error(
+        "❌ EmailService: Failed to send contact form email:",
+        error
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Generate contact form email template
+   */
+  private static generateContactFormTemplate(
+    contactData: ContactFormData
+  ): EmailTemplate {
+    const subject = `New Contact Form Message: ${contactData.subject} - Omu Fusion`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Contact Form Message</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #1e293b, #3b82f6); color: white; padding: 30px; text-align: center; }
+        .content { background: #f8fafc; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .message-box { background: white; padding: 20px; border-left: 4px solid #3b82f6; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New Contact Form Message 📧</h1>
+            <p>Someone has sent a message through your website</p>
+        </div>
+
+        <div class="content">
+            <h2>Contact Information</h2>
+            <p><strong>Name:</strong> ${contactData.name}</p>
+            <p><strong>Email:</strong> ${contactData.email}</p>
+            <p><strong>Subject:</strong> ${contactData.subject}</p>
+            
+            <div class="message-box">
+                <h3>Message:</h3>
+                <p>${contactData.message.replace(/\n/g, "<br>")}</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This message was sent through the contact form on your Omu Fusion website.</p>
+            <p>Please respond to the customer at: ${contactData.email}</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const textContent = `
+New Contact Form Message - Omu Fusion
+
+From: ${contactData.name}
+Email: ${contactData.email}
+Subject: ${contactData.subject}
+
+Message:
+${contactData.message}
+
+---
+This message was sent through the contact form on your Omu Fusion website.
+Please respond to the customer at: ${contactData.email}
 `;
 
     return { subject, htmlContent, textContent };

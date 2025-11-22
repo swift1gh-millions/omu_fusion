@@ -135,7 +135,7 @@ export class SiteConfigService {
       },
       contact: {
         email: "contact@omufusion.com",
-        phone: "+1 (555) 123-4567",
+        phone: "+233 248 397 962",
         address: "123 Fashion Street, Style City, SC 12345",
       },
       social: {

@@ -10,6 +10,7 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   similarProducts?: any[];
+  onProductSelect?: (product: any) => void;
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
@@ -17,6 +18,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   isOpen,
   onClose,
   similarProducts = [],
+  onProductSelect,
 }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
@@ -49,7 +51,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   }, [isOpen]);
 
   const handleAddToCart = async () => {
-    if (isAddedToCart) return;
+    if (isAddedToCart || product.stock === 0) return;
 
     setIsAddingToCart(true);
     try {
@@ -70,6 +72,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setIsAddingToCart(false);
     }
   };
+
+  const isOutOfStock = product?.stock === 0;
 
   if (!product) return null;
 
@@ -238,37 +242,78 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   </div>
                 )}
 
+                {/* Stock Status */}
+                <div className="mb-4">
+                  {isOutOfStock ? (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <span className="text-red-700 font-medium text-sm">
+                        🚫 Out of Stock
+                      </span>
+                      <p className="text-red-600 text-xs mt-1">
+                        This item is currently unavailable
+                      </p>
+                    </div>
+                  ) : product.stock <= 5 ? (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <span className="text-orange-700 font-medium text-sm">
+                        ⚠️ Low Stock - Only {product.stock} left!
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <span className="text-green-700 font-medium text-sm">
+                        ✅ In Stock ({product.stock} available)
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Quantity */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Quantity</h3>
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors duration-200">
+                      disabled={isOutOfStock || quantity <= 1}
+                      className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                       -
                     </button>
                     <span className="text-lg font-medium w-8 text-center">
                       {quantity}
                     </span>
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors duration-200">
+                      onClick={() =>
+                        setQuantity(Math.min(product.stock || 0, quantity + 1))
+                      }
+                      disabled={
+                        isOutOfStock || quantity >= (product.stock || 0)
+                      }
+                      className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                       +
                     </button>
                   </div>
+                  {!isOutOfStock && product.stock <= 5 && (
+                    <p className="text-sm text-orange-600 mt-2">
+                      Maximum quantity available: {product.stock}
+                    </p>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <Button
                     onClick={handleAddToCart}
-                    disabled={isAddingToCart || isAddedToCart}
+                    disabled={isAddingToCart || isAddedToCart || isOutOfStock}
                     className={`w-full py-3 text-lg font-medium transition-all duration-300 ${
-                      isAddedToCart
+                      isOutOfStock
+                        ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-50"
+                        : isAddedToCart
                         ? "bg-green-600 hover:bg-green-700 cursor-default"
                         : "bg-gradient-to-r from-accent-gold to-accent-orange hover:from-accent-orange hover:to-accent-gold"
                     }`}>
-                    {isAddingToCart ? (
+                    {isOutOfStock ? (
+                      "Out of Stock"
+                    ) : isAddingToCart ? (
                       <div className="flex items-center justify-center space-x-2">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Adding...</span>
@@ -306,10 +351,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   {similarProducts.slice(0, 4).map((similarProduct) => (
                     <div
                       key={similarProduct.id}
-                      className="group cursor-pointer"
+                      className="group cursor-pointer bg-white rounded-lg hover:shadow-lg transition-all duration-300 p-2"
                       onClick={() => {
-                        setSelectedImage(0);
-                        // You can implement opening this product in the modal here
+                        if (onProductSelect) {
+                          onProductSelect(similarProduct);
+                        }
                       }}>
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
                         <OptimizedImage
@@ -325,9 +371,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                       <h4 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-accent-gold transition-colors duration-200">
                         {similarProduct.name}
                       </h4>
-                      <p className="text-sm font-bold text-gray-700 mt-1">
-                        ₵{similarProduct.price}
-                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-sm font-bold text-gray-700">
+                          ₵{similarProduct.price}
+                        </p>
+                        {similarProduct.stock === 0 && (
+                          <span className="text-xs text-red-600 font-medium">
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

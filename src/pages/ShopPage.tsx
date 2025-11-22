@@ -36,6 +36,7 @@ import white3 from "../assets/backgrounds/white7.jpg";
 interface ShopProduct extends Omit<Product, "id"> {
   id: string;
   image: string; // Primary image for display
+  stock: number; // Ensure stock is included
   originalPrice?: number;
   isNew?: boolean;
   isOnSale?: boolean;
@@ -82,7 +83,7 @@ const ProductCard = React.memo(
 
     const handleAddToCart = async (e?: React.MouseEvent) => {
       e?.stopPropagation(); // Prevent opening modal if event is provided
-      if (isAddedToCart || isAddingToCart) return;
+      if (isAddedToCart || isAddingToCart || product.stock === 0) return;
 
       setIsAddingToCart(true);
       try {
@@ -100,6 +101,8 @@ const ProductCard = React.memo(
         setIsAddingToCart(false);
       }
     };
+
+    const isOutOfStock = product.stock === 0;
 
     return (
       <motion.div
@@ -144,7 +147,7 @@ const ProductCard = React.memo(
                   price: product.price,
                 });
               }}
-              className="absolute top-2 sm:top-3 right-2 sm:right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-110 z-10"
+              className="absolute top-2 sm:top-3 right-2 sm:right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-110 z-10 cursor-pointer"
               style={{
                 right: product.status === "sale" ? "60px" : "8px",
                 top: "8px",
@@ -198,18 +201,22 @@ const ProductCard = React.memo(
 
               {/* Enhanced Add to Cart Button */}
               <Button
-                variant="primary"
+                variant={isOutOfStock ? "secondary" : "primary"}
                 size="sm"
-                disabled={isAddingToCart || isAddedToCart}
+                disabled={isAddingToCart || isAddedToCart || isOutOfStock}
                 className={`opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 text-xs sm:text-sm touch-manipulation shadow-lg hover:shadow-xl transform hover:scale-105 min-w-[80px] ${
-                  isAddedToCart
+                  isOutOfStock
+                    ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-50"
+                    : isAddedToCart
                     ? "bg-green-600 hover:bg-green-700 cursor-default"
                     : isAddingToCart
                     ? "bg-accent-gold/70 cursor-wait"
                     : ""
                 }`}
                 onClick={handleAddToCart}>
-                {isAddingToCart ? (
+                {isOutOfStock ? (
+                  <span className="text-xs sm:text-sm">Out of Stock</span>
+                ) : isAddingToCart ? (
                   <div className="flex items-center justify-center space-x-1">
                     <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
                     <span className="hidden sm:inline text-xs">Adding...</span>
@@ -408,6 +415,14 @@ export const ShopPage: React.FC = () => {
 
     if (urlProduct && urlProduct !== focusedProduct) {
       setFocusedProduct(urlProduct);
+
+      // Auto-open product modal for the specified product
+      const product = products.find((p) => p.id === urlProduct);
+      if (product) {
+        setSelectedProduct(product);
+        setIsModalOpen(true);
+      }
+
       // Scroll to product after a short delay to ensure rendering
       setTimeout(() => {
         const productElement = document.getElementById(`product-${urlProduct}`);
@@ -526,7 +541,7 @@ export const ShopPage: React.FC = () => {
 
   return (
     <div
-      className="scrollbar-animated min-h-screen relative"
+      className="scrollbar-animated min-h-screen relative bg-gradient-to-br from-gray-50 to-gray-100"
       style={{
         backgroundImage: `url(${white3})`,
         backgroundSize: "cover",
@@ -535,11 +550,11 @@ export const ShopPage: React.FC = () => {
         backgroundAttachment: "fixed",
       }}>
       {/* Light overlay */}
-      <div className="absolute inset-0 bg-white/20 backdrop-blur-[0.5px]"></div>
-      <div className="relative z-10 pt-32 pb-12 sm:pb-16">
+      <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]"></div>
+      <div className="relative z-10 pt-24 pb-12 sm:pb-16">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-40 sm:px-6 lg:px-8">
           {/* Header */}
-          <motion.div
+          {/* <motion.div
             className="text-center mb-8 sm:mb-12"
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -547,7 +562,7 @@ export const ShopPage: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
               Shop Our Collection
             </h1>
-          </motion.div>
+          </motion.div> */}
 
           {/* Filters*/}
           <motion.div
@@ -578,7 +593,7 @@ export const ShopPage: React.FC = () => {
                       <button
                         key={category}
                         onClick={() => handleCategoryChange(category)}
-                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation shadow-md hover:shadow-lg ${
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation shadow-md hover:shadow-lg cursor-pointer ${
                           selectedCategory === category
                             ? "bg-accent-gold text-black border-2 border-accent-gold shadow-lg"
                             : "bg-white text-gray-800 border-2 border-gray-200 hover:bg-accent-gold hover:text-black hover:border-accent-gold"
@@ -593,7 +608,7 @@ export const ShopPage: React.FC = () => {
                     <select
                       value={sortBy}
                       onChange={(e) => handleSortChange(e.target.value)}
-                      className="px-3 sm:px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-accent-gold text-xs sm:text-sm text-gray-800 font-semibold bg-white shadow-md hover:shadow-lg transition-all duration-300">
+                      className="px-3 sm:px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-accent-gold text-xs sm:text-sm text-gray-800 font-semibold bg-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
                       <option value="name">Sort by Name</option>
                       <option value="price-low">Price: Low to High</option>
                       <option value="price-high">Price: High to Low</option>
@@ -604,7 +619,7 @@ export const ShopPage: React.FC = () => {
                     <div className="flex border-2 border-gray-200 rounded-lg overflow-hidden shadow-md">
                       <button
                         onClick={() => handleViewModeChange("grid")}
-                        className={`p-2 touch-manipulation transition-all duration-300 ${
+                        className={`p-2 touch-manipulation transition-all duration-300 cursor-pointer ${
                           viewMode === "grid"
                             ? "bg-accent-gold text-black border-r border-accent-gold"
                             : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black border-r border-gray-200"
@@ -613,7 +628,7 @@ export const ShopPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleViewModeChange("list")}
-                        className={`p-2 touch-manipulation transition-all duration-300 ${
+                        className={`p-2 touch-manipulation transition-all duration-300 cursor-pointer ${
                           viewMode === "list"
                             ? "bg-accent-gold text-black"
                             : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black"
@@ -682,6 +697,10 @@ export const ShopPage: React.FC = () => {
         similarProducts={
           selectedProduct ? getSimilarProducts(selectedProduct) : []
         }
+        onProductSelect={(product) => {
+          setSelectedProduct(product);
+          // Keep modal open to show the new product
+        }}
       />
     </div>
   );

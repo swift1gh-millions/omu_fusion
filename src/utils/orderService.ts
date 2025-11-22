@@ -51,7 +51,6 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   shipping: number;
-  tax: number;
   discount: number;
   total: number;
   status: OrderStatus;

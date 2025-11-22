@@ -18,61 +18,120 @@ interface ProductDisplay extends Product {
 export const FeaturedProductsSection: React.FC = () => {
   const navigate = useNavigate();
   const { addToCart, cart } = useCart();
-  const [featuredProducts, setFeaturedProducts] = useState<ProductDisplay[]>(
-    []
-  );
   const [popularProducts, setPopularProducts] = useState<ProductDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [randomSeed, setRandomSeed] = useState<number>(Date.now());
+
+  // Seeded random number generator for consistent randomization per session
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+
+  // Fisher-Yates shuffle algorithm with seeded randomization
+  const shuffleArray = <T,>(array: T[], seed: number): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const randomValue = seededRandom(seed + i);
+      const j = Math.floor(randomValue * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Smart randomization algorithm that considers various factors
+  const getRandomizedPopularProducts = (
+    products: Product[],
+    seed: number
+  ): ProductDisplay[] => {
+    // Filter active products and add weight scoring
+    const weightedProducts = products
+      .filter((product) => product.isActive !== false)
+      .map((product) => {
+        let weight = 1;
+
+        // Increase weight for newer products
+        const daysSinceCreation = product.createdAt
+          ? (Date.now() - product.createdAt.toDate().getTime()) /
+            (1000 * 60 * 60 * 24)
+          : 0;
+        if (daysSinceCreation < 30) weight += 0.5; // Boost newer products
+
+        // Increase weight for sale items
+        if (product.status === "sale") weight += 0.3;
+
+        // Increase weight for featured products
+        if (product.featured) weight += 0.2;
+
+        // Add some randomness to prevent same order
+        weight += seededRandom(seed + parseInt(product.id || "0")) * 0.4;
+
+        return { product, weight };
+      });
+
+    // Sort by weight (descending) and take more than needed
+    const sortedByWeight = weightedProducts
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, 12) // Take top 12 candidates
+      .map((item) => item.product);
+
+    // Apply Fisher-Yates shuffle to the top candidates
+    const shuffled = shuffleArray(sortedByWeight, seed);
+
+    // Take final selection and convert to display format
+    return shuffled.slice(0, 6).map((product, index) => ({
+      ...product,
+      isTrending: index < 2, // Mark first 2 as trending
+      originalPrice:
+        product.status === "sale"
+          ? Math.round(product.price * (1.2 + seededRandom(seed + index) * 0.3))
+          : undefined,
+      badge:
+        product.status === "new"
+          ? "NEW"
+          : product.status === "sale"
+          ? "SALE"
+          : index === 0 && product.featured
+          ? "FEATURED"
+          : undefined,
+    }));
+  };
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
         setIsLoading(true);
 
-        // Fetch featured products from database
-        const featuredResponse = await EnhancedProductService.getProducts(
-          { isActive: true, featured: true },
-          { field: "createdAt", direction: "desc" },
-          { pageSize: 4 }
-        );
+        // Generate a new random seed for this session
+        const sessionSeed = Date.now() + Math.floor(Math.random() * 1000);
+        setRandomSeed(sessionSeed);
 
-        // Fetch popular products from database
-        const popularResponse = await EnhancedProductService.getProducts(
+        // Fetch all active products from database
+        const allProductsResponse = await EnhancedProductService.getProducts(
           { isActive: true },
           { field: "createdAt", direction: "desc" },
-          { pageSize: 4 }
+          { pageSize: 50 } // Fetch more products to have variety for randomization
         );
 
-        // Convert to ProductDisplay and add UI-specific properties
-        const featuredDisplayProducts: ProductDisplay[] =
-          featuredResponse.products.map((product, index) => ({
-            ...product,
-            badge:
-              index === 0
-                ? "FEATURED"
-                : product.status === "new"
-                ? "NEW"
-                : product.status === "sale"
-                ? "SALE"
-                : undefined,
-          }));
+        if (allProductsResponse.products.length > 0) {
+          // Apply smart randomization algorithm
+          const randomizedProducts = getRandomizedPopularProducts(
+            allProductsResponse.products,
+            sessionSeed
+          );
+          setPopularProducts(randomizedProducts);
 
-        const popularDisplayProducts: ProductDisplay[] =
-          popularResponse.products.map((product, index) => ({
-            ...product,
-            isTrending: index < 3, // Mark first 3 as trending
-            originalPrice:
-              product.status === "sale"
-                ? Math.round(product.price * 1.25)
-                : undefined, // Calculate original price for sale items
-          }));
-
-        setFeaturedProducts(featuredDisplayProducts);
-        setPopularProducts(popularDisplayProducts);
+          console.log(
+            `🎲 Randomized ${randomizedProducts.length} popular products with seed: ${sessionSeed}`
+          );
+        } else {
+          // Fallback to sample data if no products in database
+          console.warn("No products found in database, using fallback data");
+          setPopularProducts(getFallbackPopularProducts());
+        }
       } catch (error) {
         console.error("Error loading products:", error);
         // Fallback to sample data if database fails
-        setFeaturedProducts(getFallbackFeaturedProducts());
         setPopularProducts(getFallbackPopularProducts());
       } finally {
         setIsLoading(false);
@@ -80,22 +139,21 @@ export const FeaturedProductsSection: React.FC = () => {
     };
 
     loadProducts();
-  }, []);
+  }, []); // Only run once per component mount
 
   // Fallback data in case database is empty or fails
-  const getFallbackFeaturedProducts = (): ProductDisplay[] => [
+  const getFallbackPopularProducts = (): ProductDisplay[] => [
     {
       id: "sample-1",
-      name: "Premium Hoodie",
-      description: "High-quality cotton hoodie",
-      price: 129,
+      name: "Street Essential Tee",
+      description: "Essential street style t-shirt",
+      price: 45,
       images: [
-        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       ],
-      badge: "MUST HAVE",
-      category: "Hoodies",
-      stock: 10,
+      isTrending: true,
+      category: "T-Shirts",
+      stock: 25,
       createdAt: new Date() as any,
       updatedAt: new Date() as any,
       createdBy: "system",
@@ -155,61 +213,6 @@ export const FeaturedProductsSection: React.FC = () => {
     },
   ];
 
-  const getFallbackPopularProducts = (): ProductDisplay[] => [
-    {
-      id: "sample-5",
-      name: "Street Essential Tee",
-      description: "Essential street style t-shirt",
-      price: 45,
-      images: [
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      ],
-      isTrending: true,
-      category: "T-Shirts",
-      stock: 25,
-      createdAt: new Date() as any,
-      updatedAt: new Date() as any,
-      createdBy: "system",
-      seo: {},
-      tags: [],
-    },
-    {
-      id: "sample-6",
-      name: "Urban Cargo Pants",
-      description: "Comfortable cargo pants",
-      price: 89,
-      images: [
-        "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      ],
-      isTrending: true,
-      category: "Pants",
-      stock: 12,
-      createdAt: new Date() as any,
-      updatedAt: new Date() as any,
-      createdBy: "system",
-      seo: {},
-      tags: [],
-    },
-    {
-      id: "sample-7",
-      name: "Premium Denim Jacket",
-      description: "High-quality denim jacket",
-      price: 149,
-      originalPrice: 199,
-      images: [
-        "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      ],
-      isTrending: true,
-      category: "Jackets",
-      stock: 8,
-      createdAt: new Date() as any,
-      updatedAt: new Date() as any,
-      createdBy: "system",
-      seo: {},
-      tags: [],
-    },
-  ];
-
   if (isLoading) {
     return (
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-700 rounded-t-3xl">
@@ -223,52 +226,17 @@ export const FeaturedProductsSection: React.FC = () => {
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-700 rounded-t-3xl">
       <div className="max-w-7xl mx-auto">
-        {/* Must Have Section */}
-        <div className="mb-20">
-          <div className="flex items-center justify-between mb-6 sm:mb-8">
-            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-              MUST HAVES
-            </h2>
-            <button
-              onClick={() => navigate("/shop?category=All")}
-              className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors duration-200 group">
-              <svg
-                className="w-5 h-5 sm:w-6 sm:h-6 text-black group-hover:translate-x-0.5 transition-transform duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {featuredProducts.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                index={index}
-                addToCart={addToCart}
-                cart={cart}
-              />
-            ))}
-          </div>
-        </div>
-
         {/* Popular Section */}
         <div className="mb-20">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">
-              POPULAR HOODIES
-            </h2>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                POPULAR
+              </h2>
+            </div>
             <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto">
-              Stay cozy & stylish with this street-ready oversized fit, perfect
-              for effortless layering.
+              Discover curated products selected just for you. Each visit brings
+              new surprises!
             </p>
           </div>
 
@@ -373,7 +341,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
   return (
     <div
-      className="group relative animate-fade-in-up cursor-pointer md:cursor-default"
+      className="group relative animate-fade-in-up cursor-pointer"
       style={{ animationDelay: `${index * 0.1}s` }}
       onClick={handleCardClick}>
       {/* Product Image */}
@@ -514,14 +482,12 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
   }, []);
 
   const handleCardClick = () => {
-    if (isMobile) {
-      navigate(`/shop?product=${product.id}`);
-    }
+    navigate(`/shop?product=${product.id}`);
   };
 
   return (
     <div
-      className="group relative animate-fade-in-up cursor-pointer md:cursor-default"
+      className="group relative animate-fade-in-up cursor-pointer"
       style={{ animationDelay: `${index * 0.2}s` }}
       onClick={handleCardClick}>
       <div className="bg-white bg-opacity-5 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-6 hover:bg-opacity-10 transition-all duration-300 relative">

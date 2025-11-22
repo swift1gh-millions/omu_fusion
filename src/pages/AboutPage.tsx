@@ -8,22 +8,16 @@ export const AboutPage: React.FC = () => {
     {
       name: "Sarah Johnson",
       role: "Founder & CEO",
-      image:
-        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400",
       bio: "Passionate about creating products that inspire and empower people to live their best lives.",
     },
     {
       name: "Michael Chen",
       role: "Design Director",
-      image:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400",
       bio: "Award-winning designer with 15+ years of experience in creating beautiful, functional products.",
     },
     {
       name: "Emily Rodriguez",
       role: "Head of Innovation",
-      image:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
       bio: "Leading our research and development team to push the boundaries of what's possible.",
     },
   ];
@@ -237,29 +231,21 @@ export const AboutPage: React.FC = () => {
                 <motion.div
                   key={member.name}
                   variants={itemVariants}
-                  whileHover={{ y: -15, rotateY: 5 }}
+                  whileHover={{ y: -15, scale: 1.02 }}
                   className="group relative">
                   {/* Card Glow Effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-accent-gold/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
 
-                  <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl group-hover:border-white/20 transition-all duration-300">
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={member.image}
-                        alt={member.name}
-                        className="w-full h-80 object-cover transition-all duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300"></div>
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <h3 className="text-2xl font-bold text-white mb-1">
-                          {member.name}
-                        </h3>
-                        <p className="text-accent-gold font-semibold text-lg">
-                          {member.role}
-                        </p>
-                      </div>
+                  <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl group-hover:border-white/20 transition-all duration-300 p-8 text-center">
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-bold text-white mb-2">
+                        {member.name}
+                      </h3>
+                      <p className="text-accent-gold font-semibold text-lg">
+                        {member.role}
+                      </p>
                     </div>
-                    <div className="p-6">
+                    <div>
                       <p className="text-gray-300 leading-relaxed text-lg">
                         {member.bio}
                       </p>

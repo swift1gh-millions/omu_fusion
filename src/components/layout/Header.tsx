@@ -17,8 +17,7 @@ import { useSearch } from "../../context/SearchContext";
 import { useWishlist } from "../../hooks/useWishlist";
 import { SearchModal } from "../ui/SearchModal";
 import { OptimizedImage } from "../ui/OptimizedImage";
-import logoBlack from "../../assets/logo_black.png";
-import logoWhite from "../../assets/logo_white.png";
+import { Logo } from "../ui/Logo";
 
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -92,8 +91,6 @@ export const Header: React.FC = () => {
     ? "text-accent-gold"
     : "text-accent-gold";
 
-  const logoSrc = isLightBackground ? logoBlack : logoWhite;
-
   return (
     <>
       <header className={headerClasses}>
@@ -146,16 +143,12 @@ export const Header: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}>
               <Link to="/" className="flex items-center group">
-                <motion.div whileHover={{ rotate: 5, scale: 1.1 }}>
-                  <OptimizedImage
-                    src={logoSrc}
-                    alt="OMU FUSION"
-                    className="h-10 lg:h-12 w-auto transition-all duration-300"
-                    loading="eager"
-                    priority={true}
-                    quality={95}
-                  />
-                </motion.div>
+                <Logo
+                  variant={isLightBackground ? "dark" : "light"}
+                  size="lg"
+                  animated={true}
+                  fallbackType="text"
+                />
               </Link>
             </motion.div>
 
@@ -234,7 +227,7 @@ export const Header: React.FC = () => {
                           isLightBackground
                             ? "hover:bg-gray-100"
                             : "hover:bg-white/10"
-                        } transition-all duration-300 rounded-full flex items-center space-x-2`}
+                        } transition-all duration-300 rounded-full flex items-center space-x-2 cursor-pointer`}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}>
                         {user?.avatar ? (
@@ -337,14 +330,11 @@ export const Header: React.FC = () => {
             <div className="lg:hidden flex items-center justify-between w-full">
               {/* Mobile Logo */}
               <Link to="/" className="flex items-center group">
-                <motion.img
-                  src={logoSrc}
-                  alt="OMU FUSION"
-                  className="h-12 w-auto transition-all duration-300 group-hover:scale-110"
-                  loading="eager"
-                  decoding="sync"
-                  fetchPriority="high"
-                  whileHover={{ rotate: 5 }}
+                <Logo
+                  variant={isLightBackground ? "dark" : "light"}
+                  size="md"
+                  animated={true}
+                  fallbackType="text"
                 />
               </Link>
 
@@ -393,7 +383,7 @@ export const Header: React.FC = () => {
                     isLightBackground
                       ? "hover:bg-gray-100"
                       : "hover:bg-white/10"
-                  } transition-all duration-300 rounded-full`}
+                  } transition-all duration-300 rounded-full cursor-pointer`}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}>
                   <motion.div
@@ -443,13 +433,11 @@ export const Header: React.FC = () => {
           {/* Menu Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/10">
             <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-              <OptimizedImage
-                src={logoSrc}
-                alt="OMU FUSION"
-                className="h-8 w-auto"
-                loading="eager"
-                priority={true}
-                quality={95}
+              <Logo
+                variant={isLightBackground ? "dark" : "light"}
+                size="sm"
+                animated={false}
+                fallbackType="text"
               />
             </Link>
             <button

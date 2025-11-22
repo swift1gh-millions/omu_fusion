@@ -492,8 +492,7 @@ export const CheckoutPage: React.FC = () => {
       const discount = appliedDiscount
         ? DiscountService.calculateDiscount(appliedDiscount, subtotal)
         : 0;
-      const tax = (subtotal - discount) * 0.08;
-      const orderTotal = subtotal - discount + tax;
+      const orderTotal = subtotal - discount;
 
       // Process payment first (for non-Paystack methods)
       if (formData.paymentMethod !== "paystack") {
@@ -527,7 +526,6 @@ export const CheckoutPage: React.FC = () => {
         })),
         subtotal: subtotal,
         shipping: 0,
-        tax: tax,
         discount: discount,
         total: orderTotal,
         ...(appliedDiscount && {
@@ -610,7 +608,6 @@ export const CheckoutPage: React.FC = () => {
             image: item.image,
           })),
           subtotal: subtotal,
-          tax: tax,
           discount: discount,
           total: orderTotal,
           shippingAddress: {
@@ -772,8 +769,7 @@ export const CheckoutPage: React.FC = () => {
   const discount = appliedDiscount
     ? DiscountService.calculateDiscount(appliedDiscount, subtotal)
     : 0;
-  const tax = (subtotal - discount) * 0.08;
-  const total = subtotal - discount + tax;
+  const total = subtotal - discount;
 
   // Don't render checkout if not authenticated
   if (!isAuthenticated) {
@@ -1306,7 +1302,7 @@ export const CheckoutPage: React.FC = () => {
                           </div>
                           <button
                             onClick={removeDiscount}
-                            className="text-green-600 hover:text-green-800">
+                            className="text-green-600 hover:text-green-800 cursor-pointer">
                             <HiX className="h-4 w-4" />
                           </button>
                         </div>
@@ -1325,10 +1321,6 @@ export const CheckoutPage: React.FC = () => {
                         <span>-₵{discount.toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax</span>
-                      <span>₵{tax.toFixed(2)}</span>
-                    </div>
                     <div className="flex justify-between text-lg font-bold border-t pt-2">
                       <span>Total</span>
                       <span>₵{total.toFixed(2)}</span>

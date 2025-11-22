@@ -41,6 +41,7 @@ import { CartPage } from "./pages/CartPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { SignInPage } from "./pages/SignInPage";
 import { SignUpPage } from "./pages/SignUpPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { WishlistPage } from "./pages/WishlistPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -168,6 +169,14 @@ function AppContent() {
             element={
               <ProtectedRoute requireAuth={false}>
                 <SignUpPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <ForgotPasswordPage />
               </ProtectedRoute>
             }
           />

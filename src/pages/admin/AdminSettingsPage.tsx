@@ -536,6 +536,12 @@ export const AdminSettingsPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Current Email:</span>
+                      <span className="font-semibold text-white">
+                        {admin?.email || "Not available"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
                       <span className="text-gray-300">Recovery Email:</span>
                       <span className="font-semibold text-white">
                         {admin?.recoveryEmail || "Not set"}

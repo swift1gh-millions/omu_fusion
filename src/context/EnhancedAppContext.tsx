@@ -284,6 +284,7 @@ interface AppContextType extends AppState {
     password: string
   ) => Promise<void>;
   logout: () => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
 
   // Role checking methods
   isAdmin: () => boolean;
@@ -443,6 +444,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       ErrorService.logError(error as Error, { action: "Logout" }, "medium");
       addNotification("error", errorMessage);
       throw error;
+    }
+  };
+
+  const sendPasswordResetEmail = async (email: string): Promise<void> => {
+    try {
+      dispatch({ type: "SET_LOADING", payload: true });
+      dispatch({ type: "SET_ERROR", payload: null });
+
+      await EnhancedAuthService.sendPasswordResetEmail(email);
+
+      addNotification("success", "Password reset email sent successfully!");
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      dispatch({ type: "SET_ERROR", payload: errorMessage });
+      addNotification("error", errorMessage);
+      throw error;
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false });
     }
   };
 
@@ -793,6 +812,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     signIn,
     signUp,
     logout,
+    sendPasswordResetEmail,
     isAdmin,
     isModerator,
     hasPermission,

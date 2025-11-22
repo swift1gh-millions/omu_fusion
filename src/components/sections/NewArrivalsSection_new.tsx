@@ -26,12 +26,10 @@ export const NewArrivalsSection: React.FC = () => {
           { pageSize: 3 }
         );
 
-        const arrivals: NewArrival[] = response.products
-          .filter((product) => product.id) // Only include products with valid IDs
-          .map((product) => ({
-            id: product.id!,
-            image: product.images && product.images[0] ? product.images[0] : "",
-          }));
+        const arrivals: NewArrival[] = response.products.map((product) => ({
+          id: product.id || "",
+          image: product.images && product.images[0] ? product.images[0] : "",
+        }));
 
         setNewArrivals(arrivals);
       } catch (error) {
@@ -67,12 +65,7 @@ export const NewArrivalsSection: React.FC = () => {
   };
 
   const handleProductClick = (productId: string) => {
-    if (productId && productId !== "") {
-      navigate(`/shop?product=${productId}`);
-    } else {
-      // If no valid ID, just go to shop page
-      navigate("/shop");
-    }
+    navigate(`/shop?product=${productId}`);
   };
 
   return (
@@ -88,12 +81,7 @@ export const NewArrivalsSection: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}>
-          <h2
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-clip-text text-transparent mb-4 tracking-wide"
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse at center, #FBBF24 0%, #FBBF24 30%, #FCD34D 50%, #FFFFFF 80%, #FFFFFF 100%)",
-            }}>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-wide">
             NEW ARRIVALS
           </h2>
 
@@ -144,7 +132,7 @@ export const NewArrivalsSection: React.FC = () => {
                   relative overflow-hidden rounded-2xl
                   ${
                     index === 1
-                      ? "w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                      ? "w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28"
                       : "w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24"
                   }
                   shadow-xl shadow-black/30
@@ -177,7 +165,7 @@ export const NewArrivalsSection: React.FC = () => {
                 className={`
                   ${
                     i === 1
-                      ? "w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                      ? "w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28"
                       : "w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24"
                   }
                   rounded-2xl bg-white/10 animate-pulse
