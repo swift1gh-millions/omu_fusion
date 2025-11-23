@@ -15,6 +15,8 @@ import { OptimizedImage } from "../components/ui/OptimizedImage";
 import { PageBackground } from "../components/ui/PageBackground";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { ProductModal } from "../components/ui/ProductModal";
+import { PerformanceMonitor } from "../components/ui/PerformanceMonitor";
+import { useLoadTime } from "../hooks/useLoadTime";
 import {
   ProductsLoader,
   ModernProductsLoader,
@@ -25,6 +27,7 @@ import {
 } from "../utils/enhancedProductService";
 import { Product } from "../utils/databaseSchema";
 import ProductDebugService from "../utils/productDebugService";
+import ProductPreloader from "../utils/productPreloader";
 import {
   useDebounce,
   useAnimationVariants,
@@ -257,6 +260,9 @@ export const ShopPage: React.FC = () => {
     searchParams.get("product")
   );
 
+  // Load time tracking
+  const loadTime = useLoadTime();
+
   // Hooks
   const { cart, addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -335,19 +341,21 @@ export const ShopPage: React.FC = () => {
       .map((item) => item.product);
   };
 
-  // Load products from Firestore
+  // Load products with optimized preloading
   useEffect(() => {
     const loadProducts = async () => {
       try {
+        const startTime = performance.now();
         setIsLoading(true);
-        console.log("Loading products from Firestore...");
+        console.log("Loading products...");
 
-        // Fetch more products with larger page size
-        const productsResponse = await EnhancedProductService.getProducts(
-          {}, // No server-side filtering to avoid index requirements
-          { field: "name", direction: "asc" }, // Use simpler sorting
-          { pageSize: 100 } // Fetch more products initially
-        );
+        // Check if preloader is ready for instant loading
+        if (ProductPreloader.isReady()) {
+          console.log("⚡ Using preloaded products for instant load");
+        }
+
+        // Use preloader service for optimized loading
+        const productsResponse = await ProductPreloader.getProducts();
 
         console.log("Raw products fetched:", productsResponse.products.length);
         console.log(
@@ -391,6 +399,17 @@ export const ShopPage: React.FC = () => {
           }));
 
         console.log("Final shop products:", shopProducts.length);
+
+        const loadEndTime = performance.now();
+        const totalLoadTime = loadEndTime - startTime;
+
+        console.log(`📊 Products loaded in ${totalLoadTime.toFixed(2)}ms`);
+
+        if ((productsResponse as any).fromCache) {
+          console.log("🚀 Loaded from cache - Super fast!");
+        } else {
+          console.log("🌐 Loaded from network - First time load");
+        }
         ProductDebugService.debugProductDisplay(
           shopProducts.map((p) => ({
             id: p.id,
@@ -399,7 +418,7 @@ export const ShopPage: React.FC = () => {
             price: p.price,
             stock: p.stock,
             isActive: true, // We only show active products
-            hasImages: p.image && p.image.trim() !== "",
+            hasImages: Boolean(p.image && p.image.trim() !== ""),
             imageCount: p.images?.length || 0,
           }))
         );
@@ -719,10 +738,18 @@ export const ShopPage: React.FC = () => {
             // Sort by creation date (newest first)
             const aDate = a.createdAt?.toDate
               ? a.createdAt.toDate()
-              : new Date(a.createdAt || 0);
+              : new Date(
+                  (a.createdAt as any)?.seconds
+                    ? (a.createdAt as any).seconds * 1000
+                    : 0
+                );
             const bDate = b.createdAt?.toDate
               ? b.createdAt.toDate()
-              : new Date(b.createdAt || 0);
+              : new Date(
+                  (b.createdAt as any)?.seconds
+                    ? (b.createdAt as any).seconds * 1000
+                    : 0
+                );
             return bDate.getTime() - aDate.getTime();
           default:
             return a.name.localeCompare(b.name);
@@ -825,19 +852,8 @@ export const ShopPage: React.FC = () => {
       }}>
       {/* Light overlay */}
       <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]"></div>
-      <div className="relative z-10 min-h-screen pt-24 pb-12 sm:pb-16">
+      <div className="relative z-10 min-h-screen pt-20 pb-12 sm:pb-16">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-12 sm:px-6 lg:px-8">
-          {/* Header */}
-          {/* <motion.div
-            className="text-center mb-8 sm:mb-12"
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Shop Our Collection
-            </h1>
-          </motion.div> */}
-
           {/* Filters*/}
           <motion.div
             className="mb-6 sm:mb-8"
@@ -846,49 +862,6 @@ export const ShopPage: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.2 }}>
             <GlassCard className="p-4 sm:p-6">
               <div className="flex flex-col space-y-4">
-                {/* Enhanced Search Bar */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <HiSearch className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search by name, category, or description..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="block w-full pl-10 pr-12 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-sm placeholder-gray-400 transition-all duration-200 hover:border-gray-300"
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => handleSearchChange("")}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                  {debouncedSearchTerm && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      {filteredProducts.length} product
-                      {filteredProducts.length !== 1 ? "s" : ""} found
-                      {debouncedSearchTerm.length < 3 && (
-                        <span className="ml-1 text-amber-600">
-                          • Try typing more characters for better results
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
                   {/* Categories */}
                   <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
@@ -1030,6 +1003,9 @@ export const ShopPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Performance Monitor */}
+      <PerformanceMonitor />
 
       {/* Product Modal */}
       <ProductModal
