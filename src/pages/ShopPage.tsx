@@ -8,6 +8,7 @@ import {
   HiHeart,
 } from "react-icons/hi";
 import { useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { OptimizedImage } from "../components/ui/OptimizedImage";
@@ -23,6 +24,7 @@ import {
   ProductFilter,
 } from "../utils/enhancedProductService";
 import { Product } from "../utils/databaseSchema";
+import ProductDebugService from "../utils/productDebugService";
 import {
   useDebounce,
   useAnimationVariants,
@@ -353,28 +355,69 @@ export const ShopPage: React.FC = () => {
     const loadProducts = async () => {
       try {
         setIsLoading(true);
+        console.log("Loading products from Firestore...");
 
-        // Use simpler query until indexes are built, then filter client-side
+        // Fetch more products with larger page size
         const productsResponse = await EnhancedProductService.getProducts(
           {}, // No server-side filtering to avoid index requirements
-          { field: "name", direction: "asc" } // Use simpler sorting
+          { field: "name", direction: "asc" }, // Use simpler sorting
+          { pageSize: 100 } // Fetch more products initially
         );
 
-        // Filter active products client-side
+        console.log("Raw products fetched:", productsResponse.products.length);
+        console.log(
+          "Products data:",
+          productsResponse.products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            isActive: p.isActive,
+            hasImages: p.images?.length > 0,
+          }))
+        );
+
+        // Filter active products client-side - be more permissive
         const activeProducts = productsResponse.products.filter(
-          (product) => product.isActive !== false // Include products that are true or undefined
+          (product) =>
+            product.isActive === true || product.isActive === undefined // Include products that are true or undefined
         );
 
-        // Convert products to shop display format
-        const shopProducts: ShopProduct[] = activeProducts.map((product) => ({
-          ...product,
-          id: product.id || "",
-          image: product.images && product.images[0] ? product.images[0] : "", // Use first image as primary
-          rating: 4.5 + Math.random() * 0.5, // Generate rating 4.5-5.0
-          reviews: Math.floor(Math.random() * 200) + 50, // Generate 50-250 reviews
-          // Status badges now controlled by admin through product.status field
-        }));
+        console.log("Active products after filtering:", activeProducts.length);
 
+        // Convert products to shop display format - handle missing images gracefully
+        const shopProducts: ShopProduct[] = activeProducts
+          .filter((product) => {
+            const hasValidImage =
+              product.images &&
+              product.images.length > 0 &&
+              product.images[0].trim() !== "";
+            if (!hasValidImage) {
+              console.warn("Product missing images:", product.name, product.id);
+            }
+            return hasValidImage; // Only include products with valid images
+          })
+          .map((product) => ({
+            ...product,
+            id: product.id || "",
+            image: product.images[0], // Use first image as primary
+            rating: 4.5 + Math.random() * 0.5, // Generate rating 4.5-5.0
+            reviews: Math.floor(Math.random() * 200) + 50, // Generate 50-250 reviews
+            // Status badges now controlled by admin through product.status field
+          }));
+
+        console.log("Final shop products:", shopProducts.length);
+        ProductDebugService.debugProductDisplay(
+          shopProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            stock: p.stock,
+            isActive: true, // We only show active products
+            hasImages: p.image && p.image.trim() !== "",
+            imageCount: p.images?.length || 0,
+          }))
+        );
         setProducts(shopProducts);
 
         // Generate dynamic categories from actual products
@@ -405,6 +448,11 @@ export const ShopPage: React.FC = () => {
         }
       } catch (error) {
         console.error("Failed to load products:", error);
+        ProductDebugService.log("Shop Page Product Load Failed", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        // Show user-friendly error message
+        toast.error("Failed to load products. Please refresh the page.");
         setProducts([]); // Set empty array on error
       } finally {
         setIsLoading(false);

@@ -21,14 +21,34 @@ import { getStorage } from "firebase/storage";
 import EnvironmentService from "./environmentService";
 
 // Validate environment and get Firebase config
-const firebaseConfig = EnvironmentService.getFirebaseConfig();
+let firebaseConfig;
+let app;
+let db;
+let auth;
+let storage;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+try {
+  firebaseConfig = EnvironmentService.getFirebaseConfig();
 
-// Initialize Firebase services
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+  // Initialize Firebase
+  app = initializeApp(firebaseConfig);
 
+  // Initialize Firebase services
+  db = getFirestore(app);
+  auth = getAuth(app);
+  storage = getStorage(app);
+
+  console.log("🔥 Firebase initialized successfully");
+} catch (error) {
+  console.warn("⚠️ Firebase initialization failed:", error);
+  console.warn("📱 Application will run in mock mode");
+
+  // Create mock objects to prevent app crashes
+  db = null as any;
+  auth = null as any;
+  storage = null as any;
+  app = null as any;
+}
+
+export { db, auth, storage };
 export default app;

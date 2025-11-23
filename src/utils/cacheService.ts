@@ -82,6 +82,10 @@ class CacheService {
     this.cache.clear();
   }
 
+  static clearAll(): void {
+    this.cache.clear();
+  }
+
   // Cache image URLs with different strategies
   static cacheImage(
     url: string,

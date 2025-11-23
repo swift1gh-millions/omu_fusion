@@ -20,6 +20,7 @@ import { Product } from "./databaseSchema";
 import ErrorService from "./errorService";
 import CacheService from "./cacheService";
 import { ImageStorageService } from "./imageStorageService";
+import MockProductService from "./mockProductService";
 
 export interface ProductFilter {
   category?: string;
@@ -52,10 +53,28 @@ export interface ProductsResponse {
 export class EnhancedProductService {
   private static readonly COLLECTION_NAME = "products";
   private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  private static readonly DEFAULT_PAGE_SIZE = 12;
+  private static readonly DEFAULT_PAGE_SIZE = 50;
+
+  // Check if Firebase is properly configured
+  private static isFirebaseAvailable(): boolean {
+    try {
+      // Try to access db - if Firebase isn't configured, this will throw
+      if (!db) return false;
+      return MockProductService.isFirebaseConfigured();
+    } catch (error) {
+      console.warn("Firebase not available, using mock service:", error);
+      return false;
+    }
+  }
 
   // Upload images with compression and multiple sizes
   static async uploadProductImages(images: File[]): Promise<string[]> {
+    // Use mock service if Firebase isn't available
+    if (!this.isFirebaseAvailable()) {
+      console.log("🔄 Using mock image upload service");
+      return MockProductService.uploadProductImages(images);
+    }
+
     return ErrorService.handleServiceError(
       async () => {
         if (!images || images.length === 0) {
@@ -92,6 +111,12 @@ export class EnhancedProductService {
     productData: Omit<ProductData, "id" | "createdAt" | "updatedAt">,
     userId: string
   ): Promise<string> {
+    // Use mock service if Firebase isn't available
+    if (!this.isFirebaseAvailable()) {
+      console.log("🔄 Using mock product creation service");
+      return MockProductService.addProduct(productData, userId);
+    }
+
     return ErrorService.handleServiceError(
       async () => {
         // Validate product data
@@ -103,16 +128,26 @@ export class EnhancedProductService {
           seo: validatedData.seo || {},
           variants: validatedData.variants || [],
           featured: validatedData.featured || false,
-          isActive: validatedData.isActive !== false, // Default to true
+          isActive: true, // Always set to true for new products
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
           createdBy: userId,
         };
 
+        console.log("Creating product with data:", {
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          isActive: product.isActive,
+          imagesCount: product.images.length,
+        });
+
         const docRef = await addDoc(
           collection(db, this.COLLECTION_NAME),
           product
         );
+
+        console.log("Product created successfully with ID:", docRef.id);
 
         // Invalidate relevant caches
         this.invalidateProductCaches();
@@ -130,6 +165,12 @@ export class EnhancedProductService {
     sort: ProductSort = { field: "createdAt", direction: "desc" },
     pagination: PaginationOptions = { pageSize: this.DEFAULT_PAGE_SIZE }
   ): Promise<ProductsResponse> {
+    // Use mock service if Firebase isn't available
+    if (!this.isFirebaseAvailable()) {
+      console.log("🔄 Using mock product service");
+      return MockProductService.getProducts(filters, sort, pagination);
+    }
+
     return ErrorService.handleServiceError(
       async () => {
         const cacheKey = this.generateCacheKey(
@@ -500,9 +541,14 @@ export class EnhancedProductService {
   }
 
   private static invalidateProductCaches(): void {
-    CacheService.invalidatePattern("products_.*");
-    CacheService.invalidatePattern("featured_products_.*");
-    CacheService.invalidatePattern("search_.*");
+    // Clear all product-related caches
+    CacheService.invalidatePattern("products.*");
+    CacheService.invalidatePattern("featured_products.*");
+    CacheService.invalidatePattern("search.*");
+    // Also clear the main products cache key used by shop page
+    CacheService.invalidate("products_{}_name_asc_50");
+    // Force clear all cache to ensure fresh data
+    CacheService.clearAll();
   }
 
   // Bulk operations

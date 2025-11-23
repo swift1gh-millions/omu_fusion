@@ -21,6 +21,35 @@ class EnvironmentService {
         VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
       };
 
+      // Check if any required environment variables are missing
+      const missingVars = Object.entries(envVars)
+        .filter(([key, value]) => !value)
+        .map(([key]) => key);
+
+      if (missingVars.length > 0) {
+        console.error("Missing environment variables:", missingVars);
+        console.error("\n🔥 FIREBASE SETUP REQUIRED 🔥");
+        console.error(
+          "Please create a .env file in your project root with the following variables:"
+        );
+        console.error("VITE_FIREBASE_API_KEY=your_api_key");
+        console.error("VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com");
+        console.error("VITE_FIREBASE_PROJECT_ID=your_project_id");
+        console.error("VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com");
+        console.error("VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id");
+        console.error("VITE_FIREBASE_APP_ID=your_app_id");
+        console.error("\nGet these from: https://console.firebase.google.com");
+        console.error(
+          "Go to Project Settings > General > Your apps > SDK setup\n"
+        );
+
+        throw new Error(
+          `Missing Firebase environment variables: ${missingVars.join(
+            ", "
+          )}. Please check your .env file.`
+        );
+      }
+
       this.config = EnvironmentSchema.parse(envVars);
       return this.config;
     } catch (error) {

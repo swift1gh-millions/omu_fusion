@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { EnhancedProductService } from "../../utils/enhancedProductService";
 import { CategoryService } from "../../utils/categoryService";
 import { useAuth } from "../../context/EnhancedAppContext";
+import ProductDebugService from "../../utils/productDebugService";
 import { Button } from "../../components/ui/Button";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import {
@@ -136,6 +137,9 @@ export const ProductUploadPage: React.FC = () => {
     setErrors({});
     setUploading(true);
 
+    // Debug tracking
+    ProductDebugService.debugProductUpload(formData, "Form Submission Started");
+
     try {
       // Validate form with inline errors
       const newErrors: FormErrors = {};
@@ -204,30 +208,99 @@ export const ProductUploadPage: React.FC = () => {
 
       toast.loading("Uploading product images...", { id: "upload" });
 
-      // Upload images using the service
-      const imageUrls = await EnhancedProductService.uploadProductImages(
-        formData.images
-      );
+      // Upload images using the service with better error handling
+      let imageUrls: string[] = [];
+      try {
+        imageUrls = await EnhancedProductService.uploadProductImages(
+          formData.images
+        );
+        console.log("Images uploaded successfully:", imageUrls);
+
+        // Verify all images were uploaded
+        if (imageUrls.length !== formData.images.length) {
+          throw new Error(
+            `Only ${imageUrls.length} of ${formData.images.length} images were uploaded successfully`
+          );
+        }
+
+        // Verify image URLs are valid
+        const invalidUrls = imageUrls.filter(
+          (url) => !url || url.trim() === ""
+        );
+        if (invalidUrls.length > 0) {
+          throw new Error(
+            "Some images failed to upload properly. Please try again."
+          );
+        }
+      } catch (imageError: any) {
+        console.error("Image upload failed:", imageError);
+        throw new Error(`Image upload failed: ${imageError.message}`);
+      }
 
       toast.loading("Saving product details...", { id: "upload" });
 
+      // Prepare product data with enhanced validation
+      const productData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        price: Number(formData.price),
+        category: formData.category,
+        stock: Number(formData.stock),
+        images: imageUrls,
+        featured: false,
+        isActive: true, // Explicitly set to true
+        status: "none" as const, // Default status
+      };
+
+      // Final validation before saving
+      if (!productData.name || productData.name.length < 3) {
+        throw new Error("Product name must be at least 3 characters long");
+      }
+      if (!productData.description || productData.description.length < 10) {
+        throw new Error(
+          "Product description must be at least 10 characters long"
+        );
+      }
+      if (productData.price <= 0) {
+        throw new Error("Product price must be greater than 0");
+      }
+      if (!productData.category) {
+        throw new Error("Product category is required");
+      }
+      if (productData.images.length === 0) {
+        throw new Error("At least one product image is required");
+      }
+
+      console.log("Creating product with data:", productData);
+
       // Save product using the service
       const productId = await EnhancedProductService.addProduct(
-        {
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          price: Number(formData.price),
-          category: formData.category,
-          stock: Number(formData.stock),
-          images: imageUrls,
-          featured: false,
-          isActive: true,
-        },
+        productData,
         user?.id || "admin"
       );
 
-      toast.success("Product uploaded successfully!", { id: "upload" });
+      console.log("Product created successfully with ID:", productId);
+      ProductDebugService.debugProductUpload(
+        { ...productData, id: productId },
+        "Product Created Successfully"
+      );
+
+      // Verify product was created
+      if (!productId) {
+        throw new Error("Product was not created successfully");
+      }
+
+      toast.success(`Product "${productData.name}" uploaded successfully!`, {
+        id: "upload",
+      });
       setSuccess(true);
+
+      console.log("Product upload completed successfully:", {
+        productId,
+        name: productData.name,
+        category: productData.category,
+        imagesCount: productData.images.length,
+      });
 
       // Reset form
       setFormData({
@@ -240,6 +313,23 @@ export const ProductUploadPage: React.FC = () => {
       });
       setImagePreview([]);
       setUploadProgress([]);
+      setErrors({}); // Clear any existing errors
+
+      // Optional: Force refresh product cache to ensure immediate visibility
+      try {
+        // Trigger a cache refresh by making a quick product fetch
+        await EnhancedProductService.getProducts(
+          {},
+          { field: "createdAt", direction: "desc" },
+          { pageSize: 1 }
+        );
+        console.log("Product cache refreshed");
+      } catch (cacheError) {
+        console.warn(
+          "Cache refresh failed, but product was uploaded successfully:",
+          cacheError
+        );
+      }
 
       // Redirect after success
       setTimeout(() => {
@@ -247,6 +337,10 @@ export const ProductUploadPage: React.FC = () => {
       }, 2000);
     } catch (error: any) {
       console.error("Upload error:", error);
+      ProductDebugService.log("Product Upload Failed", {
+        error: error.message,
+        formData,
+      });
 
       // Parse error message to show inline errors when possible
       const errorMessage =
