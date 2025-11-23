@@ -69,7 +69,12 @@ export const ModernCategoriesSection: React.FC = () => {
         })
       );
 
-      setCategories(categoriesWithCounts);
+      // Filter out categories with 0 products
+      const categoriesWithProducts = categoriesWithCounts.filter(
+        (cat) => cat.itemCount && cat.itemCount > 0
+      );
+
+      setCategories(categoriesWithProducts);
     } catch (error) {
       console.error("Error loading categories:", error);
       // Fallback to default categories if database fails

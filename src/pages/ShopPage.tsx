@@ -294,7 +294,18 @@ export const ShopPage: React.FC = () => {
 
   // Get similar products for recommendations
   const getSimilarProducts = (currentProduct: ShopProduct) => {
-    // Function to calculate text similarity based on common words
+    // Only return products from the same category (excluding current product)
+    const sameCategoryProducts = products.filter(
+      (p) =>
+        p.id !== currentProduct.id && p.category === currentProduct.category
+    );
+
+    // If there are no other products in the same category, return empty array
+    if (sameCategoryProducts.length === 0) {
+      return [];
+    }
+
+    // Function to calculate text similarity for ranking within same category
     const calculateTextSimilarity = (text1: string, text2: string): number => {
       const words1 = text1.toLowerCase().split(/\s+/);
       const words2 = text2.toLowerCase().split(/\s+/);
@@ -304,37 +315,34 @@ export const ShopPage: React.FC = () => {
       return commonWords.length / Math.max(words1.length, words2.length);
     };
 
-    return products
-      .filter((p) => p.id !== currentProduct.id)
-      .map((p) => {
-        let score = 0;
+    // Score products within the same category for better ranking
+    const scoredProducts = sameCategoryProducts.map((p) => {
+      let score = 0;
 
-        // Category match (highest priority)
-        if (p.category === currentProduct.category) {
-          score += 10;
-        }
+      // Description similarity
+      const descSimilarity = calculateTextSimilarity(
+        p.description || "",
+        currentProduct.description || ""
+      );
+      score += descSimilarity * 5;
 
-        // Description similarity
-        const descSimilarity = calculateTextSimilarity(
-          p.description || "",
-          currentProduct.description || ""
-        );
-        score += descSimilarity * 5;
+      // Name similarity
+      const nameSimilarity = calculateTextSimilarity(
+        p.name || "",
+        currentProduct.name || ""
+      );
+      score += nameSimilarity * 3;
 
-        // Name similarity
-        const nameSimilarity = calculateTextSimilarity(
-          p.name || "",
-          currentProduct.name || ""
-        );
-        score += nameSimilarity * 3;
+      // Price range similarity (minor factor)
+      const priceDiff = Math.abs(p.price - currentProduct.price);
+      if (priceDiff <= 20) score += 2;
+      else if (priceDiff <= 50) score += 1;
 
-        // Price range similarity (bonus, not primary)
-        const priceDiff = Math.abs(p.price - currentProduct.price);
-        if (priceDiff <= 20) score += 2;
-        else if (priceDiff <= 50) score += 1;
+      return { product: p, score };
+    });
 
-        return { product: p, score };
-      })
+    // Sort by score and return up to 4 products
+    return scoredProducts
       .sort((a, b) => b.score - a.score)
       .slice(0, 4)
       .map((item) => item.product);
@@ -423,12 +431,12 @@ export const ShopPage: React.FC = () => {
       setSelectedCategory(urlCategory);
     }
 
-    if (urlProduct && urlProduct !== focusedProduct) {
-      setFocusedProduct(urlProduct);
-
+    // Only attempt to open product modal if products are loaded and URL has product ID
+    if (urlProduct && products.length > 0) {
       // Auto-open product modal for the specified product
       const product = products.find((p) => p.id === urlProduct);
-      if (product) {
+      if (product && (!selectedProduct || selectedProduct.id !== urlProduct)) {
+        setFocusedProduct(urlProduct);
         setSelectedProduct(product);
         setIsModalOpen(true);
       }
@@ -453,7 +461,193 @@ export const ShopPage: React.FC = () => {
     if (urlSearchTerm && urlSearchTerm !== searchTerm) {
       setSearchTerm(urlSearchTerm);
     }
-  }, [searchParams]);
+  }, [searchParams, products]); // Added products as dependency
+
+  // Enhanced search function with fuzzy matching and relevance scoring
+  const searchProducts = useCallback(
+    (products: ShopProduct[], searchTerm: string) => {
+      if (!searchTerm.trim()) return products;
+
+      const normalizeText = (text: string): string => {
+        return text
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "") // Remove accents
+          .replace(/[^\w\s]/g, " ") // Replace special chars with spaces
+          .replace(/\s+/g, " ") // Normalize whitespace
+          .trim();
+      };
+
+      const normalizedSearchTerm = normalizeText(searchTerm);
+      const searchWords = normalizedSearchTerm
+        .split(" ")
+        .filter((word) => word.length > 0);
+
+      const scoredProducts = products.map((product) => {
+        let score = 0;
+        const normalizedName = normalizeText(product.name || "");
+        const normalizedCategory = normalizeText(product.category || "");
+        const normalizedDescription = normalizeText(product.description || "");
+
+        // Combine all searchable text
+        const allText = `${normalizedName} ${normalizedCategory} ${normalizedDescription}`;
+
+        searchWords.forEach((word) => {
+          // Exact match in name (highest score)
+          if (normalizedName.includes(word)) {
+            if (normalizedName.startsWith(word)) {
+              score += 100; // Name starts with search term
+            } else if (
+              normalizedName
+                .split(" ")
+                .some((nameWord) => nameWord.startsWith(word))
+            ) {
+              score += 80; // Word in name starts with search term
+            } else {
+              score += 60; // Word appears anywhere in name
+            }
+          }
+
+          // Enhanced Category match with singular/plural handling
+          const checkCategoryMatch = (
+            category: string,
+            searchWord: string
+          ): number => {
+            let categoryScore = 0;
+
+            // Direct match
+            if (category.includes(searchWord)) {
+              if (category.startsWith(searchWord) || searchWord === category) {
+                categoryScore += 100; // Perfect match
+              } else {
+                categoryScore += 60; // Partial match
+              }
+            }
+
+            // Handle singular/plural variations
+            const singularWord =
+              searchWord.endsWith("s") && searchWord.length > 3
+                ? searchWord.slice(0, -1)
+                : searchWord;
+            const pluralWord = !searchWord.endsWith("s")
+              ? searchWord + "s"
+              : searchWord;
+
+            if (
+              category.includes(singularWord) ||
+              category.includes(pluralWord)
+            ) {
+              categoryScore += 80; // Singular/plural match
+            }
+
+            // Common category aliases
+            const categoryAliases: { [key: string]: string[] } = {
+              jacket: ["jackets", "coat", "coats", "outerwear"],
+              jackets: ["jacket", "coat", "coats", "outerwear"],
+              tshirt: ["t-shirts", "tee", "shirt", "top"],
+              "t-shirts": ["tshirt", "tee", "shirt", "top"],
+              jean: ["jeans", "denim", "pants"],
+              jeans: ["jean", "denim", "pants"],
+              pant: ["pants", "trousers"],
+              pants: ["pant", "trousers"],
+            };
+
+            if (categoryAliases[searchWord]) {
+              for (const alias of categoryAliases[searchWord]) {
+                if (category.includes(alias)) {
+                  categoryScore += 70; // Alias match
+                  break;
+                }
+              }
+            }
+
+            return categoryScore;
+          };
+
+          score += checkCategoryMatch(normalizedCategory, word);
+
+          // Description match (medium score)
+          if (normalizedDescription.includes(word)) {
+            const descriptionWords = normalizedDescription.split(" ");
+            const wordMatches = descriptionWords.filter((descWord) =>
+              descWord.includes(word)
+            ).length;
+            score += wordMatches * 10; // Multiple matches in description increase score
+          }
+
+          // Fuzzy matching for typos (lower score)
+          const fuzzyMatch = (text: string, searchWord: string): number => {
+            if (searchWord.length < 3) return 0; // Skip fuzzy for short words
+
+            const words = text.split(" ");
+            return words.reduce((acc, word) => {
+              if (word.length > 0 && searchWord.length > 0) {
+                const similarity = calculateSimilarity(word, searchWord);
+                if (similarity > 0.7) {
+                  // 70% similarity threshold
+                  acc += similarity * 5;
+                }
+              }
+              return acc;
+            }, 0);
+          };
+
+          score += fuzzyMatch(allText, word);
+        });
+
+        // Bonus for multiple word matches
+        const allWordsMatch = searchWords.every((word) =>
+          allText.includes(word)
+        );
+        if (allWordsMatch && searchWords.length > 1) {
+          score += 20;
+        }
+
+        return { product, score };
+      });
+
+      // Filter products with score > 0 and sort by score
+      return scoredProducts
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((item) => item.product);
+    },
+    []
+  );
+
+  // Helper function for fuzzy string matching
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+
+    if (longer.length === 0) return 1.0;
+
+    const editDistance = levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  };
+
+  // Levenshtein distance calculation for fuzzy matching
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const matrix = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
+
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,
+          matrix[j - 1][i] + 1,
+          matrix[j - 1][i - 1] + indicator
+        );
+      }
+    }
+
+    return matrix[str2.length][str1.length];
+  };
 
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
@@ -462,24 +656,16 @@ export const ShopPage: React.FC = () => {
   const filteredProducts = useMemo(() => {
     let filtered = [...products]; // Create a new array to avoid mutations
 
-    // Filter by category
+    // Filter by category first
     if (selectedCategory !== "All") {
       filtered = filtered.filter(
         (product) => product.category === selectedCategory
       );
     }
 
-    // Filter by search term
-    if (debouncedSearchTerm) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase()) ||
-          product.category
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase())
-      );
+    // Apply advanced search if there's a search term
+    if (debouncedSearchTerm.trim()) {
+      filtered = searchProducts(filtered, debouncedSearchTerm);
     }
 
     // Filter by price range
@@ -488,33 +674,65 @@ export const ShopPage: React.FC = () => {
         product.price >= priceRange.min && product.price <= priceRange.max
     );
 
-    // Sort products
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "price-low":
-          return a.price - b.price;
-        case "price-high":
-          return b.price - a.price;
-        case "rating":
-          return (b.rating || 0) - (a.rating || 0);
-        case "newest":
-          return (b.status === "new" ? 1 : 0) - (a.status === "new" ? 1 : 0);
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
+    // Sort products (only if not already sorted by search relevance)
+    if (!debouncedSearchTerm.trim()) {
+      const sorted = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case "price-low":
+            return a.price - b.price;
+          case "price-high":
+            return b.price - a.price;
+          case "rating":
+            return (b.rating || 0) - (a.rating || 0);
+          case "newest":
+            return (b.status === "new" ? 1 : 0) - (a.status === "new" ? 1 : 0);
+          default:
+            return a.name.localeCompare(b.name);
+        }
+      });
+      return sorted;
+    }
 
-    return sorted;
-  }, [products, selectedCategory, debouncedSearchTerm, sortBy, priceRange]);
+    return filtered;
+  }, [
+    products,
+    selectedCategory,
+    debouncedSearchTerm,
+    sortBy,
+    priceRange,
+    searchProducts,
+  ]);
 
   // Memoized event handlers
-  const handleCategoryChange = useCallback((category: string) => {
-    setSelectedCategory(category);
-  }, []);
+  const handleCategoryChange = useCallback(
+    (category: string) => {
+      setSelectedCategory(category);
+      // Update URL parameters
+      const newParams = new URLSearchParams();
+      if (category !== "All") newParams.set("category", category);
+      if (searchTerm.trim()) newParams.set("search", searchTerm);
+      setSearchParams(newParams);
+    },
+    [searchTerm, setSearchParams]
+  );
 
   const handleSortChange = useCallback((value: string) => {
     setSortBy(value);
   }, []);
+
+  // Handle search term changes with URL sync
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      // Update URL parameters
+      const newParams = new URLSearchParams();
+      if (selectedCategory !== "All")
+        newParams.set("category", selectedCategory);
+      if (value.trim()) newParams.set("search", value);
+      setSearchParams(newParams);
+    },
+    [selectedCategory, setSearchParams]
+  );
 
   const handleViewModeChange = useCallback((mode: "grid" | "list") => {
     setViewMode(mode);
@@ -590,18 +808,47 @@ export const ShopPage: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.2 }}>
             <GlassCard className="p-4 sm:p-6">
               <div className="flex flex-col space-y-4">
-                {/* Search Bar */}
+                {/* Enhanced Search Bar */}
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <HiSearch className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
-                    placeholder="Search products..."
+                    placeholder="Search by name, category, or description..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-sm"
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="block w-full pl-10 pr-12 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent text-sm placeholder-gray-400 transition-all duration-200 hover:border-gray-300"
                   />
+                  {searchTerm && (
+                    <button
+                      onClick={() => handleSearchChange("")}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                  {debouncedSearchTerm && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      {filteredProducts.length} product
+                      {filteredProducts.length !== 1 ? "s" : ""} found
+                      {debouncedSearchTerm.length < 3 && (
+                        <span className="ml-1 text-amber-600">
+                          • Try typing more characters for better results
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
@@ -687,21 +934,61 @@ export const ShopPage: React.FC = () => {
               ))}
             </motion.div>
           ) : (
-            /* Empty State */
+            /* Enhanced Empty State */
             <motion.div
-              className="text-center py-16"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="text-center py-16 px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}>
-              <p className="text-xl text-gray-500">
-                No products found matching your criteria.
-              </p>
-              <Button
-                variant="primary"
-                className="mt-4"
-                onClick={handleClearFilters}>
-                Clear Filters
-              </Button>
+              <div className="max-w-md mx-auto">
+                <div className="mb-6">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <HiSearch className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No products found
+                  </h3>
+                  <p className="text-gray-500">
+                    {debouncedSearchTerm
+                      ? `No products match "${debouncedSearchTerm}". Try searching for something else or check the spelling.`
+                      : "No products found matching your criteria."}
+                  </p>
+                </div>
+
+                {debouncedSearchTerm && (
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-medium text-blue-900 mb-2">
+                      Search Tips:
+                    </h4>
+                    <ul className="text-sm text-blue-800 space-y-1 text-left">
+                      <li>• Try different keywords or synonyms</li>
+                      <li>• Check your spelling</li>
+                      <li>
+                        • Use broader terms (e.g., "shirt" instead of "graphic
+                        tee")
+                      </li>
+                      <li>• Search by category, brand, or product features</li>
+                    </ul>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <Button
+                    variant="primary"
+                    className="w-full sm:w-auto"
+                    onClick={handleClearFilters}>
+                    Clear All Filters
+                  </Button>
+                  {debouncedSearchTerm && (
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto sm:ml-3"
+                      onClick={() => handleSearchChange("")}>
+                      Clear Search
+                    </Button>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
         </div>
