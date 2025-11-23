@@ -8,6 +8,7 @@ import { ModernCategoriesSection } from "../components/sections/ModernCategories
 import { BrandStorySection } from "../components/sections/BrandStorySection";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { useScrollAnimation } from "../components/ui/ScrollAnimation";
+import { Seo } from "../components/ui/Seo";
 import ProductPreloader from "../utils/productPreloader";
 
 export const HomePage: React.FC = memo(() => {
@@ -25,6 +26,11 @@ export const HomePage: React.FC = memo(() => {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        title="OMU FUSION | Premium Fashion & Lifestyle"
+        description="OMU FUSION – Style In Motion. Discover premium fashion, curated outfits and lifestyle essentials from Nigeria's modern fashion brand. Shop the latest trends online."
+        keywords="OMU FUSION, Omu Fusion, premium fashion, Nigerian fashion, online fashion store, clothing, lifestyle, streetwear, fashion trends"
+      />
       <section id="home">
         <HeroSection />
       </section>

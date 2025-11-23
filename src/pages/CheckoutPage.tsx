@@ -5,6 +5,7 @@ import { HiLockClosed, HiCreditCard, HiTruck, HiX } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
+import { Seo } from "../components/ui/Seo";
 import {
   FormFieldError,
   formatUserFriendlyError,
@@ -783,555 +784,563 @@ export const CheckoutPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-32 pb-16">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}>
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            Checkout
-          </h1>
-          <p className="text-gray-600">
-            Complete your order securely and safely
-          </p>
-        </motion.div>
+    <>
+      <Seo
+        title="Checkout | OMU FUSION"
+        description="Complete your OMU FUSION order. Secure checkout with multiple payment options and fast delivery across Nigeria."
+      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-32 pb-16">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          {/* Header */}
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}>
+            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              Checkout
+            </h1>
+            <p className="text-gray-600">
+              Complete your order securely and safely
+            </p>
+          </motion.div>
 
-        {/* Progress Steps */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}>
-          <GlassCard className="p-6">
-            <div className="flex items-center justify-between">
-              {steps.map((step, index) => (
-                <React.Fragment key={step.number}>
-                  <div className="flex items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
-                        currentStep > step.number
-                          ? (step.number === 1 && stepValidation.step1) ||
-                            (step.number === 2 && stepValidation.step2)
-                            ? "bg-green-500 text-white"
-                            : "bg-red-500 text-white"
-                          : currentStep === step.number
-                          ? "bg-accent-gold text-black"
-                          : "bg-gray-200 text-gray-600"
-                      }`}>
-                      {currentStep > step.number
-                        ? (step.number === 1 && stepValidation.step1) ||
-                          (step.number === 2 && stepValidation.step2)
-                          ? "✓"
-                          : "!"
-                        : step.number}
-                    </div>
-                    <div className="ml-3 hidden sm:block">
-                      <p className="text-sm font-medium text-gray-900">
-                        {step.title}
-                      </p>
-                      <p
-                        className={`text-xs transition-colors duration-300 ${
+          {/* Progress Steps */}
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}>
+            <GlassCard className="p-6">
+              <div className="flex items-center justify-between">
+                {steps.map((step, index) => (
+                  <React.Fragment key={step.number}>
+                    <div className="flex items-center">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
                           currentStep > step.number
                             ? (step.number === 1 && stepValidation.step1) ||
                               (step.number === 2 && stepValidation.step2)
-                              ? "text-green-600"
-                              : "text-red-600"
-                            : "text-gray-500"
+                              ? "bg-green-500 text-white"
+                              : "bg-red-500 text-white"
+                            : currentStep === step.number
+                            ? "bg-accent-gold text-black"
+                            : "bg-gray-200 text-gray-600"
                         }`}>
                         {currentStep > step.number
                           ? (step.number === 1 && stepValidation.step1) ||
                             (step.number === 2 && stepValidation.step2)
-                            ? "Complete"
-                            : "Needs attention"
-                          : step.description}
-                      </p>
-                    </div>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`flex-1 h-1 mx-4 rounded transition-colors duration-300 ${
-                        currentStep > step.number
-                          ? (step.number === 1 && stepValidation.step1) ||
-                            (step.number === 2 && stepValidation.step2)
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                          : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </GlassCard>
-        </motion.div>
-
-        <div
-          className={`grid grid-cols-1 gap-6 sm:gap-8 ${
-            currentStep <= 2
-              ? "md:grid-cols-2 lg:grid-cols-3"
-              : "place-items-center"
-          }`}>
-          {/* Main Form */}
-          <div
-            className={currentStep <= 2 ? "lg:col-span-2" : "w-full max-w-4xl"}>
-            <form onSubmit={handleSubmit}>
-              {/* Contact Information */}
-              {currentStep === 1 && (
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}>
-                  <GlassCard className="p-8 mb-6">
-                    <div className="flex items-center mb-6">
-                      <HiLockClosed className="h-5 w-5 text-gray-400 mr-2" />
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        Contact Information
-                      </h2>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          required
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
-                            formErrors.email
-                              ? "border-red-500 bg-red-50"
-                              : "border-gray-200"
-                          }`}
-                          placeholder="your@email.com"
-                        />
-                        {formErrors.email && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {formErrors.email}
-                          </p>
-                        )}
+                            ? "✓"
+                            : "!"
+                          : step.number}
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          name="phone"
-                          required
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
-                            formErrors.phone
-                              ? "border-red-500 bg-red-50"
-                              : "border-gray-200"
-                          }`}
-                          placeholder="+233 XX XXX XXXX"
-                        />
-                        {formErrors.phone && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {formErrors.phone}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            First Name
-                          </label>
-                          <input
-                            type="text"
-                            name="firstName"
-                            required
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
-                              formErrors.firstName
-                                ? "border-red-500 bg-red-50"
-                                : "border-gray-200"
-                            }`}
-                          />
-                          {formErrors.firstName && (
-                            <p className="mt-1 text-sm text-red-600">
-                              {formErrors.firstName}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Last Name
-                          </label>
-                          <input
-                            type="text"
-                            name="lastName"
-                            required
-                            value={formData.lastName}
-                            onChange={handleInputChange}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
-                              formErrors.lastName
-                                ? "border-red-500 bg-red-50"
-                                : "border-gray-200"
-                            }`}
-                          />
-                          {formErrors.lastName && (
-                            <p className="mt-1 text-sm text-red-600">
-                              {formErrors.lastName}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Digital Address
-                        </label>
-                        <input
-                          type="text"
-                          name="digitalAddress"
-                          required
-                          value={formData.digitalAddress}
-                          onChange={handleInputChange}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
-                            formErrors.digitalAddress
-                              ? "border-red-500 bg-red-50"
-                              : "border-gray-200"
-                          }`}
-                          placeholder="e.g. GA-123-4567 or GE-456-7890"
-                        />
-                        {formErrors.digitalAddress && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {formErrors.digitalAddress}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Apartment, suite, etc. (optional)
-                        </label>
-                        <input
-                          type="text"
-                          name="apartment"
-                          value={formData.apartment}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                        />
-                      </div>
-
-                      {/* Save Information Checkbox */}
-                      <div className="flex items-center space-x-3 p-4 bg-accent-gold/5 rounded-lg border border-accent-gold/20">
-                        <input
-                          type="checkbox"
-                          id="saveInfo"
-                          name="saveInfo"
-                          checked={formData.saveInfo}
-                          onChange={handleInputChange}
-                          className="h-4 w-4 text-accent-gold focus:ring-accent-gold border-gray-300 rounded"
-                        />
-                        <label
-                          htmlFor="saveInfo"
-                          className="text-sm text-gray-700 cursor-pointer">
-                          Save this information for faster checkout next time
-                        </label>
-                      </div>
-                    </div>
-                  </GlassCard>
-
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={() => navigateToStep(2)}
-                      disabled={!stepValidation.step1}
-                      className={`transition-all duration-300 ${
-                        !stepValidation.step1
-                          ? "opacity-60 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
-                          : "hover:scale-105"
-                      }`}>
-                      {stepValidation.step1
-                        ? "Review Order"
-                        : "Complete Required Fields"}
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Order Review - Step 2 (Payment step removed, Paystack is auto-selected) */}
-              {currentStep === 2 && (
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}>
-                  <GlassCard className="p-8 mb-6">
-                    <div className="flex items-center mb-6">
-                      <HiTruck className="h-5 w-5 text-gray-400 mr-2" />
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        Review Your Order
-                      </h2>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">
-                          Shipping Address
-                        </h3>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="font-medium">
-                            {formData.firstName} {formData.lastName}
-                          </p>
-                          <p>{formData.digitalAddress}</p>
-                          {formData.apartment && <p>{formData.apartment}</p>}
-                          <p className="text-sm text-gray-600">
-                            Phone: {formData.phone}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">
-                          Payment Method
-                        </h3>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="font-medium">Paystack Payment</p>
-                          <p className="text-sm text-gray-600">
-                            Secure payment via Paystack - Supports all major
-                            cards and mobile money
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </GlassCard>
-
-                  <div className="flex justify-between items-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => navigateToStep(1)}
-                      className="text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white">
-                      Back
-                    </Button>
-
-                    <PaystackButton
-                      email={formData.email}
-                      amount={total}
-                      customerName={`${formData.firstName} ${formData.lastName}`}
-                      onSuccess={handlePaystackSuccess}
-                      onClose={handlePaystackClose}
-                      disabled={
-                        isProcessing ||
-                        isPaymentProcessing ||
-                        !stepValidation.step1
-                      }
-                      metadata={paystackService.createPaymentMetadata({
-                        userId: user?.id || "",
-                        customerName: `${formData.firstName} ${formData.lastName}`,
-                        items: cartItems.map((item) => ({
-                          name: item.name,
-                          quantity: item.quantity,
-                          price: item.price,
-                        })),
-                        shippingAddress: `${formData.digitalAddress}, ${
-                          formData.apartment || ""
-                        }`,
-                      })}
-                      buttonText={
-                        isProcessing
-                          ? "Processing..."
-                          : !stepValidation.step1
-                          ? "Complete Contact Info"
-                          : `Pay ₵${total.toFixed(2)}`
-                      }
-                      className="min-w-[200px]"
-                    />
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Order Placed Confirmation - Step 3 */}
-              {currentStep === 3 && orderData && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6 }}>
-                  <div className="text-center py-16">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{
-                        delay: 0.3,
-                        type: "spring",
-                        stiffness: 200,
-                      }}
-                      className="mx-auto h-24 w-24 bg-green-100 rounded-full flex items-center justify-center mb-8">
-                      <svg
-                        className="h-12 w-12 text-green-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </motion.div>
-
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                      Order Placed Successfully!
-                    </h1>
-
-                    <p className="text-xl text-gray-600 mb-8">
-                      Thank you for your purchase. Your order has been
-                      confirmed.
-                    </p>
-
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 max-w-md mx-auto">
-                      <p className="text-sm text-green-700 font-medium mb-2">
-                        Order Details
-                      </p>
-                      <p className="text-2xl font-bold text-green-800">
-                        #{orderData.id}
-                      </p>
-                      <p className="text-lg text-green-700">
-                        ₵{orderData.total.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <p className="text-gray-600 mb-8">
-                      A confirmation email has been sent to {formData.email}
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <Button
-                        onClick={() => navigate("/shop")}
-                        variant="outline"
-                        className="px-8 py-3">
-                        Continue Shopping
-                      </Button>
-                      <Button
-                        onClick={() => navigate("/profile")}
-                        variant="primary"
-                        className="px-8 py-3">
-                        View Orders
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </form>
-          </div>
-
-          {/* Order Summary Sidebar - Only show on steps 1 and 2 */}
-          {currentStep <= 2 && (
-            <motion.div
-              className="lg:col-span-1"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}>
-              <div className="sticky top-24">
-                <GlassCard className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Order Summary
-                  </h3>
-
-                  <div className="space-y-4 mb-6">
-                    {cartItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center space-x-4">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {item.name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Qty: {item.quantity}
-                          </p>
-                        </div>
-                        <p className="text-sm font-medium">
-                          ₵{(item.price * item.quantity).toFixed(2)}
+                      <div className="ml-3 hidden sm:block">
+                        <p className="text-sm font-medium text-gray-900">
+                          {step.title}
+                        </p>
+                        <p
+                          className={`text-xs transition-colors duration-300 ${
+                            currentStep > step.number
+                              ? (step.number === 1 && stepValidation.step1) ||
+                                (step.number === 2 && stepValidation.step2)
+                                ? "text-green-600"
+                                : "text-red-600"
+                              : "text-gray-500"
+                          }`}>
+                          {currentStep > step.number
+                            ? (step.number === 1 && stepValidation.step1) ||
+                              (step.number === 2 && stepValidation.step2)
+                              ? "Complete"
+                              : "Needs attention"
+                            : step.description}
                         </p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div
+                        className={`flex-1 h-1 mx-4 rounded transition-colors duration-300 ${
+                          currentStep > step.number
+                            ? (step.number === 1 && stepValidation.step1) ||
+                              (step.number === 2 && stepValidation.step2)
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                            : "bg-gray-200"
+                        }`}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </GlassCard>
+          </motion.div>
 
-                  {/* Promo Code Section */}
-                  <div className="border-t pt-4 mb-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">
-                      Promo Code
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          placeholder="Enter discount code"
-                          className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
-                          disabled={isValidatingPromo}
-                        />
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={applyPromoCode}
-                          disabled={!promoCode.trim() || isValidatingPromo}>
-                          {isValidatingPromo ? "..." : "Apply"}
-                        </Button>
+          <div
+            className={`grid grid-cols-1 gap-6 sm:gap-8 ${
+              currentStep <= 2
+                ? "md:grid-cols-2 lg:grid-cols-3"
+                : "place-items-center"
+            }`}>
+            {/* Main Form */}
+            <div
+              className={
+                currentStep <= 2 ? "lg:col-span-2" : "w-full max-w-4xl"
+              }>
+              <form onSubmit={handleSubmit}>
+                {/* Contact Information */}
+                {currentStep === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6 }}>
+                    <GlassCard className="p-8 mb-6">
+                      <div className="flex items-center mb-6">
+                        <HiLockClosed className="h-5 w-5 text-gray-400 mr-2" />
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          Contact Information
+                        </h2>
                       </div>
-                      {appliedDiscount && (
-                        <div className="flex items-center justify-between text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            required
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                              formErrors.email
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-200"
+                            }`}
+                            placeholder="your@email.com"
+                          />
+                          {formErrors.email && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {formErrors.email}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            required
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                              formErrors.phone
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-200"
+                            }`}
+                            placeholder="+233 XX XXX XXXX"
+                          />
+                          {formErrors.phone && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {formErrors.phone}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <div>
-                            <span className="text-sm font-medium">
-                              {appliedDiscount.code} applied
-                            </span>
-                            <p className="text-xs text-green-700">
-                              {appliedDiscount.description}
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              First Name
+                            </label>
+                            <input
+                              type="text"
+                              name="firstName"
+                              required
+                              value={formData.firstName}
+                              onChange={handleInputChange}
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                formErrors.firstName
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200"
+                              }`}
+                            />
+                            {formErrors.firstName && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {formErrors.firstName}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Last Name
+                            </label>
+                            <input
+                              type="text"
+                              name="lastName"
+                              required
+                              value={formData.lastName}
+                              onChange={handleInputChange}
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                                formErrors.lastName
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-200"
+                              }`}
+                            />
+                            {formErrors.lastName && (
+                              <p className="mt-1 text-sm text-red-600">
+                                {formErrors.lastName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Digital Address
+                          </label>
+                          <input
+                            type="text"
+                            name="digitalAddress"
+                            required
+                            value={formData.digitalAddress}
+                            onChange={handleInputChange}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent transition-colors ${
+                              formErrors.digitalAddress
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-200"
+                            }`}
+                            placeholder="e.g. GA-123-4567 or GE-456-7890"
+                          />
+                          {formErrors.digitalAddress && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {formErrors.digitalAddress}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Apartment, suite, etc. (optional)
+                          </label>
+                          <input
+                            type="text"
+                            name="apartment"
+                            value={formData.apartment}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                          />
+                        </div>
+
+                        {/* Save Information Checkbox */}
+                        <div className="flex items-center space-x-3 p-4 bg-accent-gold/5 rounded-lg border border-accent-gold/20">
+                          <input
+                            type="checkbox"
+                            id="saveInfo"
+                            name="saveInfo"
+                            checked={formData.saveInfo}
+                            onChange={handleInputChange}
+                            className="h-4 w-4 text-accent-gold focus:ring-accent-gold border-gray-300 rounded"
+                          />
+                          <label
+                            htmlFor="saveInfo"
+                            className="text-sm text-gray-700 cursor-pointer">
+                            Save this information for faster checkout next time
+                          </label>
+                        </div>
+                      </div>
+                    </GlassCard>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={() => navigateToStep(2)}
+                        disabled={!stepValidation.step1}
+                        className={`transition-all duration-300 ${
+                          !stepValidation.step1
+                            ? "opacity-60 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                            : "hover:scale-105"
+                        }`}>
+                        {stepValidation.step1
+                          ? "Review Order"
+                          : "Complete Required Fields"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Order Review - Step 2 (Payment step removed, Paystack is auto-selected) */}
+                {currentStep === 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6 }}>
+                    <GlassCard className="p-8 mb-6">
+                      <div className="flex items-center mb-6">
+                        <HiTruck className="h-5 w-5 text-gray-400 mr-2" />
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          Review Your Order
+                        </h2>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-3">
+                            Shipping Address
+                          </h3>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="font-medium">
+                              {formData.firstName} {formData.lastName}
+                            </p>
+                            <p>{formData.digitalAddress}</p>
+                            {formData.apartment && <p>{formData.apartment}</p>}
+                            <p className="text-sm text-gray-600">
+                              Phone: {formData.phone}
                             </p>
                           </div>
-                          <button
-                            onClick={removeDiscount}
-                            className="text-green-600 hover:text-green-800 cursor-pointer">
-                            <HiX className="h-4 w-4" />
-                          </button>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-3">
+                            Payment Method
+                          </h3>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="font-medium">Paystack Payment</p>
+                            <p className="text-sm text-gray-600">
+                              Secure payment via Paystack - Supports all major
+                              cards and mobile money
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </GlassCard>
+
+                    <div className="flex justify-between items-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => navigateToStep(1)}
+                        className="text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white">
+                        Back
+                      </Button>
+
+                      <PaystackButton
+                        email={formData.email}
+                        amount={total}
+                        customerName={`${formData.firstName} ${formData.lastName}`}
+                        onSuccess={handlePaystackSuccess}
+                        onClose={handlePaystackClose}
+                        disabled={
+                          isProcessing ||
+                          isPaymentProcessing ||
+                          !stepValidation.step1
+                        }
+                        metadata={paystackService.createPaymentMetadata({
+                          userId: user?.id || "",
+                          customerName: `${formData.firstName} ${formData.lastName}`,
+                          items: cartItems.map((item) => ({
+                            name: item.name,
+                            quantity: item.quantity,
+                            price: item.price,
+                          })),
+                          shippingAddress: `${formData.digitalAddress}, ${
+                            formData.apartment || ""
+                          }`,
+                        })}
+                        buttonText={
+                          isProcessing
+                            ? "Processing..."
+                            : !stepValidation.step1
+                            ? "Complete Contact Info"
+                            : `Pay ₵${total.toFixed(2)}`
+                        }
+                        className="min-w-[200px]"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Order Placed Confirmation - Step 3 */}
+                {currentStep === 3 && orderData && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6 }}>
+                    <div className="text-center py-16">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{
+                          delay: 0.3,
+                          type: "spring",
+                          stiffness: 200,
+                        }}
+                        className="mx-auto h-24 w-24 bg-green-100 rounded-full flex items-center justify-center mb-8">
+                        <svg
+                          className="h-12 w-12 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </motion.div>
+
+                      <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        Order Placed Successfully!
+                      </h1>
+
+                      <p className="text-xl text-gray-600 mb-8">
+                        Thank you for your purchase. Your order has been
+                        confirmed.
+                      </p>
+
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 max-w-md mx-auto">
+                        <p className="text-sm text-green-700 font-medium mb-2">
+                          Order Details
+                        </p>
+                        <p className="text-2xl font-bold text-green-800">
+                          #{orderData.id}
+                        </p>
+                        <p className="text-lg text-green-700">
+                          ₵{orderData.total.toFixed(2)}
+                        </p>
+                      </div>
+
+                      <p className="text-gray-600 mb-8">
+                        A confirmation email has been sent to {formData.email}
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Button
+                          onClick={() => navigate("/shop")}
+                          variant="outline"
+                          className="px-8 py-3">
+                          Continue Shopping
+                        </Button>
+                        <Button
+                          onClick={() => navigate("/profile")}
+                          variant="primary"
+                          className="px-8 py-3">
+                          View Orders
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </form>
+            </div>
+
+            {/* Order Summary Sidebar - Only show on steps 1 and 2 */}
+            {currentStep <= 2 && (
+              <motion.div
+                className="lg:col-span-1"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}>
+                <div className="sticky top-24">
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Order Summary
+                    </h3>
+
+                    <div className="space-y-4 mb-6">
+                      {cartItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center space-x-4">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {item.name}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Qty: {item.quantity}
+                            </p>
+                          </div>
+                          <p className="text-sm font-medium">
+                            ₵{(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Promo Code Section */}
+                    <div className="border-t pt-4 mb-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">
+                        Promo Code
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            placeholder="Enter discount code"
+                            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-transparent"
+                            disabled={isValidatingPromo}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={applyPromoCode}
+                            disabled={!promoCode.trim() || isValidatingPromo}>
+                            {isValidatingPromo ? "..." : "Apply"}
+                          </Button>
+                        </div>
+                        {appliedDiscount && (
+                          <div className="flex items-center justify-between text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                            <div>
+                              <span className="text-sm font-medium">
+                                {appliedDiscount.code} applied
+                              </span>
+                              <p className="text-xs text-green-700">
+                                {appliedDiscount.description}
+                              </p>
+                            </div>
+                            <button
+                              onClick={removeDiscount}
+                              className="text-green-600 hover:text-green-800 cursor-pointer">
+                              <HiX className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 border-t pt-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Subtotal</span>
+                        <span>₵{subtotal.toFixed(2)}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>Discount</span>
+                          <span>-₵{discount.toFixed(2)}</span>
                         </div>
                       )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 border-t pt-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span>₵{subtotal.toFixed(2)}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Discount</span>
-                        <span>-₵{discount.toFixed(2)}</span>
+                      <div className="flex justify-between text-lg font-bold border-t pt-2">
+                        <span>Total</span>
+                        <span>₵{total.toFixed(2)}</span>
                       </div>
-                    )}
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
-                      <span>Total</span>
-                      <span>₵{total.toFixed(2)}</span>
                     </div>
-                  </div>
-                </GlassCard>
-              </div>
-            </motion.div>
-          )}
+                  </GlassCard>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

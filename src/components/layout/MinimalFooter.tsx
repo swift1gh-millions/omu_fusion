@@ -42,8 +42,8 @@ export const MinimalFooter: React.FC = () => {
 
         {/* Bottom Section */}
         <div className="mt-8 pt-6 border-t border-white border-opacity-20">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-gray-400 font-body text-sm">
+          <div className="flex flex-row justify-between items-center space-x-4">
+            <div className="text-gray-400 font-body text-xs sm:text-sm flex-shrink-0">
               © {new Date().getFullYear()} OMU FUSION. All rights reserved.
             </div>
 

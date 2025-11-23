@@ -16,6 +16,7 @@ import { PageBackground } from "../components/ui/PageBackground";
 import { LazyLoadWrapper } from "../components/ui/LazyLoadWrapper";
 import { ProductModal } from "../components/ui/ProductModal";
 import { PerformanceMonitor } from "../components/ui/PerformanceMonitor";
+import { Seo } from "../components/ui/Seo";
 import { useLoadTime } from "../hooks/useLoadTime";
 import {
   ProductsLoader,
@@ -841,186 +842,195 @@ export const ShopPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="scrollbar-animated min-h-screen relative bg-gradient-to-br from-gray-50 to-gray-100"
-      style={{
-        backgroundImage: `url(${white3})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}>
-      {/* Light overlay */}
-      <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]"></div>
-      <div className="relative z-10 min-h-screen pt-20 pb-12 sm:pb-16">
-        <div className="max-w-7xl mx-auto px-4 pt-4 pb-12 sm:px-6 lg:px-8">
-          {/* Filters*/}
-          <motion.div
-            className="mb-6 sm:mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}>
-            <GlassCard className="p-4 sm:p-6">
-              <div className="flex flex-col space-y-4">
-                <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
-                  {/* Categories */}
-                  <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                    {categories.map((category) => (
-                      <button
-                        key={category}
-                        onClick={() => handleCategoryChange(category)}
-                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation shadow-md hover:shadow-lg cursor-pointer ${
-                          selectedCategory === category
-                            ? "bg-accent-gold text-black border-2 border-accent-gold shadow-lg"
-                            : "bg-white text-gray-800 border-2 border-gray-200 hover:bg-accent-gold hover:text-black hover:border-accent-gold"
-                        }`}>
-                        {category}
-                      </button>
-                    ))}
-                  </div>
+    <>
+      <Seo
+        title="Shop | OMU FUSION – Premium Fashion Store"
+        description="Browse OMU FUSION's latest outfits, dresses, streetwear and accessories. Discover premium fashion with secure checkout and fast delivery across Nigeria."
+        keywords="OMU FUSION shop, buy fashion online, Nigerian clothing store, premium outfits, dresses, streetwear, accessories"
+      />
+      <div
+        className="scrollbar-animated min-h-screen relative bg-gradient-to-br from-gray-50 to-gray-100"
+        style={{
+          backgroundImage: `url(${white3})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
+        }}>
+        {/* Light overlay */}
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]"></div>
+        <div className="relative z-10 min-h-screen pt-20 pb-12 sm:pb-16">
+          <div className="max-w-7xl mx-auto px-4 pt-4 pb-12 sm:px-6 lg:px-8">
+            {/* Filters*/}
+            <motion.div
+              className="mb-6 sm:mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}>
+              <GlassCard className="p-4 sm:p-6">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:gap-4 lg:items-center lg:justify-between">
+                    {/* Categories */}
+                    <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                      {categories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => handleCategoryChange(category)}
+                          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation shadow-md hover:shadow-lg cursor-pointer ${
+                            selectedCategory === category
+                              ? "bg-accent-gold text-black border-2 border-accent-gold shadow-lg"
+                              : "bg-white text-gray-800 border-2 border-gray-200 hover:bg-accent-gold hover:text-black hover:border-accent-gold"
+                          }`}>
+                          {category}
+                        </button>
+                      ))}
+                    </div>
 
-                  {/* Sort and View Options */}
-                  <div className="flex gap-2 sm:gap-3 items-center justify-center lg:justify-end">
-                    <select
-                      value={sortBy}
-                      onChange={(e) => handleSortChange(e.target.value)}
-                      className="px-3 sm:px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-accent-gold text-xs sm:text-sm text-gray-800 font-semibold bg-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
-                      <option value="name">Sort by Name</option>
-                      <option value="price-low">Price: Low to High</option>
-                      <option value="price-high">Price: High to Low</option>
-                      <option value="newest">Newest First</option>
-                    </select>
+                    {/* Sort and View Options */}
+                    <div className="flex gap-2 sm:gap-3 items-center justify-center lg:justify-end">
+                      <select
+                        value={sortBy}
+                        onChange={(e) => handleSortChange(e.target.value)}
+                        className="px-3 sm:px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-accent-gold focus:border-accent-gold text-xs sm:text-sm text-gray-800 font-semibold bg-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+                        <option value="name">Sort by Name</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="newest">Newest First</option>
+                      </select>
 
-                    <div className="flex border-2 border-gray-200 rounded-lg overflow-hidden shadow-md">
-                      <button
-                        onClick={() => handleViewModeChange("grid")}
-                        className={`p-2 touch-manipulation transition-all duration-300 cursor-pointer ${
-                          viewMode === "grid"
-                            ? "bg-accent-gold text-black border-r border-accent-gold"
-                            : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black border-r border-gray-200"
-                        }`}>
-                        <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleViewModeChange("list")}
-                        className={`p-2 touch-manipulation transition-all duration-300 cursor-pointer ${
-                          viewMode === "list"
-                            ? "bg-accent-gold text-black"
-                            : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black"
-                        }`}>
-                        <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
+                      <div className="flex border-2 border-gray-200 rounded-lg overflow-hidden shadow-md">
+                        <button
+                          onClick={() => handleViewModeChange("grid")}
+                          className={`p-2 touch-manipulation transition-all duration-300 cursor-pointer ${
+                            viewMode === "grid"
+                              ? "bg-accent-gold text-black border-r border-accent-gold"
+                              : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black border-r border-gray-200"
+                          }`}>
+                          <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleViewModeChange("list")}
+                          className={`p-2 touch-manipulation transition-all duration-300 cursor-pointer ${
+                            viewMode === "list"
+                              ? "bg-accent-gold text-black"
+                              : "bg-white text-gray-800 hover:bg-accent-gold hover:text-black"
+                          }`}>
+                          <HiViewList className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </GlassCard>
-          </motion.div>
-
-          {/* Products Grid or Loading State */}
-          {isLoading ? (
-            <ProductsLoader viewMode={viewMode} />
-          ) : filteredProducts.length > 0 ? (
-            <motion.div
-              key={`products-${selectedCategory}-${filteredProducts.length}`}
-              className={`grid gap-4 sm:gap-6 ${
-                viewMode === "grid"
-                  ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-1"
-              }`}
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={`product-${product.id}-${selectedCategory}`}
-                  product={product}
-                  addToCart={addToCart}
-                  onProductClick={handleProductClick}
-                  cart={cart}
-                  isInWishlist={isInWishlist}
-                  toggleWishlist={toggleWishlist}
-                />
-              ))}
+              </GlassCard>
             </motion.div>
-          ) : (
-            /* Enhanced Empty State */
-            <motion.div
-              className="text-center py-16 px-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}>
-              <div className="max-w-md mx-auto">
-                <div className="mb-6">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <HiSearch className="w-10 h-10 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No products found
-                  </h3>
-                  <p className="text-gray-500">
-                    {debouncedSearchTerm
-                      ? `No products match "${debouncedSearchTerm}". Try searching for something else or check the spelling.`
-                      : "Refresh the page."}
-                  </p>
-                </div>
 
-                {debouncedSearchTerm && (
-                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-2">
-                      Search Tips:
-                    </h4>
-                    <ul className="text-sm text-blue-800 space-y-1 text-left">
-                      <li>• Try different keywords or synonyms</li>
-                      <li>• Check your spelling</li>
-                      <li>
-                        • Use broader terms (e.g., "shirt" instead of "graphic
-                        tee")
-                      </li>
-                      <li>• Search by category, brand, or product features</li>
-                    </ul>
+            {/* Products Grid or Loading State */}
+            {isLoading ? (
+              <ProductsLoader viewMode={viewMode} />
+            ) : filteredProducts.length > 0 ? (
+              <motion.div
+                key={`products-${selectedCategory}-${filteredProducts.length}`}
+                className={`grid gap-4 sm:gap-6 ${
+                  viewMode === "grid"
+                    ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                }`}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={`product-${product.id}-${selectedCategory}`}
+                    product={product}
+                    addToCart={addToCart}
+                    onProductClick={handleProductClick}
+                    cart={cart}
+                    isInWishlist={isInWishlist}
+                    toggleWishlist={toggleWishlist}
+                  />
+                ))}
+              </motion.div>
+            ) : (
+              /* Enhanced Empty State */
+              <motion.div
+                className="text-center py-16 px-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}>
+                <div className="max-w-md mx-auto">
+                  <div className="mb-6">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <HiSearch className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      No products found
+                    </h3>
+                    <p className="text-gray-500">
+                      {debouncedSearchTerm
+                        ? `No products match "${debouncedSearchTerm}". Try searching for something else or check the spelling.`
+                        : "Refresh the page."}
+                    </p>
                   </div>
-                )}
 
-                <div className="space-y-3">
-                  <Button
-                    variant="primary"
-                    className="w-full sm:w-auto"
-                    onClick={handleClearFilters}>
-                    Clear All Filters
-                  </Button>
                   {debouncedSearchTerm && (
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto sm:ml-3"
-                      onClick={() => handleSearchChange("")}>
-                      Clear Search
-                    </Button>
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="font-medium text-blue-900 mb-2">
+                        Search Tips:
+                      </h4>
+                      <ul className="text-sm text-blue-800 space-y-1 text-left">
+                        <li>• Try different keywords or synonyms</li>
+                        <li>• Check your spelling</li>
+                        <li>
+                          • Use broader terms (e.g., "shirt" instead of "graphic
+                          tee")
+                        </li>
+                        <li>
+                          • Search by category, brand, or product features
+                        </li>
+                      </ul>
+                    </div>
                   )}
+
+                  <div className="space-y-3">
+                    <Button
+                      variant="primary"
+                      className="w-full sm:w-auto"
+                      onClick={handleClearFilters}>
+                      Clear All Filters
+                    </Button>
+                    {debouncedSearchTerm && (
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-auto sm:ml-3"
+                        onClick={() => handleSearchChange("")}>
+                        Clear Search
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </div>
         </div>
+
+        {/* Performance Monitor */}
+        <PerformanceMonitor />
+
+        {/* Product Modal */}
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          similarProducts={
+            selectedProduct ? getSimilarProducts(selectedProduct) : []
+          }
+          onProductSelect={(product) => {
+            setSelectedProduct(product);
+            // Keep modal open to show the new product
+          }}
+        />
       </div>
-
-      {/* Performance Monitor */}
-      <PerformanceMonitor />
-
-      {/* Product Modal */}
-      <ProductModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        similarProducts={
-          selectedProduct ? getSimilarProducts(selectedProduct) : []
-        }
-        onProductSelect={(product) => {
-          setSelectedProduct(product);
-          // Keep modal open to show the new product
-        }}
-      />
-    </div>
+    </>
   );
 };
 
