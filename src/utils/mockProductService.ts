@@ -20,7 +20,9 @@ const mockProducts: Product[] = [
     status: "none",
     seo: {},
     variants: [],
-    createdAt: { toDate: () => new Date() } as any,
+    createdAt: {
+      toDate: () => new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+    } as any, // 4 days ago
     updatedAt: { toDate: () => new Date() } as any,
     createdBy: "admin",
   },
@@ -38,7 +40,9 @@ const mockProducts: Product[] = [
     status: "new",
     seo: {},
     variants: [],
-    createdAt: { toDate: () => new Date() } as any,
+    createdAt: {
+      toDate: () => new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    } as any, // 1 day ago
     updatedAt: { toDate: () => new Date() } as any,
     createdBy: "admin",
   },
@@ -58,7 +62,9 @@ const mockProducts: Product[] = [
     status: "none",
     seo: {},
     variants: [],
-    createdAt: { toDate: () => new Date() } as any,
+    createdAt: {
+      toDate: () => new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    } as any, // 7 days ago
     updatedAt: { toDate: () => new Date() } as any,
     createdBy: "admin",
   },
@@ -76,7 +82,9 @@ const mockProducts: Product[] = [
     status: "sale",
     seo: {},
     variants: [],
-    createdAt: { toDate: () => new Date() } as any,
+    createdAt: {
+      toDate: () => new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    } as any, // 2 days ago
     updatedAt: { toDate: () => new Date() } as any,
     createdBy: "admin",
   },
@@ -96,7 +104,7 @@ const mockProducts: Product[] = [
     status: "none",
     seo: {},
     variants: [],
-    createdAt: { toDate: () => new Date() } as any,
+    createdAt: { toDate: () => new Date() } as any, // Today (newest)
     updatedAt: { toDate: () => new Date() } as any,
     createdBy: "admin",
   },

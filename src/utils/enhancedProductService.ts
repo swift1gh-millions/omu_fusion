@@ -58,16 +58,33 @@ export class EnhancedProductService {
   // Check if Firebase is properly configured
   private static isFirebaseAvailable(): boolean {
     try {
-      // Try to access db - if Firebase isn't configured, this will throw
-      if (!db) return false;
-      return MockProductService.isFirebaseConfigured();
+      console.log("🔍 Checking Firebase availability...");
+
+      // First check if environment variables are properly configured
+      const isConfigured = MockProductService.isFirebaseConfigured();
+      console.log("🔧 Firebase config check:", isConfigured);
+
+      if (!isConfigured) {
+        console.log(
+          "❌ Firebase environment variables not configured, using mock service"
+        );
+        return false;
+      }
+
+      // Check if db is available
+      console.log("db:", db);
+      if (!db) {
+        console.log("❌ db is null/undefined, Firebase not available");
+        return false;
+      }
+
+      console.log("✅ Firebase is available and configured");
+      return true;
     } catch (error) {
-      console.warn("Firebase not available, using mock service:", error);
+      console.warn("❌ Firebase not available, using mock service:", error);
       return false;
     }
-  }
-
-  // Upload images with compression and multiple sizes
+  } // Upload images with compression and multiple sizes
   static async uploadProductImages(images: File[]): Promise<string[]> {
     // Use mock service if Firebase isn't available
     if (!this.isFirebaseAvailable()) {
@@ -165,12 +182,29 @@ export class EnhancedProductService {
     sort: ProductSort = { field: "createdAt", direction: "desc" },
     pagination: PaginationOptions = { pageSize: this.DEFAULT_PAGE_SIZE }
   ): Promise<ProductsResponse> {
+    console.log("🚀 EnhancedProductService.getProducts called");
+    console.log("📦 Filters:", filters);
+    console.log("📊 Sort:", sort);
+    console.log("📄 Pagination:", pagination);
+
     // Use mock service if Firebase isn't available
     if (!this.isFirebaseAvailable()) {
       console.log("🔄 Using mock product service");
-      return MockProductService.getProducts(filters, sort, pagination);
+      try {
+        const result = await MockProductService.getProducts(
+          filters,
+          sort,
+          pagination
+        );
+        console.log("✅ Mock service returned:", result);
+        return result;
+      } catch (error) {
+        console.error("❌ Mock service error:", error);
+        throw error;
+      }
     }
 
+    console.log("🔥 Using Firebase service");
     return ErrorService.handleServiceError(
       async () => {
         const cacheKey = this.generateCacheKey(

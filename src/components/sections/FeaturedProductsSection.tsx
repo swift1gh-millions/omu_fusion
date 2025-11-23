@@ -571,7 +571,7 @@ const PopularProductCard: React.FC<ProductCardProps> = ({
 
         <div className="space-y-3 sm:space-y-3">
           <h3 className="text-white font-semibold text-sm sm:text-base lg:text-xl line-clamp-2 leading-tight">
-            {product.name}
+            {product.description}
           </h3>
 
           {/* Price section - stacked on mobile, inline on larger screens */}

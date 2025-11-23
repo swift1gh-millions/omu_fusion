@@ -42,8 +42,6 @@ interface ShopProduct extends Omit<Product, "id"> {
   originalPrice?: number;
   isNew?: boolean;
   isOnSale?: boolean;
-  rating?: number;
-  reviews?: number;
 }
 
 // Dynamic categories will be generated from actual products
@@ -168,23 +166,10 @@ const ProductCard = React.memo(
               {product.name}
             </h3>
 
-            <div className="flex items-center mb-3">
-              <div className="flex text-yellow-400">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`text-xs sm:text-sm ${
-                      i < Math.floor(product.rating || 0)
-                        ? "text-yellow-400"
-                        : "text-gray-300"
-                    }`}>
-                    ★
-                  </span>
-                ))}
-              </div>
-              <span className="text-gray-500 text-xs ml-2">
-                ({product.reviews || 0})
-              </span>
+            <div className="mb-3">
+              <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 leading-relaxed">
+                {product.description || "No description available"}
+              </p>
             </div>
 
             <div className="flex items-center justify-between">
@@ -730,10 +715,15 @@ export const ShopPage: React.FC = () => {
             return a.price - b.price;
           case "price-high":
             return b.price - a.price;
-          case "rating":
-            return (b.rating || 0) - (a.rating || 0);
           case "newest":
-            return (b.status === "new" ? 1 : 0) - (a.status === "new" ? 1 : 0);
+            // Sort by creation date (newest first)
+            const aDate = a.createdAt?.toDate
+              ? a.createdAt.toDate()
+              : new Date(a.createdAt || 0);
+            const bDate = b.createdAt?.toDate
+              ? b.createdAt.toDate()
+              : new Date(b.createdAt || 0);
+            return bDate.getTime() - aDate.getTime();
           default:
             return a.name.localeCompare(b.name);
         }
@@ -925,7 +915,6 @@ export const ShopPage: React.FC = () => {
                       <option value="name">Sort by Name</option>
                       <option value="price-low">Price: Low to High</option>
                       <option value="price-high">Price: High to Low</option>
-                      <option value="rating">Highest Rated</option>
                       <option value="newest">Newest First</option>
                     </select>
 
@@ -999,7 +988,7 @@ export const ShopPage: React.FC = () => {
                   <p className="text-gray-500">
                     {debouncedSearchTerm
                       ? `No products match "${debouncedSearchTerm}". Try searching for something else or check the spelling.`
-                      : "No products found matching your criteria."}
+                      : "Refresh the page."}
                   </p>
                 </div>
 

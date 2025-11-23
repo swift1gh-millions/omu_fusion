@@ -111,7 +111,7 @@ export const BrandStorySection: React.FC = () => {
               <p className="text-gray-300 font-body">
                 Born from a vision to redefine modern streetwear,{" "}
                 <span className="text-accent-gold font-semibold">
-                  OMU FUTION
+                  OMU FUSION
                 </span>{" "}
                 represents the fusion of contemporary design with timeless
                 craftsmanship. We believe that fashion is more than just
@@ -151,7 +151,7 @@ export const BrandStorySection: React.FC = () => {
             <GlassCard className="overflow-hidden h-96 lg:h-[500px]">
               <OptimizedImage
                 src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-                alt="OMU FUTION Brand Story"
+                alt="OMU FUSION Brand Story"
                 className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
                 loading="lazy"
                 fallbackSrc="https://via.placeholder.com/1200x500/1a1a1a/ffffff?text=OMU+FUSION+Story"
@@ -164,7 +164,7 @@ export const BrandStorySection: React.FC = () => {
                     transcend trends."
                   </p>
                   <p className="text-accent-gold text-xs mt-2 font-medium">
-                    — OMU FUTION Design Team
+                    — OMU FUSION Design Team
                   </p>
                 </GlassCard>
               </div>
