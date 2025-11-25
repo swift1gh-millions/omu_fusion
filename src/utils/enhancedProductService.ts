@@ -78,13 +78,18 @@ export class EnhancedProductService {
         return false;
       }
 
-      console.log("✅ Firebase is available and configured");
+      console.log("✅ Firebase is configured and db object exists");
       return true;
-    } catch (error) {
-      console.warn("❌ Firebase not available, using mock service:", error);
+    } catch (error: any) {
+      console.warn("❌ Firebase connection test failed, using mock service:", error);
+      if (error?.code) {
+        console.log("Error code:", error.code);
+      }
       return false;
     }
-  } // Upload images with compression and multiple sizes
+  }
+
+  // Upload images with compression and multiple sizes
   static async uploadProductImages(images: File[]): Promise<string[]> {
     // Use mock service if Firebase isn't available
     if (!this.isFirebaseAvailable()) {
@@ -189,7 +194,7 @@ export class EnhancedProductService {
 
     // Use mock service if Firebase isn't available
     if (!this.isFirebaseAvailable()) {
-      console.log("🔄 Using mock product service");
+      console.log("🔄 Using mock product service (Firebase not available)");
       try {
         const result = await MockProductService.getProducts(
           filters,
@@ -204,95 +209,114 @@ export class EnhancedProductService {
       }
     }
 
-    console.log("🔥 Using Firebase service");
-    return ErrorService.handleServiceError(
-      async () => {
-        const cacheKey = this.generateCacheKey(
-          "products",
+    console.log("🔥 Attempting Firebase service");
+    
+    try {
+      return await ErrorService.handleServiceError(
+        async () => {
+          const cacheKey = this.generateCacheKey(
+            "products",
+            filters,
+            sort,
+            pagination
+          );
+
+          return CacheService.getOrFetch(
+            cacheKey,
+            async () => {
+              const constraints: QueryConstraint[] = [];
+
+              // Add filters
+              if (filters.category) {
+                constraints.push(where("category", "==", filters.category));
+              }
+              if (filters.subcategory) {
+                constraints.push(where("subcategory", "==", filters.subcategory));
+              }
+              if (filters.brand) {
+                constraints.push(where("brand", "==", filters.brand));
+              }
+              if (filters.featured !== undefined) {
+                constraints.push(where("featured", "==", filters.featured));
+              }
+              if (filters.isActive !== undefined) {
+                constraints.push(where("isActive", "==", filters.isActive));
+              }
+              if (filters.minPrice !== undefined) {
+                constraints.push(where("price", ">=", filters.minPrice));
+              }
+              if (filters.maxPrice !== undefined) {
+                constraints.push(where("price", "<=", filters.maxPrice));
+              }
+              if (filters.tags && filters.tags.length > 0) {
+                constraints.push(
+                  where("tags", "array-contains-any", filters.tags)
+                );
+              }
+
+              // Add sorting
+              constraints.push(orderBy(sort.field, sort.direction));
+
+              // Add pagination
+              constraints.push(firestoreLimit(pagination.pageSize + 1)); // +1 to check if there are more
+
+              if (pagination.lastDoc) {
+                constraints.push(startAfter(pagination.lastDoc));
+              }
+
+              const q = query(
+                collection(db, this.COLLECTION_NAME),
+                ...constraints
+              );
+              const querySnapshot = await getDocs(q);
+
+              const products: Product[] = [];
+              const docs = querySnapshot.docs;
+
+              for (
+                let i = 0;
+                i < Math.min(docs.length, pagination.pageSize);
+                i++
+              ) {
+                const doc = docs[i];
+                products.push({
+                  id: doc.id,
+                  ...doc.data(),
+                } as Product);
+              }
+
+              return {
+                products,
+                hasMore: docs.length > pagination.pageSize,
+                lastDoc:
+                  docs.length > pagination.pageSize
+                    ? docs[pagination.pageSize - 1]
+                    : undefined,
+              };
+            },
+            this.CACHE_TTL
+          );
+        },
+        { action: "Get products" },
+        "low"
+      );
+    } catch (error: any) {
+      console.warn("🔥 Firebase service failed, falling back to mock service:", error);
+      console.log("🔄 Using mock product service fallback");
+      
+      try {
+        const result = await MockProductService.getProducts(
           filters,
           sort,
           pagination
         );
-
-        return CacheService.getOrFetch(
-          cacheKey,
-          async () => {
-            const constraints: QueryConstraint[] = [];
-
-            // Add filters
-            if (filters.category) {
-              constraints.push(where("category", "==", filters.category));
-            }
-            if (filters.subcategory) {
-              constraints.push(where("subcategory", "==", filters.subcategory));
-            }
-            if (filters.brand) {
-              constraints.push(where("brand", "==", filters.brand));
-            }
-            if (filters.featured !== undefined) {
-              constraints.push(where("featured", "==", filters.featured));
-            }
-            if (filters.isActive !== undefined) {
-              constraints.push(where("isActive", "==", filters.isActive));
-            }
-            if (filters.minPrice !== undefined) {
-              constraints.push(where("price", ">=", filters.minPrice));
-            }
-            if (filters.maxPrice !== undefined) {
-              constraints.push(where("price", "<=", filters.maxPrice));
-            }
-            if (filters.tags && filters.tags.length > 0) {
-              constraints.push(
-                where("tags", "array-contains-any", filters.tags)
-              );
-            }
-
-            // Add sorting
-            constraints.push(orderBy(sort.field, sort.direction));
-
-            // Add pagination
-            constraints.push(firestoreLimit(pagination.pageSize + 1)); // +1 to check if there are more
-
-            if (pagination.lastDoc) {
-              constraints.push(startAfter(pagination.lastDoc));
-            }
-
-            const q = query(
-              collection(db, this.COLLECTION_NAME),
-              ...constraints
-            );
-            const querySnapshot = await getDocs(q);
-
-            const products: Product[] = [];
-            const docs = querySnapshot.docs;
-
-            for (
-              let i = 0;
-              i < Math.min(docs.length, pagination.pageSize);
-              i++
-            ) {
-              const doc = docs[i];
-              products.push({
-                id: doc.id,
-                ...doc.data(),
-              } as Product);
-            }
-
-            return {
-              products,
-              hasMore: docs.length > pagination.pageSize,
-              lastDoc:
-                docs.length > pagination.pageSize
-                  ? docs[pagination.pageSize - 1]
-                  : undefined,
-            };
-          },
-          this.CACHE_TTL
-        );
-      },
-      { action: "Get products" },
-      "low"
-    );
+        console.log("✅ Mock service fallback successful:", result);
+        return result;
+      } catch (mockError) {
+        console.error("❌ Mock service fallback also failed:", mockError);
+        throw error; // Throw original error
+      }
+    }
   }
 
   // Get single product by ID

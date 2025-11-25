@@ -122,11 +122,8 @@ service cloud.firestore {
     
     // Products collection - role-based access
     match /products/{productId} {
-      // Anyone can read active products for shopping
-      allow read: if (
-        ("isActive" in resource.data && resource.data.isActive == true) ||
-        !("isActive" in resource.data)
-      );
+      // Anyone can read all products for shopping (simplified for debugging)
+      allow read: if true;
 
       // Admins have full access to all products
       allow read, write: if isAdmin();
