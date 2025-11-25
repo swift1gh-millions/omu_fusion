@@ -39,7 +39,7 @@ class ProductDebugger {
   static startDebugging(): void {
     this.startTime = Date.now();
     this.errors = [];
-    console.log('🐛 ProductDebugger: Debug session started');
+    console.log("🐛 ProductDebugger: Debug session started");
   }
 
   // Log an error
@@ -51,10 +51,10 @@ class ProductDebugger {
         name: error?.name,
         message: error?.message,
         code: error?.code,
-        stack: error?.stack?.split('\n').slice(0, 5)
-      }
+        stack: error?.stack?.split("\n").slice(0, 5),
+      },
     };
-    
+
     this.errors.push(errorInfo);
     console.log(`🐛 ProductDebugger: Error logged in ${context}:`, errorInfo);
   }
@@ -67,31 +67,33 @@ class ProductDebugger {
         mode: import.meta.env.MODE,
         prod: import.meta.env.PROD,
         dev: import.meta.env.DEV,
-        nodeEnv: import.meta.env.NODE_ENV || 'unknown',
+        nodeEnv: import.meta.env.NODE_ENV || "unknown",
         url: window.location.href,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
       },
       firebase: {
         hasApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
         hasProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
         hasAuthDomain: !!import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
         apiKeyLength: import.meta.env.VITE_FIREBASE_API_KEY?.length || 0,
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'MISSING',
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'MISSING'
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "MISSING",
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "MISSING",
       },
       services: {
         firebaseAvailable: false, // Will be updated by calling services
         mockServiceAvailable: true, // Assume available unless proven otherwise
-        cacheAvailable: typeof localStorage !== 'undefined'
+        cacheAvailable: typeof localStorage !== "undefined",
       },
       performance: {
         loadStartTime: this.startTime,
-        memoryUsage: (performance as any).memory ? {
-          usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
-          totalJSHeapSize: (performance as any).memory.totalJSHeapSize
-        } : 'not available'
+        memoryUsage: (performance as any).memory
+          ? {
+              usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
+              totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
+            }
+          : "not available",
       },
-      errors: this.errors
+      errors: this.errors,
     };
 
     return report;
@@ -100,29 +102,29 @@ class ProductDebugger {
   // Print formatted debug report
   static printReport(): void {
     const report = this.generateReport();
-    
-    console.log('🐛 ===== PRODUCT DEBUG REPORT =====');
-    console.log('🕒 Timestamp:', report.timestamp);
-    console.log('🌍 Environment:', report.environment);
-    console.log('🔥 Firebase Config:', report.firebase);
-    console.log('⚙️ Services:', report.services);
-    console.log('⚡ Performance:', report.performance);
-    console.log('❌ Errors (' + report.errors.length + '):', report.errors);
-    console.log('🐛 ===== END DEBUG REPORT =====');
+
+    console.log("🐛 ===== PRODUCT DEBUG REPORT =====");
+    console.log("🕒 Timestamp:", report.timestamp);
+    console.log("🌍 Environment:", report.environment);
+    console.log("🔥 Firebase Config:", report.firebase);
+    console.log("⚙️ Services:", report.services);
+    console.log("⚡ Performance:", report.performance);
+    console.log("❌ Errors (" + report.errors.length + "):", report.errors);
+    console.log("🐛 ===== END DEBUG REPORT =====");
 
     // Also log as a single object for easy copying
-    console.log('🐛 Full Debug Report Object:', report);
+    console.log("🐛 Full Debug Report Object:", report);
   }
 
   // Quick status check
   static quickStatus(): void {
-    console.log('🐛 Quick Status Check:', {
+    console.log("🐛 Quick Status Check:", {
       firebaseApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
       firebaseProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
       environment: import.meta.env.MODE,
       isProduction: import.meta.env.PROD,
       errorCount: this.errors.length,
-      uptime: Date.now() - this.startTime
+      uptime: Date.now() - this.startTime,
     });
   }
 }
@@ -133,7 +135,7 @@ if (import.meta.env.DEV) {
 }
 
 // Make it globally available for manual debugging
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).ProductDebugger = ProductDebugger;
 }
 

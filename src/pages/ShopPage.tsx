@@ -349,9 +349,9 @@ export const ShopPage: React.FC = () => {
     const loadProducts = async () => {
       try {
         // Initialize comprehensive debugging
-        ProductDebugger.startDebug('ShopPage');
-        ProductDebugger.log('Product loading initiated');
-        
+        ProductDebugger.startDebug("ShopPage");
+        ProductDebugger.log("Product loading initiated");
+
         const startTime = performance.now();
         setIsLoading(true);
         console.log("🛍️ Shop page: Loading products...");
@@ -361,42 +361,47 @@ export const ShopPage: React.FC = () => {
           NODE_ENV: import.meta.env.NODE_ENV,
           isDev: import.meta.env.DEV,
           url: window.location.href,
-          userAgent: navigator.userAgent.substring(0, 100)
+          userAgent: navigator.userAgent.substring(0, 100),
         });
 
-        ProductDebugger.log('Environment variables checked', {
+        ProductDebugger.log("Environment variables checked", {
           MODE: import.meta.env.MODE,
           PROD: import.meta.env.PROD,
-          url: window.location.href
+          url: window.location.href,
         });
 
         // Check if preloader is ready for instant loading
         const preloaderReady = ProductPreloader.isReady();
         console.log("🔍 DEBUG: ProductPreloader status:", {
           isReady: preloaderReady,
-          hasCache: ProductionProductService.hasProducts()
+          hasCache: ProductionProductService.hasProducts(),
         });
-        
+
         if (preloaderReady) {
           console.log("⚡ Using preloaded products for instant load");
         }
 
         let productsResponse;
-        
+
         // Check if we're in production environment
-        const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
+        const isProduction =
+          import.meta.env.PROD || import.meta.env.MODE === "production";
         console.log("🔍 DEBUG: Environment decision:", {
           isProduction,
           MODE: import.meta.env.MODE,
           PROD: import.meta.env.PROD,
-          selectedPath: isProduction ? 'ProductionProductService' : 'Development (Preloader)'
+          selectedPath: isProduction
+            ? "ProductionProductService"
+            : "Development (Preloader)",
         });
 
-        ProductDebugger.log('Environment decision made', {
+        ProductDebugger.log("Environment decision made", {
           isProduction,
-          selectedPath: isProduction ? 'ProductionProductService' : 'Development'
+          selectedPath: isProduction
+            ? "ProductionProductService"
+            : "Development",
         });
-        
+
         if (isProduction) {
           // In production, use the reliable production service
           console.log("🏭 Production mode: using ProductionProductService");
@@ -406,13 +411,13 @@ export const ShopPage: React.FC = () => {
             const serviceTime = performance.now() - startServiceTime;
             console.log("✅ ProductionProductService completed:", {
               loadTime: `${serviceTime.toFixed(2)}ms`,
-              productCount: productsResponse?.products?.length || 0
+              productCount: productsResponse?.products?.length || 0,
             });
           } catch (productionError) {
             console.error("❌ Production service failed:", {
               error: productionError,
               name: productionError?.name,
-              message: productionError?.message
+              message: productionError?.message,
             });
             throw productionError;
           }
@@ -425,11 +430,14 @@ export const ShopPage: React.FC = () => {
             const preloaderTime = performance.now() - startPreloaderTime;
             console.log("✅ ProductPreloader completed:", {
               loadTime: `${preloaderTime.toFixed(2)}ms`,
-              productCount: productsResponse?.products?.length || 0
+              productCount: productsResponse?.products?.length || 0,
             });
           } catch (preloaderError) {
-            console.warn("⚠️ Preloader failed, trying direct service...", preloaderError);
-            
+            console.warn(
+              "⚠️ Preloader failed, trying direct service...",
+              preloaderError
+            );
+
             // Direct fallback to EnhancedProductService
             try {
               productsResponse = await EnhancedProductService.getProducts(
@@ -439,7 +447,10 @@ export const ShopPage: React.FC = () => {
               );
               console.log("✅ Direct service loading successful");
             } catch (directError) {
-              console.error("❌ Both preloader and direct service failed:", directError);
+              console.error(
+                "❌ Both preloader and direct service failed:",
+                directError
+              );
               throw directError;
             }
           }
@@ -539,7 +550,9 @@ export const ShopPage: React.FC = () => {
           }));
         }
 
-        ProductDebugger.log(`Products loaded successfully: ${shopProducts.length} products`);
+        ProductDebugger.log(
+          `Products loaded successfully: ${shopProducts.length} products`
+        );
         ProductDebugger.endDebug();
       } catch (error) {
         ProductDebugger.logError(error as Error);

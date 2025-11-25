@@ -167,7 +167,7 @@ class ProductPreloaderService {
   // Get products instantly if preloaded, otherwise load normally
   async getProducts(): Promise<ProductsResponse> {
     console.log("🚀 ProductPreloader.getProducts called");
-    
+
     // Return cached/preloaded data immediately if available
     if (this.preloadedData) {
       console.log("⚡ Using preloaded products");
@@ -187,11 +187,14 @@ class ProductPreloaderService {
       console.log("⏳ Waiting for background preload...");
       try {
         // Add timeout for preload promise
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error("Preload timeout")), 5000)
         );
-        
-        const products = await Promise.race([this.preloadPromise, timeoutPromise]);
+
+        const products = await Promise.race([
+          this.preloadPromise,
+          timeoutPromise,
+        ]);
         this.preloadedData = products as ProductsResponse;
         return products as ProductsResponse;
       } catch (error) {
@@ -210,11 +213,11 @@ class ProductPreloaderService {
         { field: "name", direction: "asc" },
         { pageSize: this.config.maxProducts }
       );
-      
+
       // Cache the result for next time
       this.preloadedData = products;
       this.setCachedProducts(products);
-      
+
       return products;
     } catch (error) {
       console.error("❌ Direct product loading failed:", error);
