@@ -166,6 +166,8 @@ class ProductPreloaderService {
 
   // Get products instantly if preloaded, otherwise load normally
   async getProducts(): Promise<ProductsResponse> {
+    console.log("🚀 ProductPreloader.getProducts called");
+    
     // Return cached/preloaded data immediately if available
     if (this.preloadedData) {
       console.log("⚡ Using preloaded products");
@@ -180,21 +182,44 @@ class ProductPreloaderService {
       return cached;
     }
 
-    // If currently preloading, wait for it
+    // If currently preloading, wait for it with timeout
     if (this.preloadPromise) {
       console.log("⏳ Waiting for background preload...");
-      const products = await this.preloadPromise;
-      this.preloadedData = products;
-      return products;
+      try {
+        // Add timeout for preload promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Preload timeout")), 5000)
+        );
+        
+        const products = await Promise.race([this.preloadPromise, timeoutPromise]);
+        this.preloadedData = products as ProductsResponse;
+        return products as ProductsResponse;
+      } catch (error) {
+        console.warn("⚠️ Background preload failed or timed out:", error);
+        // Clear the failed promise
+        this.preloadPromise = null;
+        this.isPreloading = false;
+      }
     }
 
-    // Fall back to normal loading
-    console.log("🔄 Loading products normally...");
-    return EnhancedProductService.getProducts(
-      {},
-      { field: "name", direction: "asc" },
-      { pageSize: this.config.maxProducts }
-    );
+    // Fall back to direct loading
+    console.log("🔄 Loading products directly (bypassing preload)...");
+    try {
+      const products = await EnhancedProductService.getProducts(
+        {},
+        { field: "name", direction: "asc" },
+        { pageSize: this.config.maxProducts }
+      );
+      
+      // Cache the result for next time
+      this.preloadedData = products;
+      this.setCachedProducts(products);
+      
+      return products;
+    } catch (error) {
+      console.error("❌ Direct product loading failed:", error);
+      throw error;
+    }
   }
 
   // Check if products are ready (preloaded or cached)

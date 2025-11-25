@@ -29,6 +29,7 @@ import {
 import { Product } from "../utils/databaseSchema";
 import ProductDebugService from "../utils/productDebugService";
 import ProductPreloader from "../utils/productPreloader";
+import ProductionProductService from "../utils/productionProductService";
 import {
   useDebounce,
   useAnimationVariants,
@@ -342,21 +343,55 @@ export const ShopPage: React.FC = () => {
       .map((item) => item.product);
   };
 
-  // Load products with optimized preloading
+  // Load products with optimized preloading and fallbacks
   useEffect(() => {
     const loadProducts = async () => {
       try {
         const startTime = performance.now();
         setIsLoading(true);
-        console.log("Loading products...");
+        console.log("🛍️ Shop page: Loading products...");
 
         // Check if preloader is ready for instant loading
         if (ProductPreloader.isReady()) {
           console.log("⚡ Using preloaded products for instant load");
         }
 
-        // Use preloader service for optimized loading
-        const productsResponse = await ProductPreloader.getProducts();
+        let productsResponse;
+        
+        // Check if we're in production environment
+        const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
+        
+        if (isProduction) {
+          // In production, use the reliable production service
+          console.log("🏭 Production mode: using ProductionProductService");
+          try {
+            productsResponse = await ProductionProductService.getProducts();
+          } catch (productionError) {
+            console.error("❌ Production service failed:", productionError);
+            throw productionError;
+          }
+        } else {
+          // In development, try preloader first, with fallbacks
+          try {
+            console.log("🔄 Development mode: attempting ProductPreloader...");
+            productsResponse = await ProductPreloader.getProducts();
+          } catch (preloaderError) {
+            console.warn("⚠️ Preloader failed, trying direct service...", preloaderError);
+            
+            // Direct fallback to EnhancedProductService
+            try {
+              productsResponse = await EnhancedProductService.getProducts(
+                {},
+                { field: "name", direction: "asc" },
+                { pageSize: 50 }
+              );
+              console.log("✅ Direct service loading successful");
+            } catch (directError) {
+              console.error("❌ Both preloader and direct service failed:", directError);
+              throw directError;
+            }
+          }
+        }
 
         console.log("Raw products fetched:", productsResponse.products.length);
         console.log(
