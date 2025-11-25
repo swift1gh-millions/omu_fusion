@@ -12,7 +12,7 @@ class ProductionProductService {
 
   // Check if cache is still valid
   private static isCacheValid(): boolean {
-    return this.cache && (Date.now() - this.cacheTimestamp) < this.CACHE_DURATION;
+    return this.cache !== null && (Date.now() - this.cacheTimestamp) < this.CACHE_DURATION;
   }
 
   // Reliable product loading for production
@@ -69,10 +69,10 @@ class ProductionProductService {
     } catch (firebaseError) {
       console.warn('⚠️ Firebase failed, analyzing error...');
       console.log('🔍 DEBUG: Firebase error details:', {
-        name: firebaseError?.name,
-        message: firebaseError?.message,
-        code: firebaseError?.code,
-        stack: firebaseError?.stack?.split('\n').slice(0, 3),
+        name: (firebaseError as any)?.name,
+        message: (firebaseError as any)?.message,
+        code: (firebaseError as any)?.code,
+        stack: (firebaseError as any)?.stack?.split('\n').slice(0, 3),
         fullError: firebaseError
       });
       
@@ -98,9 +98,9 @@ class ProductionProductService {
       } catch (mockError) {
         console.error('❌ Both Firebase and mock services failed');
         console.log('🔍 DEBUG: Mock service error:', {
-          name: mockError?.name,
-          message: mockError?.message,
-          stack: mockError?.stack?.split('\n').slice(0, 3),
+          name: (mockError as any)?.name,
+          message: (mockError as any)?.message,
+          stack: (mockError as any)?.stack?.split('\n').slice(0, 3),
           fullError: mockError
         });
         
