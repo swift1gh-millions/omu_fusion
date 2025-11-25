@@ -30,6 +30,13 @@ let storage;
 try {
   firebaseConfig = EnvironmentService.getFirebaseConfig();
 
+  console.log("🔧 Firebase Config Retrieved:", {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    hasApiKey: !!firebaseConfig.apiKey,
+    environment: import.meta.env.MODE,
+  });
+
   // Initialize Firebase
   app = initializeApp(firebaseConfig);
 
@@ -39,9 +46,17 @@ try {
   storage = getStorage(app);
 
   console.log("🔥 Firebase initialized successfully");
+  console.log("📊 Environment:", import.meta.env.MODE);
+  console.log("🌐 Production build:", import.meta.env.PROD);
 } catch (error) {
   console.warn("⚠️ Firebase initialization failed:", error);
   console.warn("📱 Application will run in mock mode");
+  console.log("🔧 Environment details:", {
+    MODE: import.meta.env.MODE,
+    PROD: import.meta.env.PROD,
+    hasApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
+    hasProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  });
 
   // Create mock objects to prevent app crashes
   db = null as any;

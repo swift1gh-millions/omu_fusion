@@ -81,7 +81,10 @@ export class EnhancedProductService {
       console.log("✅ Firebase is configured and db object exists");
       return true;
     } catch (error: any) {
-      console.warn("❌ Firebase connection test failed, using mock service:", error);
+      console.warn(
+        "❌ Firebase connection test failed, using mock service:",
+        error
+      );
       if (error?.code) {
         console.log("Error code:", error.code);
       }
@@ -210,7 +213,7 @@ export class EnhancedProductService {
     }
 
     console.log("🔥 Attempting Firebase service");
-    
+
     try {
       return await ErrorService.handleServiceError(
         async () => {
@@ -231,7 +234,9 @@ export class EnhancedProductService {
                 constraints.push(where("category", "==", filters.category));
               }
               if (filters.subcategory) {
-                constraints.push(where("subcategory", "==", filters.subcategory));
+                constraints.push(
+                  where("subcategory", "==", filters.subcategory)
+                );
               }
               if (filters.brand) {
                 constraints.push(where("brand", "==", filters.brand));
@@ -301,9 +306,30 @@ export class EnhancedProductService {
         "low"
       );
     } catch (error: any) {
-      console.warn("🔥 Firebase service failed, falling back to mock service:", error);
+      console.warn(
+        "🔥 Firebase service failed, falling back to mock service:",
+        error
+      );
+
+      // Log specific error details for debugging
+      if (error?.code) {
+        console.log("Firebase Error Code:", error.code);
+      }
+      if (error?.message) {
+        console.log("Firebase Error Message:", error.message);
+      }
+
+      // Special handling for production environment
+      const isProduction =
+        import.meta.env.PROD || import.meta.env.MODE === "production";
+      if (isProduction) {
+        console.log(
+          "🌐 Production environment detected - using mock data as fallback"
+        );
+      }
+
       console.log("🔄 Using mock product service fallback");
-      
+
       try {
         const result = await MockProductService.getProducts(
           filters,
@@ -314,7 +340,14 @@ export class EnhancedProductService {
         return result;
       } catch (mockError) {
         console.error("❌ Mock service fallback also failed:", mockError);
-        throw error; // Throw original error
+
+        // Return empty result as last resort
+        console.log("⚠️ Returning empty product list as last resort");
+        return {
+          products: [],
+          hasMore: false,
+          total: 0,
+        };
       }
     }
   }
