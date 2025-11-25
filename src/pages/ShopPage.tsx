@@ -359,7 +359,8 @@ export const ShopPage: React.FC = () => {
           userAgent: navigator.userAgent.substring(0, 100),
           hasFirebaseApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
           hasFirebaseProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
-          firebaseApiKeyLength: import.meta.env.VITE_FIREBASE_API_KEY?.length || 0
+          firebaseApiKeyLength:
+            import.meta.env.VITE_FIREBASE_API_KEY?.length || 0,
         });
 
         // Check if preloader is ready for instant loading
@@ -386,8 +387,6 @@ export const ShopPage: React.FC = () => {
             ? "ProductionProductService"
             : "Development (Preloader)",
         });
-
-
 
         if (isProduction) {
           // In production, use the reliable production service
@@ -537,7 +536,9 @@ export const ShopPage: React.FC = () => {
           }));
         }
 
-        console.log(`✅ Products loaded successfully: ${shopProducts.length} products`);
+        console.log(
+          `✅ Products loaded successfully: ${shopProducts.length} products`
+        );
       } catch (error) {
         console.error("Failed to load products:", error);
         ProductDebugService.log("Shop Page Product Load Failed", {

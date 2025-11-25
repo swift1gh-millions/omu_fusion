@@ -54,7 +54,9 @@ class ProductDebugger {
   // End debugging session
   static endDebug(): void {
     const duration = Date.now() - this.startTime;
-    console.log(`🐛 [${this.debugContext}] Debug session ended (${duration}ms)`);
+    console.log(
+      `🐛 [${this.debugContext}] Debug session ended (${duration}ms)`
+    );
     if (this.errors.length > 0) {
       console.log(`🐛 [${this.debugContext}] Errors encountered:`, this.errors);
     }

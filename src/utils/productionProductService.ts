@@ -45,8 +45,13 @@ class ProductionProductService {
 
     try {
       // Check if Firebase environment variables are available
-      if (!import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID) {
-        console.warn("⚠️ Firebase environment variables missing, using mock data immediately");
+      if (
+        !import.meta.env.VITE_FIREBASE_API_KEY ||
+        !import.meta.env.VITE_FIREBASE_PROJECT_ID
+      ) {
+        console.warn(
+          "⚠️ Firebase environment variables missing, using mock data immediately"
+        );
         const mockProducts = await MockProductService.getProducts({}, {}, {});
         this.cache = mockProducts;
         this.cacheTimestamp = Date.now();
