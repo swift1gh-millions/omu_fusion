@@ -34,6 +34,7 @@ interface DebugReport {
 class ProductDebugger {
   private static errors: any[] = [];
   private static startTime: number = 0;
+  private static debugContext: string = "";
 
   // Start debugging session
   static startDebugging(): void {
@@ -42,21 +43,64 @@ class ProductDebugger {
     console.log("🐛 ProductDebugger: Debug session started");
   }
 
-  // Log an error
-  static logError(context: string, error: any): void {
+  // Start debugging session with context
+  static startDebug(context: string): void {
+    this.debugContext = context;
+    this.startTime = Date.now();
+    this.errors = [];
+    console.log(`🐛 [${context}] Debug session started`);
+  }
+
+  // End debugging session
+  static endDebug(): void {
+    const duration = Date.now() - this.startTime;
+    console.log(`🐛 [${this.debugContext}] Debug session ended (${duration}ms)`);
+    if (this.errors.length > 0) {
+      console.log(`🐛 [${this.debugContext}] Errors encountered:`, this.errors);
+    }
+  }
+
+  // Log debug message
+  static log(message: string, data?: any): void {
+    if (data) {
+      console.log(`🐛 [${this.debugContext}] ${message}:`, data);
+    } else {
+      console.log(`🐛 [${this.debugContext}] ${message}`);
+    }
+  }
+
+  // Log an error with context
+  static logErrorWithContext(context: string, error: any): void {
     const errorInfo = {
       context,
       timestamp: new Date().toISOString(),
       error: {
         name: error?.name,
         message: error?.message,
-        code: error?.code,
+        code: (error as any)?.code,
         stack: error?.stack?.split("\n").slice(0, 5),
       },
     };
 
     this.errors.push(errorInfo);
     console.log(`🐛 ProductDebugger: Error logged in ${context}:`, errorInfo);
+  }
+
+  // Log an error (simplified interface)
+  static logError(error: Error): void {
+    const errorInfo = {
+      context: this.debugContext,
+      timestamp: new Date().toISOString(),
+      error: {
+        name: error?.name,
+        message: error?.message,
+        code: (error as any)?.code,
+        stack: error?.stack?.split("\n").slice(0, 5),
+      },
+    };
+
+    this.errors.push(errorInfo);
+    console.log(`🐛 [${this.debugContext}] Error logged:`, errorInfo);
   }
 
   // Generate comprehensive debug report

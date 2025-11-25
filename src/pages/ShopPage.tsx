@@ -30,7 +30,6 @@ import { Product } from "../utils/databaseSchema";
 import ProductDebugService from "../utils/productDebugService";
 import ProductPreloader from "../utils/productPreloader";
 import ProductionProductService from "../utils/productionProductService";
-import ProductDebugger from "../utils/productDebugger";
 import {
   useDebounce,
   useAnimationVariants,
@@ -348,10 +347,6 @@ export const ShopPage: React.FC = () => {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        // Initialize comprehensive debugging
-        ProductDebugger.startDebug("ShopPage");
-        ProductDebugger.log("Product loading initiated");
-
         const startTime = performance.now();
         setIsLoading(true);
         console.log("🛍️ Shop page: Loading products...");
@@ -362,12 +357,9 @@ export const ShopPage: React.FC = () => {
           isDev: import.meta.env.DEV,
           url: window.location.href,
           userAgent: navigator.userAgent.substring(0, 100),
-        });
-
-        ProductDebugger.log("Environment variables checked", {
-          MODE: import.meta.env.MODE,
-          PROD: import.meta.env.PROD,
-          url: window.location.href,
+          hasFirebaseApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
+          hasFirebaseProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          firebaseApiKeyLength: import.meta.env.VITE_FIREBASE_API_KEY?.length || 0
         });
 
         // Check if preloader is ready for instant loading
@@ -395,12 +387,7 @@ export const ShopPage: React.FC = () => {
             : "Development (Preloader)",
         });
 
-        ProductDebugger.log("Environment decision made", {
-          isProduction,
-          selectedPath: isProduction
-            ? "ProductionProductService"
-            : "Development",
-        });
+
 
         if (isProduction) {
           // In production, use the reliable production service
@@ -550,12 +537,8 @@ export const ShopPage: React.FC = () => {
           }));
         }
 
-        ProductDebugger.log(
-          `Products loaded successfully: ${shopProducts.length} products`
-        );
-        ProductDebugger.endDebug();
+        console.log(`✅ Products loaded successfully: ${shopProducts.length} products`);
       } catch (error) {
-        ProductDebugger.logError(error as Error);
         console.error("Failed to load products:", error);
         ProductDebugService.log("Shop Page Product Load Failed", {
           error: error instanceof Error ? error.message : "Unknown error",
@@ -563,7 +546,6 @@ export const ShopPage: React.FC = () => {
         // Show user-friendly error message
         toast.error("Failed to load products. Please refresh the page.");
         setProducts([]); // Set empty array on error
-        ProductDebugger.endDebug();
       } finally {
         setIsLoading(false);
       }
