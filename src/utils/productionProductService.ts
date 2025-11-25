@@ -18,45 +18,91 @@ class ProductionProductService {
   // Reliable product loading for production
   static async getProducts(): Promise<ProductsResponse> {
     console.log('🏭 ProductionProductService: Loading products...');
+    console.log('🔍 DEBUG: Environment details:', {
+      MODE: import.meta.env.MODE,
+      PROD: import.meta.env.PROD,
+      NODE_ENV: import.meta.env.NODE_ENV,
+      hasApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
+      hasProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      apiKeyLength: import.meta.env.VITE_FIREBASE_API_KEY?.length || 0,
+      timestamp: new Date().toISOString()
+    });
     
     // Return cached data if valid
     if (this.isCacheValid() && this.cache) {
-      console.log('⚡ Using cached products');
+      console.log('⚡ Using cached products:', {
+        productCount: this.cache.products.length,
+        cacheAge: Date.now() - this.cacheTimestamp,
+        hasMore: this.cache.hasMore
+      });
       return this.cache;
     }
+
+    console.log('🔄 Cache miss or invalid, loading fresh data...');
 
     try {
       // Try Firebase first
       console.log('🔥 Attempting Firebase load...');
+      console.log('🔍 DEBUG: About to call EnhancedProductService.getProducts');
+      
+      const startTime = Date.now();
       const products = await EnhancedProductService.getProducts(
         {},
         { field: 'name', direction: 'asc' },
         { pageSize: 50 }
       );
+      const loadTime = Date.now() - startTime;
       
       // Cache successful result
       this.cache = products;
       this.cacheTimestamp = Date.now();
       
-      console.log('✅ Firebase load successful:', products.products.length, 'products');
+      console.log('✅ Firebase load successful:', {
+        productCount: products.products.length,
+        loadTime: `${loadTime}ms`,
+        hasMore: products.hasMore,
+        total: products.total,
+        sampleProducts: products.products.slice(0, 3).map(p => ({ id: p.id, name: p.name, category: p.category }))
+      });
       return products;
       
     } catch (firebaseError) {
-      console.warn('⚠️ Firebase failed, using mock data:', firebaseError);
+      console.warn('⚠️ Firebase failed, analyzing error...');
+      console.log('🔍 DEBUG: Firebase error details:', {
+        name: firebaseError?.name,
+        message: firebaseError?.message,
+        code: firebaseError?.code,
+        stack: firebaseError?.stack?.split('\n').slice(0, 3),
+        fullError: firebaseError
+      });
       
       try {
-        // Fallback to mock service
+        console.log('🔄 Attempting mock service fallback...');
+        const startTime = Date.now();
         const mockProducts = await MockProductService.getProducts({}, {}, {});
+        const loadTime = Date.now() - startTime;
         
         // Cache mock result too
         this.cache = mockProducts;
         this.cacheTimestamp = Date.now();
         
-        console.log('✅ Mock service fallback successful:', mockProducts.products.length, 'products');
+        console.log('✅ Mock service fallback successful:', {
+          productCount: mockProducts.products.length,
+          loadTime: `${loadTime}ms`,
+          hasMore: mockProducts.hasMore,
+          total: mockProducts.total,
+          sampleProducts: mockProducts.products.slice(0, 3).map(p => ({ id: p.id, name: p.name, category: p.category }))
+        });
         return mockProducts;
         
       } catch (mockError) {
-        console.error('❌ Both Firebase and mock services failed:', mockError);
+        console.error('❌ Both Firebase and mock services failed');
+        console.log('🔍 DEBUG: Mock service error:', {
+          name: mockError?.name,
+          message: mockError?.message,
+          stack: mockError?.stack?.split('\n').slice(0, 3),
+          fullError: mockError
+        });
         
         // Last resort: return empty result
         const emptyResult: ProductsResponse = {

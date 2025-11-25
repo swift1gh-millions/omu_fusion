@@ -58,21 +58,26 @@ export class EnhancedProductService {
   // Check if Firebase is properly configured
   private static isFirebaseAvailable(): boolean {
     try {
-      console.log("🔍 Checking Firebase availability...");
+      console.log("🔍 EnhancedProductService: Checking Firebase availability...");
 
       // First check if environment variables are properly configured
       const isConfigured = MockProductService.isFirebaseConfigured();
-      console.log("🔧 Firebase config check:", isConfigured);
+      console.log("🔧 Firebase config check result:", isConfigured);
 
       if (!isConfigured) {
-        console.log(
-          "❌ Firebase environment variables not configured, using mock service"
-        );
+        console.log("❌ Firebase environment variables not configured, using mock service");
+        console.log("🔍 DEBUG: Available env vars:", Object.keys(import.meta.env).filter(k => k.startsWith('VITE_FIREBASE_')));
         return false;
       }
 
       // Check if db is available
-      console.log("db:", db);
+      console.log("🔍 DEBUG: Firebase db object check:", {
+        dbExists: !!db,
+        dbType: typeof db,
+        dbConstructor: db?.constructor?.name,
+        hasApp: !!(db as any)?._delegate?.app
+      });
+      
       if (!db) {
         console.log("❌ db is null/undefined, Firebase not available");
         return false;
@@ -81,13 +86,13 @@ export class EnhancedProductService {
       console.log("✅ Firebase is configured and db object exists");
       return true;
     } catch (error: any) {
-      console.warn(
-        "❌ Firebase connection test failed, using mock service:",
-        error
-      );
-      if (error?.code) {
-        console.log("Error code:", error.code);
-      }
+      console.warn("❌ Firebase availability check failed:", {
+        error,
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack?.split('\n').slice(0, 3)
+      });
       return false;
     }
   }
@@ -191,28 +196,46 @@ export class EnhancedProductService {
     pagination: PaginationOptions = { pageSize: this.DEFAULT_PAGE_SIZE }
   ): Promise<ProductsResponse> {
     console.log("🚀 EnhancedProductService.getProducts called");
-    console.log("📦 Filters:", filters);
-    console.log("📊 Sort:", sort);
-    console.log("📄 Pagination:", pagination);
+    console.log("🔍 DEBUG: Call details:", {
+      filters,
+      sort,
+      pagination,
+      timestamp: new Date().toISOString(),
+      callStack: new Error().stack?.split('\n').slice(1, 4)
+    });
 
     // Use mock service if Firebase isn't available
-    if (!this.isFirebaseAvailable()) {
+    const firebaseAvailable = this.isFirebaseAvailable();
+    console.log("🔍 DEBUG: Firebase availability check result:", firebaseAvailable);
+    
+    if (!firebaseAvailable) {
       console.log("🔄 Using mock product service (Firebase not available)");
       try {
+        const startTime = Date.now();
         const result = await MockProductService.getProducts(
           filters,
           sort,
           pagination
         );
-        console.log("✅ Mock service returned:", result);
+        const loadTime = Date.now() - startTime;
+        console.log("✅ Mock service returned:", {
+          productCount: result.products.length,
+          loadTime: `${loadTime}ms`,
+          hasMore: result.hasMore,
+          total: result.total
+        });
         return result;
       } catch (error) {
-        console.error("❌ Mock service error:", error);
+        console.error("❌ Mock service error:", {
+          error,
+          name: error?.name,
+          message: error?.message
+        });
         throw error;
       }
     }
 
-    console.log("🔥 Attempting Firebase service");
+    console.log("🔥 Attempting Firebase service (Firebase is available)");
 
     try {
       return await ErrorService.handleServiceError(

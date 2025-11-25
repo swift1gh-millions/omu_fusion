@@ -21,13 +21,27 @@ class EnvironmentService {
         VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
       };
 
+      // Debug: Log all environment variables with lengths but not actual values
+      console.log("🔍 DEBUG: Environment variables check:", {
+        VITE_FIREBASE_API_KEY: envVars.VITE_FIREBASE_API_KEY ? `***${envVars.VITE_FIREBASE_API_KEY.length} chars***` : 'MISSING',
+        VITE_FIREBASE_AUTH_DOMAIN: envVars.VITE_FIREBASE_AUTH_DOMAIN || 'MISSING',
+        VITE_FIREBASE_PROJECT_ID: envVars.VITE_FIREBASE_PROJECT_ID || 'MISSING',
+        VITE_FIREBASE_STORAGE_BUCKET: envVars.VITE_FIREBASE_STORAGE_BUCKET || 'MISSING',
+        VITE_FIREBASE_MESSAGING_SENDER_ID: envVars.VITE_FIREBASE_MESSAGING_SENDER_ID || 'MISSING',
+        VITE_FIREBASE_APP_ID: envVars.VITE_FIREBASE_APP_ID ? `***${envVars.VITE_FIREBASE_APP_ID.length} chars***` : 'MISSING',
+        totalEnvVars: Object.keys(import.meta.env).length,
+        allEnvKeys: Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')),
+        timestamp: new Date().toISOString()
+      });
+
       // Check if any required environment variables are missing
       const missingVars = Object.entries(envVars)
         .filter(([key, value]) => !value)
         .map(([key]) => key);
 
       if (missingVars.length > 0) {
-        console.error("Missing environment variables:", missingVars);
+        console.error("❌ Missing environment variables:", missingVars);
+        console.error("🔍 DEBUG: Available VITE_ env vars:", Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
         console.error("\n🔥 FIREBASE SETUP REQUIRED 🔥");
         console.error(
           "Please create a .env file in your project root with the following variables:"
